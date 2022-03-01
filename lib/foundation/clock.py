@@ -2,7 +2,7 @@
 Clock class for any purpose
 by joonhyuk@me.com
 
-maybe it's reinventing the wheel, the goal was reducing dependance on pygame
+maybe it's reinventing the wheel, the goal was reducing dependance on any frameworks
 """
 
 class Clock:
@@ -12,7 +12,7 @@ class Clock:
     get_perf = pytime.perf_counter
     
     def __init__(self, fps = 60) -> None:
-        self.start_time = self.prev_time = Clock.get_time()
+        self.start_time = self.prev_time = self.__class__.get_time()
         # self.prev_time = self.start_time - 1 / 60 # force delay for start
         """previous frame start time"""
         self.cur_time = 0.0
@@ -25,7 +25,7 @@ class Clock:
         """initial fps limit"""
         self.fps_current = 0.0
         
-        self.timerdic:dict[str, list[bool,float,float]] = {}
+        self.timers:dict[str, list[bool,float,float]] = {}
         """{id:[pause, start time, paused time]}"""
         self.timer_game_paused_list:list = []
         self.timer_game_ispaused:bool = False
@@ -80,66 +80,66 @@ class Clock:
 
     def __repr__(self):
         """need to refine to use each timer class instance"""
-        return self.timerdic
+        return self.timers
     
     def get_fps(self) -> float:
         
         return self.fps_current
     
-    def timer_get(self, name:str):
-        if name not in self.timerdic:
+    def timer_get(self, name:str) -> float:
+        if name not in self.timers:
             self.timer_start(name)
+            return 0.0
             
-        if self.timerdic[name][0]:
+        if self.timers[name][0]:
             """while pause"""
-            return self.timerdic[name][2] - self.timerdic[name][1]
+            return self.timers[name][2] - self.timers[name][1]
         else:
-            return self.get_perf() - self.timerdic[name][1]
+            return self.get_perf() - self.timers[name][1]
     
     def timer_start(self, id:str, pause:bool = None):
         cur_time = self.get_perf()
         
-        if id not in self.timerdic:
+        if id not in self.timers:
             if pause is None: pause = False
-            self.timerdic[id] = [pause, cur_time, cur_time]
+            self.timers[id] = [pause, cur_time, cur_time]
             return 0
         
         return self.timer_get(id)
     
     def timer_pause(self, id:str, switch:bool = None):
-        if id not in self.timerdic:
+        if id not in self.timers:
             return self.timer_start(id, pause = switch)
         
         cur_time = self.get_perf()
-        prev_pause = self.timerdic[id][0]
+        prev_pause = self.timers[id][0]
         if switch is None: switch = not prev_pause
         if switch ^ prev_pause:
-            self.timerdic[id][0] = switch
+            self.timers[id][0] = switch
             if switch:
-                self.timerdic[id][2] = cur_time
+                self.timers[id][2] = cur_time
             else:
-                self.timerdic[id][1] = self.timerdic[id][1] - self.timerdic[id][2] + cur_time
+                self.timers[id][1] = self.timers[id][1] - self.timers[id][2] + cur_time
         return self.timer_get(id)
     
     def timer_reset(self, id:str, restart = True):
-        # if self.timer_remove(name):
-        #     self.timer_start(name, not restart)
-        self.timer_remove(id)
-        return self.timer_start(id, not restart)
+        timer_value = self.timer_remove(id)
+        self.timer_start(id, not restart)
+        return timer_value
         
-    def timer_remove(self, id:str):
-        if id not in self.timerdic:
-            # OPT.print_raw('timer['+name+'] not exists')
-            return False
-        del self.timerdic[id]
-        return True
+    def timer_remove(self, id:str) -> float:
+        if id not in self.timers:
+            return 0.0
+        timer_value = self.timer_get(id)
+        del self.timers[id]
+        return timer_value
     
     def timer_pause_all(self, switch:bool = None):
         if switch is None: switch = not self.timer_game_ispaused
         if switch == self.timer_game_ispaused: return False
         if switch:
             self.timer_game_paused_list = []
-            for id, timer in self.timerdic.items():
+            for id, timer in self.timers.items():
                 if not timer[0]:
                     """not paused timers"""
                     self.timer_game_paused_list.append(id)
@@ -158,7 +158,7 @@ class Clock:
     @property
     def actual_time_elapsed(self) -> float:
         """return elapsed time(sec) after this instance made"""
-        return self.__class__.get_time() - self.game_start_time
+        return self.__class__.get_time() - self.start_time
 
 if __name__ != "__main__":
     CLOCK = Clock()
