@@ -4,6 +4,7 @@ by joonhyuk@me.com
 
 maybe it's reinventing the wheel, the goal was reducing dependance on any frameworks
 """
+import threading
 
 class Clock:
     """SUPER PRECISE timer"""
@@ -151,6 +152,16 @@ class Clock:
                 self.timer_game_paused_list = []
         self.timer_game_ispaused = switch
 
+    def reserve_exec(self, interval:float, function, *args, **kwargs):
+        if interval <= 0: return function(*args, **kwargs)
+        threading.Timer(interval, function, args, kwargs).start()
+    
+    def reserve_cancel(self):
+        thread_list = threading.enumerate()
+        for tt in thread_list:
+            if isinstance(tt, threading.Timer):
+                tt.cancel()
+    
     @property
     def process_time_ms(self) -> int:
         return round(self.raw_time * 1000)
