@@ -5,3 +5,4 @@ from .vector import Vector
 # from . import *
 from .engine import *
 from .actor import *
+print('lib.foundation shoot')

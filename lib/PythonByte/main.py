@@ -1,4 +1,3 @@
-from json.encoder import ESCAPE
 from config import *
 from .units import *
 import arcade
@@ -46,11 +45,11 @@ class SnakeHead(Sprite):
         super().__init__(texture = self.sprites[self.direction.value.values])
     
     def update(self):
-        print('update')
+        # print(CLOCK.delta_time)
         return super().update()
     
     def on_update(self, delta_time: float = 1 / 60):
-        print('on_update')
+        # print('on_update')
         return super().on_update(delta_time)
     
         
@@ -112,9 +111,11 @@ class GameManager(arcade.Window):
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed."""
         if key == arcade.key.UP:
+            CLOCK.reserve_exec(5, self.on_tile_tick)
             self.player.body.change_y = 10
         
         if key in (arcade.key.Q, arcade.key.ESCAPE):
+            CLOCK.reserve_cancel()
             arcade.exit()
 
     def on_key_release(self, key, modifiers):
@@ -126,7 +127,7 @@ class GameManager(arcade.Window):
         
         # PLAYER_MOVEMENT_SPEED * 
         # self.player_sprite.change_y = 10
-        self.characters.on_update(delta_time)
+        self.characters.update()
         self.physics_engine.update()
     
     def on_tile_tick(self):

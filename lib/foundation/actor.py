@@ -1,4 +1,3 @@
-
 from lib.foundation.base import *
 from lib.foundation.clock import *
 from lib.foundation.engine import *
@@ -48,6 +47,13 @@ class MObject(object):
         # del self    # ????? do we need it?
         return False
 
+    def check_super(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            if not super().f(*args, **kwargs): return False
+            return f(*args, **kwargs)
+        return wrapper
+        
     @property
     def remain_lifetime(self) -> float:
         if self._lifetime:
