@@ -2,7 +2,7 @@
 base feature codes
 joonhyuk@me.com
 """
-import sys, json, functools
+import sys, json, functools, inspect
 from enum import Enum
 from typing import Iterable
 from lib.foundation.vector import Vector

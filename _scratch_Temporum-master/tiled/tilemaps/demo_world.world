@@ -1,0 +1,20 @@
+{
+    "maps": [
+        {
+            "fileName": "demo_1.tmx",
+            "height": 640,
+            "width": 480,
+            "x": 0,
+            "y": 0
+        },
+        {
+            "fileName": "tutorial.tmx",
+            "height": 240,
+            "width": 480,
+            "x": 480,
+            "y": 240
+        }
+    ],
+    "onlyShowAdjacentMaps": false,
+    "type": "world"
+}

@@ -1,0 +1,32 @@
+{
+    "backgrounds":
+    {
+        "digital":
+        {
+            "start": [0, 0]
+        }
+    },
+    "characters":
+    {
+        "player":
+        {
+            "start": [0, 0],
+        },
+        "machine":
+        {
+            "start": [0, 0],
+        },
+        "computer":
+        {
+            "start": [0, 0],
+        },
+        "terminal":
+        {
+            "start": [0, 0],
+        },
+        "note":
+        {
+            "start": [0, 0],
+        }
+    }
+}
