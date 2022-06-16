@@ -63,8 +63,6 @@ class MObject(object):
     @property
     def is_alive(self) -> bool:
         return self._alive
-    
-    
 
 class Actor2D(MObject):
     def __init__(self, **kwargs) -> None:

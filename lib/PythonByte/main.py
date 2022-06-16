@@ -51,9 +51,6 @@ class SnakeHead(Sprite):
     def on_update(self, delta_time: float = 1 / 60):
         # print('on_update')
         return super().on_update(delta_time)
-    
-        
-    
 
 class GameManager(arcade.Window):
     """
