@@ -14,7 +14,7 @@ class MyGame(arcade.Window):
         # File name of GLSL code
         # file_name = "fractal_pyramid.glsl"
         # file_name = "cyber_fuji_2020.glsl"
-        file_name = "_scratch/shadertest.glsl"
+        file_name = "_scratch/shadertest_flame.glsl"
         # file_name = "flame.glsl"
         # file_name = "star_nest.glsl"
 
