@@ -6,7 +6,7 @@ class MyGame(arcade.Window):
 
     def __init__(self):
         # Call the parent constructor
-        super().__init__(width=320, height=240, title="Shader Demo", resizable=True)
+        super().__init__(width=1280, height=240, title="Shader Demo", resizable=True)
 
         # Keep track of total run-time
         self.time = 0.0

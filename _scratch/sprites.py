@@ -93,8 +93,8 @@ class MyGame(arcade.Window):
         """Set up the game and initialize the variables."""
 
         # Map name
-        map_name = ":resources:tiled_maps/level_1.json"
-
+        # map_name = ":resources:tiled_maps/level_1.json"
+        map_name = 'resources/tile/test-map.json'
         # Layer Specific Options for the Tilemap
         layer_options = {
             LAYER_NAME_PLATFORMS: {
