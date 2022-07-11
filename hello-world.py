@@ -69,6 +69,10 @@ class ArcadeBasic(arcade.Window):
             color=arcade.color.ORANGE,
         )
         
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.Q and modifiers & arcade.key.MOD_CTRL:
+            print('mod is ' + str(modifiers))
+            arcade.exit()
         # arcade.draw_text()
 
 class MyGame(arcade.Window):
@@ -86,17 +90,18 @@ class MyGame(arcade.Window):
     def setup(self):
         """Set up the game here. Call this function to restart the game."""
         pass
-
+    
     def on_draw(self):
         """Render the screen."""
 
         self.clear()
         # Code to draw the screen goes here
+    
 
 # Run the program
 if __name__ == "__main__":
     arcade_game = ArcadeBasic(WIDTH, HEIGHT, "Arcade Basic Game")
-    window = MyGame()
+    # window = MyGame()
     # window.setup()
     # ag2 = ArcadeBasic(WIDTH / 2, HEIGHT / 2, "ttt")
     arcade.run()
