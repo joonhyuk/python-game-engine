@@ -175,8 +175,21 @@ class Vector(object):
         rounded = tuple(map(round, self.values, ndigits_list))
         return self.__class__(*rounded)
     
+    @property
+    def ceil(self):
+        rounded = tuple(map(math.ceil, self.values))
+        return self.__class__(*rounded)
+    
+    @property
+    def floor(self):
+        rounded = tuple(map(math.floor, self.values))
+        return self.__class__(*rounded)
+    
     def clamp_max(self, other):
-        return self.__class__(min(other[0], self.x), min(other[1], self.y))
+        """return claped vector"""
+        clamped = tuple(map(min, self.values, other))
+        return clamped
+        # return self.__class__(min(other[0], self.x), min(other[1], self.y))
     
     # def __sum__(self, *others):
     #     pass
@@ -270,4 +283,9 @@ else:
     vs = Vector((22,3))
     print(type(vs))
     
+    v3 = Vector(1,2,3)
+    v4 = Vector(0,4,2)
+    print(v3.clamp_max((0,4,2)))
     
+    vvv = Vector(1.3, 2, 3.141592)
+    print(vvv.floor)    
