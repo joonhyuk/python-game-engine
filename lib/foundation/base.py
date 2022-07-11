@@ -3,6 +3,7 @@ base feature codes
 joonhyuk@me.com
 """
 import sys, json, functools, inspect
+from random import random
 from enum import Enum
 from typing import Iterable
 from lib.foundation.vector import Vector
@@ -67,6 +68,9 @@ def load_json(filepath:str) -> dict:
 def save_json(filepath:str, json_data) -> None:
     with open(get_path(filepath), 'w') as json_file:
         json.dump(json_data, json_file, indent = 4)
+
+def flip_coin(prob = 0.5) -> bool:
+    return random() <= prob
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

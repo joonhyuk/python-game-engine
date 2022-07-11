@@ -2,6 +2,8 @@ import arcade
 from enum import Enum
 from lib.foundation.base import *
 
+from dataclasses import dataclass
+
 PROJECT_NAME = 'python arcade test'
 DEFAULT_SCREEN_WIDTH = 1024
 DEFAULT_SCREEN_HEIGHT = 768
@@ -17,6 +19,10 @@ class settings(int, Enum):
     tile_size = DEFAULT_TILE_SIZE
     fps = DEFAULT_FPS
 
+@dataclass
+class default_settings:
+    screen_size = Vector(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
+    
 class direction(EnumVector):
     up = Vector(0, 1)
     down = Vector(0, -1)

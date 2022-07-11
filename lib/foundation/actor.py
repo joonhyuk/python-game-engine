@@ -14,8 +14,8 @@ class MObject(object):
         # self._update_render:bool = True
         # """rendering optimization"""
         if kwargs:
-            for k, v in kwargs:
-                setattr(self, k, v)
+            for k in kwargs:
+                setattr(self, k, kwargs[k])
         
     def get_id(self) -> str:
         return str(id(self))
@@ -101,5 +101,9 @@ class Actor2D(MObject):
     
     def _set_velocity(self, velocity:Vector = Vector(0, 0)):
         self.body.velocity = velocity
+    
+    # def on_update(self, delta_time: float = 1 / 60):
+    #     self.tick()
+    #     return super().on_update(delta_time)
     
     position = property(get_position, set_position)
