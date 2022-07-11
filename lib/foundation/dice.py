@@ -1,7 +1,11 @@
 import random, re
 
 class Dice:
-    def __init__(self, faces = range(1, 7), rolls = 1, sum_results_if_int = True, bonus_if_int = 0) -> None:
+    def __init__(self, 
+                 faces = range(1, 7), 
+                 rolls = 1, 
+                 sum_results_if_int = True, 
+                 bonus_if_int = 0) -> None:
         self.face = None
         self.faces = None
         self.sum_result = sum_results_if_int
