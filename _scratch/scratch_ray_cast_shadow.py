@@ -16,8 +16,8 @@ CAMERA_SPEED = 0.1
 
 PLAYER_MOVEMENT_SPEED = 7
 BOMB_COUNT = 30
-PLAYING_FIELD_WIDTH = 1600
-PLAYING_FIELD_HEIGHT = 1600
+PLAYING_FIELD_WIDTH = 2560
+PLAYING_FIELD_HEIGHT = 1440
 
 
 class MyGame(arcade.Window):
@@ -29,6 +29,8 @@ class MyGame(arcade.Window):
         self.shadertoy = None
         self.channel0 = None
         self.channel1 = None
+        self.render_ratio = 1.0
+        
         self.load_shader()
         
         self.perf_counter = time.perf_counter()
@@ -53,11 +55,12 @@ class MyGame(arcade.Window):
 
     def load_shader(self):
         # Where is the shader file? Must be specified as a path.
-        shader_file_path = "_scratch/shaders/rc_step_05.glsl"
+        shader_file_path = "_scratch/shaders/rc_test.glsl"
 
         # Size of the window
-        window_size = self.get_size()
-
+        window_size = self.get_framebuffer_size()
+        self.render_ratio = window_size[0] / self.get_size()[0]
+        
         # Create the shader toy
         self.shadertoy = Shadertoy.create_from_file(window_size, shader_file_path)
 
@@ -137,15 +140,15 @@ class MyGame(arcade.Window):
         
         # Calculate the light position. We have to subtract the camera position
         # from the player position to get screen-relative coordinates.
-        p = (self.player_sprite.position[0] - self.camera_sprites.position[0],
-             self.player_sprite.position[1] - self.camera_sprites.position[1])
+        p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
+             (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
 
         # Set the uniform data
         self.shadertoy.program['lightPosition'] = p
         
         # Run the shader and render to the window
         # self.shadertoy.program['lightPosition'] = self.player_sprite.position
-        self.shadertoy.program['lightSize'] = 450
+        self.shadertoy.program['lightSize'] = 500
         # self.shadertoy.program['lightDirection'] = 0.0
         # self.shadertoy.program['lightAngle'] = 45.0
         
