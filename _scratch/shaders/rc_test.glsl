@@ -3,16 +3,16 @@
 uniform vec2 lightPosition;
 // Size of light in pixels
 uniform float lightSize;
-// 가리키는 방향
+// direction
 uniform float lightDirection;
-// 비추는 각도
+// field of view angle
 uniform float lightAngle;
 
 #define N 100
 
 float terrain(vec2 samplePoint)
 {
-    // iChannel0(지형 채널)에 위치한 점일 경우 알파=1 
+    // iChannel0(terrain) 
     float samplePointAlpha = texture(iChannel0, samplePoint).a;
     float sampleStepped = step(0.1, samplePointAlpha);
     float result = 1.0 - sampleStepped;
@@ -22,7 +22,7 @@ float terrain(vec2 samplePoint)
     return result;
 }
 
-// mainImage로 예약된 메인 함수
+// should be 'mainImage' for shadertoy
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     // Distance in pixels to the light
@@ -34,7 +34,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    else if (acos(dot(samplep, vec2(sin(iTime), cos(iTime))) / length(samplep)) > radians(50))
+    else if (acos(dot(samplep, vec2(sin(iTime), cos(iTime))) / length(samplep)) > radians(50.0))
     {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
@@ -44,7 +44,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // Normalize the fragment coordinate from (0.0, 0.0) to (1.0, 1.0)
         vec2 normalizedFragCoord = fragCoord/iResolution.xy;
 
-        // 라이트 좌표 노멀라이즈
+        // normalize light coord
         vec2 normalizedLightCoord = lightPosition.xy/iResolution.xy;
 
 
@@ -65,7 +65,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             lightAmount *= shadowAmount;
         }
 
-        // terrain에서 구한 지형 블락위치를 가지고 그림자 만들어주기
+        // Make shadow for terrain itself
         // float shadowAmount = terrain(normalizedFragCoord);
         // lightAmount *= shadowAmount;
 
