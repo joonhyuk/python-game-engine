@@ -2,7 +2,7 @@ import random, math
 from typing import Tuple
 import arcade
 import time
-from arcade.experimental import Shadertoy
+from arcade.experimental import Shadertoy, lights
 from pyglet.math import Vec2
 
 # Do the math to figure out our screen dimensions
@@ -15,7 +15,7 @@ SPRITE_SCALING = 0.5
 # How fast the camera pans to the player. 1.0 is instant.
 CAMERA_SPEED = 0.1
 
-PLAYER_MOVEMENT_SPEED = 7
+PLAYER_MOVEMENT_SPEED = 2
 BOMB_COUNT = 30
 PLAYING_FIELD_WIDTH = 2560
 PLAYING_FIELD_HEIGHT = 1440
@@ -36,6 +36,7 @@ class MyGame(arcade.Window):
         self.perf_counter = time.perf_counter()
         
         # Sprites and sprite lists
+        self.background_sprite_list = arcade.SpriteList()
         self.player_sprite = None
         self.wall_list = arcade.SpriteList()
         self.player_list = arcade.SpriteList()
@@ -81,6 +82,14 @@ class MyGame(arcade.Window):
         self.shadertoy.channel_1 = self.channel1.color_attachments[0]
     
     def generate_sprites(self):
+        
+        for x in range(0, PLAYING_FIELD_WIDTH, 128):
+            for y in range(0, PLAYING_FIELD_HEIGHT, 128):
+                sprite = arcade.Sprite(":resources:images/tiles/brickTextureWhite.png")
+                sprite.position = x, y
+                sprite.color = (30,30,30)
+                self.background_sprite_list.append(sprite)
+        
         # -- Set up several columns of walls
         for x in range(0, PLAYING_FIELD_WIDTH, 128):
             for y in range(0, PLAYING_FIELD_HEIGHT, int(128 * SPRITE_SCALING)):
@@ -133,6 +142,7 @@ class MyGame(arcade.Window):
 
         self.channel1.use()
         self.channel1.clear()
+        self.background_sprite_list.draw()
         self.bomb_list.draw()
         self.wall_list.draw()
         
@@ -154,7 +164,7 @@ class MyGame(arcade.Window):
         # self.shadertoy.program['lightPosition'] = self.player_sprite.position
         self.shadertoy.program['lightSize'] = 500
         # self.shadertoy.program['lightDirection'] = 0.0
-        self.shadertoy.program['lightAngle'] = 60.0
+        self.shadertoy.program['lightAngle'] = 80.0
         # self.shadertoy.program['lightDirection'] = 45
         player_heading_vec_norm = Vec2(self.mousex - p[0], self.mousey - p[1]).normalize()
         self.shadertoy.program['lightDirectionV'] = player_heading_vec_norm
@@ -168,6 +178,7 @@ class MyGame(arcade.Window):
         
         # self.wall_list.draw()
         self.player_list.draw()
+        self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
         
         # Switch to the un-scrolled camera to draw the GUI with
         self.camera_gui.use()

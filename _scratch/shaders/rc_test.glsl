@@ -8,7 +8,7 @@ uniform vec2 lightDirectionV;
 // field of view angle
 uniform float lightAngle;
 
-#define N 100
+#define N 128
 
 float terrain(vec2 samplePoint)
 {
@@ -36,7 +36,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     }
     else if (acos(dot(samplep, lightDirectionV) / length(samplep)) > radians(lightAngle))
     {
-        fragColor = vec4(seep.xy, 0.0, 1.0);
+        fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
     else
     {
@@ -57,7 +57,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             // A 0.0 - 1.0 ratio between where our current pixel is, and where the light is
             float t = i / N;
             // Grab a coordinate between where we are and the light
-            vec2 samplePoint = mix(normalizedFragCoord, normalizedLightCoord, t);
+            vec2 samplePoint = mix(normalizedLightCoord, normalizedFragCoord, t);
             // Is there something there? If so, we'll assume we are in shadow
             float shadowAmount = terrain(samplePoint);
             // Multiply the light amount.
@@ -69,6 +69,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // float shadowAmount = terrain(normalizedFragCoord);
         // lightAmount *= shadowAmount;
 
+        // float terrainUnmask = terrain(normalizedFragCoord);
+
+
         // Find out how much light we have based on the distance to our light
         lightAmount *= 1.0 - smoothstep(0.0, lightSize, distanceToLight);
 
@@ -77,7 +80,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
         // Our fragment color will be somewhere between black and channel 1
         // dependent on the value of b.
-        fragColor = mix(blackColor, texture(iChannel1, normalizedFragCoord), lightAmount);
+        vec4 ich1 = texture(iChannel1, normalizedFragCoord);
+        float ich1_alpha = step(0.2, lightAmount);
+        ich1 = ich1 * ich1_alpha;
+
+        fragColor = mix(blackColor, ich1, lightAmount);
 
 
     }
