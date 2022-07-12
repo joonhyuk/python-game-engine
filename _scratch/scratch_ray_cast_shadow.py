@@ -30,6 +30,7 @@ class MyGame(arcade.Window):
         self.channel0 = None
         self.channel1 = None
         self.render_ratio = 1.0
+        self.light_layer = lights.LightLayer(*self.get_framebuffer_size())
         
         self.load_shader()
         
@@ -119,6 +120,8 @@ class MyGame(arcade.Window):
         # self.player_sprite.center_y = 512
         self.player_list.append(self.player_sprite)
 
+        self.light_layer.add(lights.Light(500,500,500,(255,255,255), 'soft'))
+        
         # Physics engine, so we don't run into walls
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
 
@@ -173,12 +176,14 @@ class MyGame(arcade.Window):
         if player_heading_vec_norm[0] > 0: pa_rad *= -1
         self.player_sprite.angle = math.degrees(pa_rad)
         
-        self.shadertoy.render()
         
-        # self.wall_list.draw()
-        self.player_list.draw()
+        with self.light_layer:
+            self.shadertoy.render()
+            self.player_list.draw()
+        
+        self.light_layer.draw(ambient_color=(255,255,255))
         self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
-        
+                
         # Switch to the un-scrolled camera to draw the GUI with
         self.camera_gui.use()
         # Draw our sample GUI text
