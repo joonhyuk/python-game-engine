@@ -6,6 +6,7 @@ joonhyuk@me.com
 import os
 import arcade
 from arcade import Texture
+from arcade.experimental import Shadertoy
 
 from lib.foundation.base import *
 
