@@ -1,4 +1,5 @@
 import random
+from typing import Tuple
 import arcade
 import time
 from arcade.experimental import Shadertoy
@@ -18,7 +19,6 @@ PLAYER_MOVEMENT_SPEED = 7
 BOMB_COUNT = 30
 PLAYING_FIELD_WIDTH = 2560
 PLAYING_FIELD_HEIGHT = 1440
-
 
 class MyGame(arcade.Window):
 
@@ -45,6 +45,9 @@ class MyGame(arcade.Window):
         # Create cameras used for scrolling
         self.camera_sprites = arcade.Camera(width, height)
         self.camera_gui = arcade.Camera(width, height)
+        
+        self.mousex = None
+        self.mousey = None
         
         self.generate_sprites()
         
@@ -100,10 +103,11 @@ class MyGame(arcade.Window):
             self.bomb_list.append(bomb)
 
         # Create the player
-        self.player_sprite = arcade.Sprite(":resources:images/animated_characters/female_person/femalePerson_idle.png",
-                                           scale=SPRITE_SCALING)
-        self.player_sprite.center_x = 256
-        self.player_sprite.center_y = 512
+        # self.player_sprite = arcade.Sprite(":resources:images/animated_characters/female_person/femalePerson_idle.png",
+        #                                    scale=SPRITE_SCALING)
+        self.player_sprite = arcade.Sprite('resources/art/player_handgun.png', scale=1, center_x=30, center_y=66)
+        # self.player_sprite.center_x = 256
+        # self.player_sprite.center_y = 512
         self.player_list.append(self.player_sprite)
 
         # Physics engine, so we don't run into walls
@@ -150,7 +154,10 @@ class MyGame(arcade.Window):
         # self.shadertoy.program['lightPosition'] = self.player_sprite.position
         self.shadertoy.program['lightSize'] = 500
         # self.shadertoy.program['lightDirection'] = 0.0
-        # self.shadertoy.program['lightAngle'] = 45.0
+        self.shadertoy.program['lightAngle'] = 60.0
+        # self.shadertoy.program['lightDirection'] = 45
+        self.shadertoy.program['lightDirection'] = Vec2(self.mousex - p[0], self.mousey - p[1]).normalize()
+        
         
         self.shadertoy.render()
         
@@ -162,6 +169,10 @@ class MyGame(arcade.Window):
         # Draw our sample GUI text
         self.score_text.draw()
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.mousex = x
+        self.mousey = y
+        
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
 
