@@ -82,7 +82,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // dependent on the value of b.
         vec4 ich1 = texture(iChannel1, normalizedFragCoord);
         float ich1_alpha = step(0.2, lightAmount);
-        ich1 = ich1 * ich1_alpha;
+        // ich1 = ich1 * ich1_alpha;
 
         fragColor = mix(blackColor, ich1, lightAmount);
 

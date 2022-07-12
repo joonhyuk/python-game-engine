@@ -47,8 +47,8 @@ class MyGame(arcade.Window):
         self.camera_sprites = arcade.Camera(width, height)
         self.camera_gui = arcade.Camera(width, height)
         
-        self.mousex = None
-        self.mousey = None
+        self.mousex = 0
+        self.mousey = 0
         
         self.generate_sprites()
         
@@ -171,7 +171,6 @@ class MyGame(arcade.Window):
         
         pa_rad = math.acos(Vec2(0, 1).dot(player_heading_vec_norm))
         if player_heading_vec_norm[0] > 0: pa_rad *= -1
-        
         self.player_sprite.angle = math.degrees(pa_rad)
         
         self.shadertoy.render()
@@ -186,8 +185,9 @@ class MyGame(arcade.Window):
         self.score_text.draw()
 
     def on_mouse_motion(self, x, y, dx, dy):
-        self.mousex = x
-        self.mousey = y
+        self.mousex = x * self.render_ratio
+        self.mousey = y * self.render_ratio
+        # print(x, y)
         
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
