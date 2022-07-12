@@ -4,7 +4,7 @@ uniform vec2 lightPosition;
 // Size of light in pixels
 uniform float lightSize;
 // direction
-uniform vec2 lightDirection;
+uniform vec2 lightDirectionV;
 // field of view angle
 uniform float lightAngle;
 
@@ -34,7 +34,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    else if (acos(dot(samplep, lightDirection) / length(samplep)) > radians(lightAngle))
+    else if (acos(dot(samplep, lightDirectionV) / length(samplep)) > radians(lightAngle))
     {
         fragColor = vec4(seep.xy, 0.0, 1.0);
     }

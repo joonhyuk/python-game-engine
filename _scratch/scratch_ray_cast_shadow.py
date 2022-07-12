@@ -1,4 +1,4 @@
-import random
+import random, math
 from typing import Tuple
 import arcade
 import time
@@ -156,8 +156,13 @@ class MyGame(arcade.Window):
         # self.shadertoy.program['lightDirection'] = 0.0
         self.shadertoy.program['lightAngle'] = 60.0
         # self.shadertoy.program['lightDirection'] = 45
-        self.shadertoy.program['lightDirection'] = Vec2(self.mousex - p[0], self.mousey - p[1]).normalize()
+        player_heading_vec_norm = Vec2(self.mousex - p[0], self.mousey - p[1]).normalize()
+        self.shadertoy.program['lightDirectionV'] = player_heading_vec_norm
         
+        pa_rad = math.acos(Vec2(0, 1).dot(player_heading_vec_norm))
+        if player_heading_vec_norm[0] > 0: pa_rad *= -1
+        
+        self.player_sprite.angle = math.degrees(pa_rad)
         
         self.shadertoy.render()
         
@@ -176,21 +181,21 @@ class MyGame(arcade.Window):
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
 
-        if key == arcade.key.UP:
+        if key in (arcade.key.UP, arcade.key.W):
             self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
-        elif key == arcade.key.DOWN:
+        elif key in (arcade.key.DOWN, arcade.key.S):
             self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
-        elif key == arcade.key.LEFT:
+        if key in (arcade.key.LEFT, arcade.key.A):
             self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
-        elif key == arcade.key.RIGHT:
+        elif key in (arcade.key.RIGHT, arcade.key.D):
             self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
-        if key == arcade.key.UP or key == arcade.key.DOWN:
+        if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
             self.player_sprite.change_y = 0
-        elif key == arcade.key.LEFT or key == arcade.key.RIGHT:
+        elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
             self.player_sprite.change_x = 0
 
     def on_update(self, delta_time):
@@ -205,7 +210,7 @@ class MyGame(arcade.Window):
         fps = -1 / (self.perf_counter - time.perf_counter())
         self.perf_counter = time.perf_counter()
         # print(fps)
-        if fps < 45: print('hell', fps)
+        if fps < 45: print('low fps :', fps)
         
     def scroll_to_player(self, speed=CAMERA_SPEED):
         """
