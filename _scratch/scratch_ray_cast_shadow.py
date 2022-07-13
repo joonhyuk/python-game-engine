@@ -120,7 +120,7 @@ class MyGame(arcade.Window):
         # self.player_sprite.center_y = 512
         self.player_list.append(self.player_sprite)
 
-        self.light_layer.add(lights.Light(500,500,500,(255,255,255), 'soft'))
+        self.light_layer.add(lights.Light(500,500,500,(255,0,0), 'soft'))
         
         # Physics engine, so we don't run into walls
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
@@ -165,7 +165,7 @@ class MyGame(arcade.Window):
         
         # Run the shader and render to the window
         # self.shadertoy.program['lightPosition'] = self.player_sprite.position
-        self.shadertoy.program['lightSize'] = 500
+        self.shadertoy.program['lightSize'] = 200
         # self.shadertoy.program['lightDirection'] = 0.0
         self.shadertoy.program['lightAngle'] = 80.0
         # self.shadertoy.program['lightDirection'] = 45
