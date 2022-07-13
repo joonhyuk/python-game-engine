@@ -28,7 +28,7 @@ class Screen(arcade.View):
         self.clear()
         self.draw_contents()
         if self.fade_in > 0 or self.fade_out > 0:
-            self.fade_alpha = finterp_to(self.fade_alpha, )
+            # self.fade_alpha = finterp_to(self.fade_alpha, )
             self.draw_tint()
     
     def go_next(self, next_screen:arcade.View):
@@ -51,12 +51,8 @@ class TitleScreen(Screen):
         self.fade_in = 0.5
         self.time = 0
     
-    def on_draw(self):
-        self.clear()
+    def draw_contents(self):
         self.shadertoy.render(time=self.time)
-        self.draw_title_info()
-    
-    def draw_title_info(self):
         arcade.draw_text(PROJECT_NAME, 
                          self.window.width // 2, self.window.height // 2, 
                          arcade.color.CYAN, 
@@ -76,6 +72,7 @@ class TitleScreen(Screen):
     
     def on_update(self, delta_time: float):
         self.time += delta_time
+        CLOCK.tick()
         
     def start_game(self):
         game = GameScreen()
