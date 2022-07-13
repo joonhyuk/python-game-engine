@@ -50,11 +50,13 @@ class MyGame(arcade.Window):
         
         self.mousex = 0
         self.mousey = 0
+        self.fps = 0
         
         self.generate_sprites()
         
         # Our sample GUI text
         self.score_text = arcade.Text("Score: 0", 10, 10, arcade.color.WHITE, 24)
+        self.fps_text = arcade.Text('FPS : 0', 10, 30, arcade.color.CYAN, 24)
         
         arcade.set_background_color(arcade.color.ARMY_GREEN)
 
@@ -187,7 +189,8 @@ class MyGame(arcade.Window):
         # Switch to the un-scrolled camera to draw the GUI with
         self.camera_gui.use()
         # Draw our sample GUI text
-        self.score_text.draw()
+        # self.score_text.draw()
+        self.fps_text.draw()
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.mousex = x * self.render_ratio
@@ -213,6 +216,8 @@ class MyGame(arcade.Window):
             self.player_sprite.change_y = 0
         elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
             self.player_sprite.change_x = 0
+        
+        if key == arcade.key.ESCAPE: arcade.exit()
 
     def on_update(self, delta_time):
         """ Movement and game logic """
@@ -223,10 +228,13 @@ class MyGame(arcade.Window):
         
         self.scroll_to_player()
         
-        fps = -1 / (self.perf_counter - time.perf_counter())
+        # self.fps = 1 / (time.perf_counter() - self.perf_counter)
+        self.fps = 1 / delta_time
+        
+        self.fps_text.text = str(round(self.fps, 1))
         self.perf_counter = time.perf_counter()
         # print(fps)
-        if fps < 45: print('low fps :', fps)
+        # if fps < 45: print('low fps :', fps)
         
     def scroll_to_player(self, speed=CAMERA_SPEED):
         """
