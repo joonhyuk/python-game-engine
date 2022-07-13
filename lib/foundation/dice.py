@@ -59,7 +59,7 @@ class Dice:
             raise AttributeError(f'Invalid dice expression : {abbr}')
         s1 = re.split('\+|-', abbr)
         
-        if len(s1) == 1 or s1[1] is '':
+        if len(s1) == 1 or s1[1] == '':
             bonus = 0
         else:
             bonus = int(s1[1])
