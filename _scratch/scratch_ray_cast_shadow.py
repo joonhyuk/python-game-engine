@@ -43,7 +43,7 @@ class MyGame(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.bomb_list = arcade.SpriteList()
         self.physics_engine = None
-
+        
         # Create cameras used for scrolling
         self.camera_sprites = arcade.Camera(width, height)
         self.camera_gui = arcade.Camera(width, height)
@@ -167,9 +167,9 @@ class MyGame(arcade.Window):
         
         # Run the shader and render to the window
         # self.shadertoy.program['lightPosition'] = self.player_sprite.position
-        self.shadertoy.program['lightSize'] = 200
+        self.shadertoy.program['lightSize'] = 500
         # self.shadertoy.program['lightDirection'] = 0.0
-        self.shadertoy.program['lightAngle'] = 80.0
+        self.shadertoy.program['lightAngle'] = 120.0
         # self.shadertoy.program['lightDirection'] = 45
         player_heading_vec_norm = Vec2(self.mousex - p[0], self.mousey - p[1]).normalize()
         self.shadertoy.program['lightDirectionV'] = player_heading_vec_norm
@@ -216,7 +216,7 @@ class MyGame(arcade.Window):
             self.player_sprite.change_y = 0
         elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
             self.player_sprite.change_x = 0
-        
+            
         if key == arcade.key.ESCAPE: arcade.exit()
 
     def on_update(self, delta_time):
