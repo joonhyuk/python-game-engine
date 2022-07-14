@@ -6,9 +6,25 @@ joonhyuk@me.com
 import os
 import arcade
 from arcade import Texture
-from arcade.experimental import Shadertoy
+from arcade.experimental import Shadertoy, lights
 
 from lib.foundation.base import *
+
+def load_shader(file_path:str, target_window:arcade.Window, channels:list[Texture]):
+    
+    window_size = target_window.get_framebuffer_size()
+    render_ratio = window_size[0] / target_window.get_size()[0] # need to be revised
+    shadertoy = Shadertoy.create_from_file(window_size, file_path)
+    
+    if len(channels) > 4:
+        raise 'ShaderToy channels limited to 4'
+    
+    for i in range(len(channels)):
+        channels[i] = shadertoy.ctx.framebuffer(color_attachments=[shadertoy.ctx.texture(window_size, components=4)])
+        setattr(shadertoy, f'channel_{i}', channels[i].color_attachments[0])
+    
+    return shadertoy
+
 
 class Sprite(arcade.Sprite):
     def __init__(self, 

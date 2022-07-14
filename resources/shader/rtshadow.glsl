@@ -30,11 +30,13 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec2 samplep = fragCoord - lightPosition;
     vec2 seep = iMouse.xy - lightPosition;
 
+    float angleFromHeading = acos(dot(samplep, lightDirectionV) / length(samplep));
+
     if (distanceToLight > lightSize)
     {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
-    else if (acos(dot(samplep, lightDirectionV) / length(samplep)) > radians(lightAngle))
+    else if (angleFromHeading > radians(lightAngle))
     {
         fragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
@@ -74,7 +76,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
         // Find out how much light we have based on the distance to our light
         lightAmount *= 1.0 - smoothstep(0.0, lightSize, distanceToLight);
-
+        lightAmount *= 1.0 - smoothstep(0.0, radians(lightAngle), angleFromHeading);
         // We'll alternate our display between black and whatever is in channel 1
         vec4 blackColor = vec4(0.0, 0.0, 0.0, 1.0);
 
@@ -82,7 +84,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // dependent on the value of b.
         vec4 ich1 = texture(iChannel1, normalizedFragCoord);
         float ich1_alpha = step(0.2, lightAmount);
-        ich1 = ich1 * ich1_alpha;
+        // ich1 = ich1 * ich1_alpha;
 
         fragColor = mix(blackColor, ich1, lightAmount);
 

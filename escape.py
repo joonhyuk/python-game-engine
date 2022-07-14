@@ -1,5 +1,6 @@
 from config import *
 from lib.foundation import *
+import random, math
 
 # --- Constants ---
 SPRITE_SCALING_PLAYER = 0.5
@@ -72,10 +73,11 @@ class TitleScreen(Screen):
     
     def on_update(self, delta_time: float):
         self.time += delta_time
+        # print('titleview.onupdate')
         CLOCK.tick()
         
     def start_game(self):
-        game = GameScreen()
+        game = EscapeGameView()
         game.setup()
         self.window.show_view(game)
         
@@ -157,7 +159,7 @@ class GameScreen(arcade.View):
     
     def on_update(self, delta_time):
         """ Movement and game logic """
-
+        print('gameview.onupdate')
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
         self.coin_list.update()
@@ -176,11 +178,179 @@ class GameScreen(arcade.View):
             view = GameOverScreen()
             self.window.show_view(view)
 
+class EscapeGameView(arcade.View):
+    def __init__(self, window: arcade.Window = None):
+        super().__init__(window)
+        
+        # Sprites and sprite lists
+        self.field_list = arcade.SpriteList()
+        self.player_sprite = None
+        self.wall_list = arcade.SpriteList()
+        self.player_list = arcade.SpriteList()
+        self.bomb_list = arcade.SpriteList()
+        self.physics_engine = None
+
+        # Create cameras used for scrolling
+        self.camera_sprites = arcade.Camera(*default_settings.screen_size)
+        self.camera_gui = arcade.Camera(*default_settings.screen_size)
+        
+        self.mousex = 64
+        self.mousey = 64
+        self.fps = 0
+        self.render_ratio = 1.0
+        
+        self.channel_static = None
+        self.channel_dynamic = None
+        self.channels:list[Texture] = [self.channel_static, self.channel_dynamic]
+        self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
+        print(self.shader)
+        
+    def setup(self):
+        
+        self._draw_random_level()
+        self.player_sprite = arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png')
+        self.player_sprite.position = -100, -100
+        self.player_list.append(self.player_sprite)
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+    
+    def _draw_random_level(self, wall_prob = 0.2):
+        field_size = default_settings.screen_size * 4
+        
+        for x in range(0, field_size.x, 64):
+            for y in range(0, field_size.y, 64):
+                ground = arcade.Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
+                
+                ground.position = x, y
+                ground.color = (30, 30, 30)
+                self.field_list.append(ground)
+                
+                if flip_coin(wall_prob):
+                    wall = arcade.Sprite(':resources:images/tiles/boxCrate_double.png', 0.5)
+                    
+                    wall.position = x, y
+                    self.wall_list.append(wall)
+        
+        for _ in range(30):
+            bomb = arcade.Sprite(":resources:images/tiles/bomb.png", 0.125)
+            
+            placed = False
+            while not placed:
+                bomb.position = random.randrange(field_size.x), random.randrange(field_size.y)
+                if not arcade.check_for_collision_with_list(bomb, self.wall_list):
+                    placed = True
+            self.bomb_list.append(bomb)
+    
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.mousex = x * self.render_ratio
+        self.mousey = y * self.render_ratio
+        # print(x, y)
+    
+    def on_key_press(self, key: int, modifiers: int):
+        
+        if key in (arcade.key.UP, arcade.key.W):
+            self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
+        elif key in (arcade.key.DOWN, arcade.key.S):
+            self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
+        if key in (arcade.key.LEFT, arcade.key.A):
+            self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
+        elif key in (arcade.key.RIGHT, arcade.key.D):
+            self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
+    
+    def on_key_release(self, key, modifiers):
+        """Called when the user releases a key. """
+
+        if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
+            self.player_sprite.change_y = 0
+        elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
+            self.player_sprite.change_x = 0
+            
+        if key == arcade.key.ESCAPE: arcade.exit()
+    
+    def on_draw(self):
+
+        self.camera_sprites.use()
+        # self.use()
+        
+        # self.channel_static.use()
+        # self.channel_static.clear()
+        self.channels[0].use()
+        self.channels[0].clear()
+        self.wall_list.draw()
+        
+        self.channels[1].use()
+        self.channels[1].clear()
+        self.field_list.draw()
+        self.bomb_list.draw()
+        self.wall_list.draw()
+        
+        
+        # self.field_list.draw()
+        # self.wall_list.draw()
+        # self.bomb_list.draw()
+        
+        self.window.use()
+        
+        self.clear()
+        
+        p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
+             (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
+
+        player_heading_vec_norm = Vector(self.mousex - p[0], self.mousey - p[1]).normalize()
+        pa_rad = math.acos(Vector(0, 1) * player_heading_vec_norm)
+        if player_heading_vec_norm[0] > 0: pa_rad *= -1
+        self.player_sprite.angle = math.degrees(pa_rad)
+        
+        
+        self.shader.program['lightPosition'] = p
+        self.shader.program['lightSize'] = 500
+        self.shader.program['lightAngle'] = 120.0
+        self.shader.program['lightDirectionV'] = player_heading_vec_norm
+        
+        self.shader.render()
+        
+        self.player_list.draw()
+        self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
+        
+        self.camera_gui.use()
+        self.scroll_to_player()
+        
+    def on_update(self, delta_time: float):
+        self.physics_engine.update()
+        
+        self.render_ratio = self.window.get_framebuffer_size()[0] / self.window.get_size()[0]   # should be moved to os level hidpi change event
+    
+    def scroll_to_player(self, speed = 0.1):
+        """
+        Scroll the window to the player.
+
+        if CAMERA_SPEED is 1, the camera will immediately move to the desired position.
+        Anything between 0 and 1 will have the camera move to the location with a smoother
+        pan.
+        """
+
+        position = Vector(self.player_sprite.center_x - self.window.width / 2,
+                        self.player_sprite.center_y - self.window.height / 2)
+        self.camera_sprites.move_to(position, speed)
+
+    
 class GameOverScreen(TitleScreen):
     pass    
 
+class MainWindow(arcade.Window):
+    def on_key_press(self, symbol: int, modifiers: int):
+        print('key input :', symbol)
+        pass
+    
+    def on_update(self, delta_time: float):
+        # return super().on_update(delta_time)
+        # print(delta_time)
+        pass
+    
+    def on_draw(self):
+        pass
+
 def main():
-    window = arcade.Window(*default_settings.screen_size, PROJECT_NAME)
+    window = MainWindow(*default_settings.screen_size, PROJECT_NAME)
     title = TitleScreen()
     window.show_view(title)
     arcade.run()
