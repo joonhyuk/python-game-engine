@@ -22,6 +22,7 @@ class settings(int, Enum):
 @dataclass
 class default_settings:
     screen_size = Vector(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
+    fog_of_war = True
     
 class direction(EnumVector):
     up = Vector(0, 1)
@@ -32,3 +33,5 @@ class direction(EnumVector):
     upright = up + right
     downleft = down + left
     downright = down + right
+
+CONFIG = default_settings()

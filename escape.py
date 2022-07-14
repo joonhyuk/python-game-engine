@@ -191,8 +191,8 @@ class EscapeGameView(arcade.View):
         self.physics_engine = None
 
         # Create cameras used for scrolling
-        self.camera_sprites = arcade.Camera(*default_settings.screen_size)
-        self.camera_gui = arcade.Camera(*default_settings.screen_size)
+        self.camera_sprites = arcade.Camera(*CONFIG.screen_size)
+        self.camera_gui = arcade.Camera(*CONFIG.screen_size)
         
         self.mousex = 64
         self.mousey = 64
@@ -214,7 +214,7 @@ class EscapeGameView(arcade.View):
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
     
     def _draw_random_level(self, wall_prob = 0.2):
-        field_size = default_settings.screen_size * 4
+        field_size = CONFIG.screen_size * 4
         
         for x in range(0, field_size.x, 64):
             for y in range(0, field_size.y, 64):
@@ -255,6 +255,8 @@ class EscapeGameView(arcade.View):
             self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
         elif key in (arcade.key.RIGHT, arcade.key.D):
             self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
+            
+        if key == arcade.key.F1: CONFIG.fog_of_war = not CONFIG.fog_of_war
     
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
@@ -300,7 +302,7 @@ class EscapeGameView(arcade.View):
         if player_heading_vec_norm[0] > 0: pa_rad *= -1
         self.player_sprite.angle = math.degrees(pa_rad)
         
-        
+        self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = p
         self.shader.program['lightSize'] = 500
         self.shader.program['lightAngle'] = 120.0
@@ -350,7 +352,7 @@ class MainWindow(arcade.Window):
         pass
 
 def main():
-    window = MainWindow(*default_settings.screen_size, PROJECT_NAME)
+    window = MainWindow(*CONFIG.screen_size, PROJECT_NAME)
     title = TitleScreen()
     window.show_view(title)
     arcade.run()
