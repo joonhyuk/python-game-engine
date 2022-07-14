@@ -10,37 +10,10 @@ COIN_COUNT = 50
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
-class Screen(arcade.View):
-    def __init__(self):
-        super().__init__()
-        self.fade_out = 0.0
-        self.fade_in = 0.0
-        self.fade_alpha = 1
-
-    def draw_tint(self, alpha = 0.0, color = (0, 0, 0)):
-        arcade.draw_rectangle_filled(self.window.width / 2, self.window.height / 2,
-                                     self.window.width, self.window.height,
-                                     (*color, alpha * 255))
-    
-    def draw_contents(self):
-        pass
-    
-    def on_draw(self):
-        self.clear()
-        self.draw_contents()
-        if self.fade_in > 0 or self.fade_out > 0:
-            # self.fade_alpha = finterp_to(self.fade_alpha, )
-            self.draw_tint()
-    
-    def go_next(self, next_screen:arcade.View):
-        if self.fade_out:
-            pass
-        
-    def go_after_fade_out(self, next_screen:arcade.View):
-        pass
 
 
-class TitleScreen(Screen):
+
+class TitleScreen(View):
     
     def on_show_view(self):
         """run once when switched to"""
@@ -48,12 +21,12 @@ class TitleScreen(Screen):
         
         # reset viewport
         arcade.set_viewport(0, self.window.width, 0, self.window.height)
-        self.shadertoy = Shadertoy(size = self.window.get_size(), main_source = open(RESOURCE_PATH + 'shader/title_planet.glsl').read())
+        self.shadertoy = Shadertoy(size = self.window.get_framebuffer_size(), main_source = open(RESOURCE_PATH + 'shader/title_planet.glsl').read())
         self.fade_in = 0.5
         self.time = 0
     
     def draw_contents(self):
-        self.shadertoy.render(time=self.time)
+        # self.shadertoy.render(time=self.time)
         arcade.draw_text(PROJECT_NAME, 
                          self.window.width // 2, self.window.height // 2, 
                          arcade.color.CYAN, 
@@ -74,6 +47,7 @@ class TitleScreen(Screen):
     def on_update(self, delta_time: float):
         self.time += delta_time
         # print('titleview.onupdate')
+        print(CLOCK.delta_time)
         CLOCK.tick()
         
     def start_game(self):
@@ -178,10 +152,9 @@ class GameScreen(arcade.View):
             view = GameOverScreen()
             self.window.show_view(view)
 
-class EscapeGameView(arcade.View):
-    def __init__(self, window: arcade.Window = None):
+class EscapeGameView(View):
+    def __init__(self, window: Window = None):
         super().__init__(window)
-        
         # Sprites and sprite lists
         self.field_list = arcade.SpriteList()
         self.player_sprite = None
@@ -197,11 +170,11 @@ class EscapeGameView(arcade.View):
         self.mousex = 64
         self.mousey = 64
         self.fps = 0
-        self.render_ratio = 1.0
+        self.render_ratio = self.window.render_ratio
         
         self.channel_static = None
         self.channel_dynamic = None
-        self.channels:list[Texture] = [self.channel_static, self.channel_dynamic]
+        self.channels:list[arcade.Texture] = [self.channel_static, self.channel_dynamic]
         self.shader = None
         self.light_layer = None
         
@@ -311,11 +284,16 @@ class EscapeGameView(arcade.View):
         player_heading_vec_norm = Vector(self.mousex - p[0], self.mousey - p[1]).normalize()
         pa_rad = math.acos(Vector(0, 1) * player_heading_vec_norm)
         if player_heading_vec_norm[0] > 0: pa_rad *= -1
-        self.player_sprite.angle = math.degrees(pa_rad)
+        
+        turn_to_angle = math.degrees(pa_rad)
+        self.player_sprite.angle += (turn_to_angle - self.player_sprite.angle) * CLOCK.delta_time * 5
+        print(turn_to_angle)
+        
+        # self.player_sprite.angle = math.degrees(pa_rad)
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = p
-        self.shader.program['lightSize'] = 500
+        self.shader.program['lightSize'] = 500 * self.render_ratio
         self.shader.program['lightAngle'] = 120.0
         self.shader.program['lightDirectionV'] = player_heading_vec_norm
         
@@ -333,8 +311,8 @@ class EscapeGameView(arcade.View):
         
     def on_update(self, delta_time: float):
         self.physics_engine.update()
-        
-        self.render_ratio = self.window.get_framebuffer_size()[0] / self.window.get_size()[0]   # should be moved to os level hidpi change event
+        CLOCK.tick()
+        # self.render_ratio = self.window.get_framebuffer_size()[0] / self.window.get_size()[0]   # should be moved to os level hidpi change event
     
     def scroll_to_player(self, speed = 0.1):
         """
@@ -351,23 +329,11 @@ class EscapeGameView(arcade.View):
 
     
 class GameOverScreen(TitleScreen):
-    pass    
-
-class MainWindow(arcade.Window):
-    def on_key_press(self, symbol: int, modifiers: int):
-        print('key input :', symbol)
-        pass
-    
-    def on_update(self, delta_time: float):
-        # return super().on_update(delta_time)
-        # print(delta_time)
-        pass
-    
-    def on_draw(self):
-        pass
+    pass
 
 def main():
-    window = MainWindow(*CONFIG.screen_size, PROJECT_NAME)
+    CLOCK.use_engine_tick = True
+    window = Window(*CONFIG.screen_size, PROJECT_NAME)
     title = TitleScreen()
     window.show_view(title)
     arcade.run()

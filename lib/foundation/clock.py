@@ -12,7 +12,9 @@ class Clock:
     get_time = pytime.time
     get_perf = pytime.perf_counter
     
-    def __init__(self, fps = 60) -> None:
+    def __init__(self, fps = 60, use_engine_tick = False) -> None:
+        self.use_engine_tick = use_engine_tick
+        '''switch for sleep in tick'''
         self.start_time = self.prev_time = self.__class__.get_time()
         # self.prev_time = self.start_time - 1 / 60 # force delay for start
         """previous frame start time"""
@@ -34,6 +36,7 @@ class Clock:
         self.raw_time = self.cur_time - self.eof_time
         
         # self.pgclock = pygame.time.Clock()
+        
     def tick(self, fps_limit:float = None, magic_num = 1):    # replacement for pygame.Clock.tick
         """refresh frame and wait for actual framerate\n
         should be called once a loop"""
@@ -69,7 +72,7 @@ class Clock:
         
         """hybrid method"""
         wait_time = frame_sec - self.raw_time
-        self.eof_time = self.sleep(wait_time * self.magic_num, est_eof_time)        
+        if not self.use_engine_tick: self.eof_time = self.sleep(wait_time * self.magic_num, est_eof_time)        
         
     def sleep(self, sleep_time = 0.0, wake_time = 0.0, precision = 0.0):
         if sleep_time > 0 : self.__class__.pytime.sleep(sleep_time)

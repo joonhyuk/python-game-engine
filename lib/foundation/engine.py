@@ -5,12 +5,11 @@ joonhyuk@me.com
 """
 import os
 import arcade
-from arcade import Texture
 from arcade.experimental import Shadertoy, lights
 
 from lib.foundation.base import *
 
-def load_shader(file_path:str, target_window:arcade.Window, channels:list[Texture]):
+def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade.Texture]):
     
     window_size = target_window.get_framebuffer_size()
     render_ratio = window_size[0] / target_window.get_size()[0] # need to be revised
@@ -25,6 +24,53 @@ def load_shader(file_path:str, target_window:arcade.Window, channels:list[Textur
     
     return shadertoy
 
+class Window(arcade.Window):
+    
+    def on_key_press(self, symbol: int, modifiers: int):
+        print('key input :', symbol)
+        pass
+    
+    def on_update(self, delta_time: float):
+        # return super().on_update(delta_time)
+        # print(delta_time)
+        pass
+    
+    def on_draw(self):
+        pass
+    
+    @property
+    def render_ratio(self):
+        return self.get_framebuffer_size()[0] / self.get_size()[0]
+
+class View(arcade.View):
+    
+    def __init__(self, window: Window = None):
+        super().__init__(window)
+        self.fade_out = 0.0
+        self.fade_in = 0.0
+        self.fade_alpha = 1
+
+    def draw_tint(self, alpha = 0.0, color = (0, 0, 0)):
+        arcade.draw_rectangle_filled(self.window.width / 2, self.window.height / 2,
+                                     self.window.width, self.window.height,
+                                     (*color, alpha * 255))
+    
+    def draw_contents(self):
+        pass
+    
+    def on_draw(self):
+        self.clear()
+        self.draw_contents()
+        if self.fade_in > 0 or self.fade_out > 0:
+            # self.fade_alpha = finterp_to(self.fade_alpha, )
+            self.draw_tint()
+    
+    def go_next(self, next_screen:arcade.View):
+        if self.fade_out:
+            pass
+        
+    def go_after_fade_out(self, next_screen:arcade.View):
+        pass
 
 class Sprite(arcade.Sprite):
     def __init__(self, 
@@ -35,7 +81,7 @@ class Sprite(arcade.Sprite):
                  repeat_count_x: int = 1, repeat_count_y: int = 1, 
                  flipped_horizontally: bool = False, flipped_vertically: bool = False, flipped_diagonally: bool = False, 
                  hit_box_algorithm: str = "Simple", hit_box_detail: float = 4.5, 
-                 texture: Texture = None, 
+                 texture: arcade.Texture = None, 
                  angle: float = 0):
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         
@@ -45,6 +91,7 @@ class SpriteCircle(arcade.SpriteCircle):
                  color: arcade.Color = arcade.color.ALLOY_ORANGE, 
                  soft: bool = False):
         super().__init__(radius, color, soft)
+
 
 class SoundBank:
     def __init__(self, path:str) -> None:
