@@ -33,16 +33,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // Distance in pixels to the light
         float distanceToLight = length(lightPosition - fragCoord);
         vec2 samplep = fragCoord - lightPosition;
-        vec2 seep = iMouse.xy - lightPosition;
 
         float angleFromHeading = acos(dot(samplep, lightDirectionV) / length(samplep));
 
-        if (distanceToLight > lightSize)
+        // if (distanceToLight > lightSize)
+        // {
+        //     fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        // }
+        // else 
+        if (angleFromHeading > radians(lightAngle))
         {
-            fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-        else if (angleFromHeading > radians(lightAngle))
-        {
+            // should be blacked out even on lights
             fragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
         else

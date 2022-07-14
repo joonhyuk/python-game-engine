@@ -202,19 +202,27 @@ class EscapeGameView(arcade.View):
         self.channel_static = None
         self.channel_dynamic = None
         self.channels:list[Texture] = [self.channel_static, self.channel_dynamic]
-        self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
-        print(self.shader)
+        self.shader = None
+        self.light_layer = None
         
     def setup(self):
         
-        self._draw_random_level()
         self.player_sprite = arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png')
         self.player_sprite.position = -100, -100
         self.player_list.append(self.player_sprite)
+        
+        self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
+        self.light_layer.set_background_color(arcade.color.BLACK)
+        self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
+        
+        self._draw_random_level()
+        
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-    
+        
+            
     def _draw_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 4
+        field_center = field_size * 0.5
         
         for x in range(0, field_size.x, 64):
             for y in range(0, field_size.y, 64):
@@ -239,7 +247,10 @@ class EscapeGameView(arcade.View):
                 if not arcade.check_for_collision_with_list(bomb, self.wall_list):
                     placed = True
             self.bomb_list.append(bomb)
-    
+
+        self.light_layer.add(lights.Light(*field_center, 750, arcade.color.WHITE, 'hard'))
+        
+        
     def on_mouse_motion(self, x, y, dx, dy):
         self.mousex = x * self.render_ratio
         self.mousey = y * self.render_ratio
@@ -308,9 +319,13 @@ class EscapeGameView(arcade.View):
         self.shader.program['lightAngle'] = 120.0
         self.shader.program['lightDirectionV'] = player_heading_vec_norm
         
-        self.shader.render()
+        with self.light_layer:
         
-        self.player_list.draw()
+            self.shader.render()
+            self.player_list.draw()
+        
+        self.light_layer.draw(ambient_color=(128,128,128))
+        
         self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
         
         self.camera_gui.use()
