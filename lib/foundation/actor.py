@@ -45,7 +45,7 @@ class MObject(object):
         self._alive = False
         CLOCK.timer_remove(self.id)
         # del self    # ????? do we need it?
-        return False
+        return True
 
     def check_super(f):
         @functools.wraps(f)
@@ -65,13 +65,17 @@ class MObject(object):
         return self._alive
 
 class Actor2D(MObject):
-    '''위치, 방향, 컬리전을 가지는 객체'''
+    '''top-down, 위치, 방향, 컬리전을 가지는 객체'''
     def __init__(self, 
                  body:Sprite = None, 
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.set_body(body)
         """actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...)"""
+        
+        if 'visibility' in kwargs: visibility = kwargs['visibility']
+        else: visibility = True
+        self.visibility = visibility
     
     def set_body(self, body:Sprite = None) -> None:
         self.body = body or SpriteCircle()
@@ -83,8 +87,12 @@ class Actor2D(MObject):
               lifetime=0) -> None:
         self.position = position
         self.rotation = rotation
-        self.register(sprite_list)
+        self.register_body(sprite_list)
         return super().spawn(lifetime)
+    
+    def destroy(self) -> bool:
+        self.remove_body()
+        return super().destroy()
     
     def _get_position(self) -> Vector:
         return Vector(self.body.position)
@@ -96,43 +104,100 @@ class Actor2D(MObject):
     def _get_rotation(self) -> float:
         return self.body.angle
     
-    def _set_rotation(self, new_rotation:float = 0.0) -> bool:
-        self.body.angle = new_rotation
+    def _set_rotation(self, rotation:float = 0.0) -> bool:
+        self.body.angle = rotation
         return True
     
-    def register(self, sprite_list:arcade.SpriteList):
+    def _get_visibility(self) -> bool:
+        return self.body.visible
+    
+    def _set_visibility(self, switch:bool = None):
+        if switch is None: switch = not switch
+        self.body.visible = switch
+    
+    
+    def register_body(self, sprite_list:arcade.SpriteList):
         return sprite_list.append(self.body)
     
-    def remove(self):
+    def remove_body(self):
         return self.body.remove_from_sprite_lists()
     
-    # def _set_movement(self, direction:Vector, speed:float):
-    #     self._set_velocity(direction.normalize() * speed)
-    #     pass
-    
-    # def _set_velocity(self, velocity:Vector = Vector(0, 0)):
-    #     self.body.velocity = velocity
-    
-    # # def on_update(self, delta_time: float = 1 / 60):
-    # #     self.tick()
-    # #     return super().on_update(delta_time)
-    
+    visibility = property(_get_visibility, _set_visibility)
     position = property(_get_position, _set_position)
     rotation = property(_get_rotation, _set_rotation)
 
+class ActorComponent:
+    '''component base class'''
+    def __init__(self) -> None:
+        # self.owner = owner
+        pass
+    
+    def tick(self, delta_time:float = None):
+        return True
+
+class CharacterMovement(ActorComponent):
+    '''movement component for character'''
+    def __init__(self, 
+                 body:Sprite, 
+                 max_speed = 100, 
+                 acceleration = 100, 
+                 braking = None, 
+                 max_rotation_speed = 360
+                 ) -> None:
+        super().__init__()
+        self.body = body
+        self.max_speed = max_speed
+        self.max_rotation_speed = max_rotation_speed
+        self.acceleration = acceleration
+        self.braking = braking if braking is not None else acceleration
+    
+    def tick(self, delta_time:float = None) -> bool:
+        if not super().tick(): return False
+        if delta_time is None: delta_time = CLOCK.delta_time
+        print('movement ticked')
+    
+    def move_forward(self, speed):
+        self.body.forward(speed)
+        self.velocity
+    
+    def _get_velocity(self):
+        return self.body.velocity
+    
+    def _set_velocity(self, velocity:Vector = Vector()):
+        self.body.velocity = velocity.clamp_length(self.max_speed)
+    
+    velocity = property(_get_velocity, _set_velocity)
+    
+    def _get_rotation(self):
+        return get_positive_angle(self.body.angle)
+    
+    def _set_rotation(self, rotation:float):
+        self.body.angle = get_positive_angle(rotation)
+    
+    rotation = property(_get_rotation, _set_rotation)
+    
+    @property
+    def speed(self):
+        return Vector(self.body.velocity).length
+    
 class Pawn2D(Actor2D):
     
     def __init__(self, 
                  body: Sprite = None, 
-                 hp:float = 100,
                  **kwargs) -> None:
         super().__init__(body, **kwargs)
-        self.hp = hp
+        self.max_velocity = kwargs['max_velocity'] or 100
         self.rotation_speed = kwargs['rotation_speed'] or 90
         self.acceleration = kwargs['acceleration'] or 1
-        
+        self.braking = kwargs['braking'] or self.acceleration
         
         '''rotation speed in degrees per second'''
+        
+    def tick(self, delta_time:float = None) -> bool:
+        if not super().tick(): return False
+        if delta_time is None: delta_time = CLOCK.delta_time
+        if self.velocity < self.max_velocity: self.velocity += self.acceleration
+        
     
     def turn_to(self, rotation:float):
         self.rotation = rotation
@@ -145,12 +210,16 @@ class Pawn2D(Actor2D):
         theta = rotation_speed * delta_time
         return self.body.turn_left(theta)
     
-    def _get_velocity(self):
-        return self.body.velocity
+class Character2D(Actor2D):
     
-    def _set_velocity(self):
-        self.body.velocity
+    def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+        self.hp = hp
+        self.movement = CharacterMovement(self.body)
     
-    def on_dead(self):
-        pass
+    def tick(self, delta_time: float = None) -> bool:
+        if not super().tick(): return False
+        for attr in self.__dict__:
+            if isinstance(self.__dict__[attr], ActorComponent):
+                self.__dict__[attr].tick(delta_time)
     
