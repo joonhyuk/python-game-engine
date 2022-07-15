@@ -6,7 +6,7 @@ class MyGame(arcade.Window):
 
     def __init__(self):
         # Call the parent constructor
-        super().__init__(width=1280, height=240, title="Shader Demo", resizable=True)
+        super().__init__(width=1280, height=720, title="Shader Demo", resizable=True)
 
         # Keep track of total run-time
         self.time = 0.0
@@ -14,7 +14,8 @@ class MyGame(arcade.Window):
         # File name of GLSL code
         # file_name = "fractal_pyramid.glsl"
         # file_name = "cyber_fuji_2020.glsl"
-        file_name = "_scratch/shadertest_flame.glsl"
+        # file_name = "_scratch/shadertest_flame.glsl"
+        file_name = "_scratch/shaders/2dshadow.glsl"
         # file_name = "flame.glsl"
         # file_name = "star_nest.glsl"
 
