@@ -309,6 +309,7 @@ class EscapeGameView(View):
         self.light_layer.draw(ambient_color=(128,128,128))
         
         self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
+        # self.wall_list.draw_hit_boxes(color=(128,128,255,128), line_thickness=1)
         
         self.camera_gui.use()
         self.scroll_to_player()

@@ -56,8 +56,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
             // normalize light coord
             vec2 normalizedLightCoord = lightPosition.xy/iResolution.xy;
 
-
-
             // Start our mixing variable at 1.0
             float lightAmount = 1.0;
 
