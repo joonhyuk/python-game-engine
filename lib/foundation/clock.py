@@ -46,7 +46,7 @@ class Clock:
         """prev end of frame time plus frame delay(1/60)"""
         self.cur_time = self.__class__.get_time()
         self.raw_time = self.cur_time - self.eof_time
-        self.delta_time = self.cur_time - self.prev_time
+        self.delta_time = self.cur_time - self.prev_time or 0.016
         self.prev_time = self.cur_time
         
         self.fps_current = 1 / self.delta_time
