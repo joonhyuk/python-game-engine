@@ -20,6 +20,10 @@ class Vector(object):
     def norm(self):
         """ Returns the norm (length, magnitude) of the vector """
         return math.sqrt(sum( x*x for x in self ))
+    
+    @property
+    def length(self):
+        return self.norm()
         
     def argument(self, radians=False):
         """ Returns the argument of the vector, the angle clockwise from +y. In degress by default, 
@@ -190,6 +194,12 @@ class Vector(object):
         clamped = tuple(map(min, self.values, other))
         return clamped
         # return self.__class__(min(other[0], self.x), min(other[1], self.y))
+    
+    def clamp_length(self, max_length:float = 1.0):
+        norm = self.norm()
+        if norm <= max_length: return self
+        clamped = tuple( x * max_length / norm for x in self )
+        return self.__class__(*clamped)
     
     # def __sum__(self, *others):
     #     pass
