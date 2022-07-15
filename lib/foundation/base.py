@@ -2,7 +2,7 @@
 base feature codes
 joonhyuk@me.com
 """
-import sys, json, functools, inspect
+import os, sys, json, functools, inspect
 from random import random
 from enum import Enum
 from typing import Iterable
@@ -53,6 +53,20 @@ def vinterp_to(current:Vector,
     delta = target - current
     if delta.norm() < precision: return target
     return current + delta * clamp(delta_time * speed, 0, 1)
+
+def rinterp_to(current:float, 
+               target:float,
+               delta_time:float, 
+               speed:float = 1.0,
+               precision:float = 0.001):
+    '''rotation angle interp. in degrees'''
+    delta = get_shortest_angle(current, target)
+    if abs(delta) < precision: return target
+    return current + delta * clamp(delta_time * speed, 0, 1)
+
+def get_shortest_angle(start:float,
+                       end:float):
+    return ((end - start) + 180) % 360 - 180
 
 def clamp(value, in_min, in_max):
     return min(in_max, max(in_min, value))

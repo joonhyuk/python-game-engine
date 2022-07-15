@@ -286,8 +286,7 @@ class EscapeGameView(View):
         if player_heading_vec_norm[0] > 0: pa_rad *= -1
         
         turn_to_angle = math.degrees(pa_rad)
-        self.player_sprite.angle += (turn_to_angle - self.player_sprite.angle) * CLOCK.delta_time * 5
-        print(turn_to_angle)
+        if turn_to_angle < 0: turn_to_angle += 360.0
         
         # self.player_sprite.angle = math.degrees(pa_rad)
         
