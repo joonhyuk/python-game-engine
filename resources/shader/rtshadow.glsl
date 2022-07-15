@@ -81,8 +81,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 
             // Find out how much light we have based on the distance to our light
-            lightAmount *= 1.0 - smoothstep(0.0, lightSize, distanceToLight);
-            lightAmount *= 1.0 - smoothstep(0.0, radians(lightAngle), angleFromHeading);
+            lightAmount *= 1.0 - smoothstep(100, lightSize, distanceToLight);
+
+            // smoothing edge of eye sight
+            lightAmount *= 1.0 - smoothstep(0.5, radians(lightAngle), angleFromHeading);
             // We'll alternate our display between black and whatever is in channel 1
             vec4 blackColor = vec4(0.0, 0.0, 0.0, 1.0);
 
