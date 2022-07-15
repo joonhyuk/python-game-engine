@@ -94,7 +94,7 @@ class CharacterMovement(ActorComponent):
     def tick(self, delta_time:float = None) -> bool:
         if not super().tick(): return False
         if delta_time is None: delta_time = CLOCK.delta_time
-        print('movement ticked')
+        
     
     def move_forward(self, speed):
         self.body.forward(speed)
@@ -227,6 +227,7 @@ class Pawn2D(Actor2D):
         theta = rotation_speed * delta_time
         return self.body.turn_left(theta)
     
+
 class Character2D(Actor2D):
     
     def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
