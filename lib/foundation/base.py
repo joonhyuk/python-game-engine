@@ -68,6 +68,12 @@ def get_shortest_angle(start:float,
                        end:float):
     return ((end - start) + 180) % 360 - 180
 
+def get_positive_angle(degrees:float):
+    '''convert angle in degrees to 0 <= x < 360'''
+    degrees = get_shortest_angle(0, degrees)
+    if degrees < 0: degrees += 360
+    return degrees
+
 def clamp(value, in_min, in_max):
     return min(in_max, max(in_min, value))
 

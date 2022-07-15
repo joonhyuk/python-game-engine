@@ -288,7 +288,7 @@ class EscapeGameView(View):
         
         # if desired_heading_angle_deg < 0: desired_heading_angle_deg += 360.0
         # self.player_sprite.angle += get_shortest_angle(self.player_sprite.angle, turn_to_angle) * CLOCK.delta_time * 1
-        self.player_sprite.angle = rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5)
+        self.player_sprite.angle = get_positive_angle(rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5))
         # turn_to_angle = turn_to_angle // 45 * 45
         # self.player_sprite.angle = turn_to_angle
         current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
