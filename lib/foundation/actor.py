@@ -64,67 +64,6 @@ class MObject(object):
     def is_alive(self) -> bool:
         return self._alive
 
-class Actor2D(MObject):
-    '''top-down, 위치, 방향, 컬리전을 가지는 객체'''
-    def __init__(self, 
-                 body:Sprite = None, 
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.set_body(body)
-        """actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...)"""
-        
-        if 'visibility' in kwargs: visibility = kwargs['visibility']
-        else: visibility = True
-        self.visibility = visibility
-    
-    def set_body(self, body:Sprite = None) -> None:
-        self.body = body or SpriteCircle()
-        
-    def spawn(self, 
-              position:Vector = None, 
-              rotation:float = None, 
-              sprite_list:arcade.SpriteList = None, 
-              lifetime=0) -> None:
-        self.position = position
-        self.rotation = rotation
-        self.register_body(sprite_list)
-        return super().spawn(lifetime)
-    
-    def destroy(self) -> bool:
-        self.remove_body()
-        return super().destroy()
-    
-    def _get_position(self) -> Vector:
-        return Vector(self.body.position)
-    
-    def _set_position(self, new_position:Vector = Vector(0., 0.)) -> bool:
-        self.body.position = new_position
-        return True
-    
-    def _get_rotation(self) -> float:
-        return self.body.angle
-    
-    def _set_rotation(self, rotation:float = 0.0) -> bool:
-        self.body.angle = rotation
-        return True
-    
-    def _get_visibility(self) -> bool:
-        return self.body.visible
-    
-    def _set_visibility(self, switch:bool = None):
-        if switch is None: switch = not switch
-        self.body.visible = switch
-    
-    
-    def register_body(self, sprite_list:arcade.SpriteList):
-        return sprite_list.append(self.body)
-    
-    def remove_body(self):
-        return self.body.remove_from_sprite_lists()
-    
-    visibility = property(_get_visibility, _set_visibility)
-    position = property(_get_position, _set_position)
-    rotation = property(_get_rotation, _set_rotation)
 
 class ActorComponent:
     '''component base class'''
@@ -134,6 +73,7 @@ class ActorComponent:
     
     def tick(self, delta_time:float = None):
         return True
+
 
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
@@ -180,6 +120,83 @@ class CharacterMovement(ActorComponent):
     def speed(self):
         return Vector(self.body.velocity).length
     
+
+class Actor2D(MObject):
+    '''top-down, 위치, 방향, 컬리전을 가지는 객체'''
+    def __init__(self, 
+                 body:Sprite = None, 
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.set_body(body)
+        """actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...)"""
+        
+        if 'visibility' in kwargs: visibility = kwargs['visibility']
+        else: visibility = True
+        self.visibility = visibility
+        self.ticker = []
+    
+    def set_body(self, body:Sprite = None) -> None:
+        self.body = body or SpriteCircle()
+    
+    def register_components(self):
+        for k in self.__dict__:
+            if isinstance(self.__dict__[k], (ActorComponent, )):
+                self.ticker.append(self.__dict__[k])
+    
+    def spawn(self, 
+              position:Vector = Vector(), 
+              rotation:float = None, 
+              sprite_list:arcade.SpriteList = None, 
+              lifetime=0) -> None:
+        self.position = position
+        self.rotation = rotation
+        if sprite_list: self.register_body(sprite_list)
+        self.register_components()
+        return super().spawn(lifetime)
+    
+    def tick(self, delta_time:float = None) -> bool:
+        if delta_time is None: delta_time = CLOCK.delta_time
+        if not super().tick(): return False
+        for ticker in self.ticker:
+            ticker.tick(delta_time)
+        return True
+    
+    def destroy(self) -> bool:
+        self.remove_body()
+        return super().destroy()
+    
+    def _get_position(self) -> Vector:
+        return Vector(self.body.position)
+    
+    def _set_position(self, new_position:Vector = Vector(0., 0.)) -> bool:
+        self.body.position = new_position
+        return True
+    
+    def _get_rotation(self) -> float:
+        return self.body.angle
+    
+    def _set_rotation(self, rotation:float = 0.0) -> bool:
+        self.body.angle = rotation
+        return True
+    
+    def _get_visibility(self) -> bool:
+        return self.body.visible
+    
+    def _set_visibility(self, switch:bool = None):
+        if switch is None: switch = not switch
+        self.body.visible = switch
+    
+    def register_body(self, sprite_list:arcade.SpriteList):
+        return sprite_list.append(self.body)
+    
+    def remove_body(self):
+        return self.body.remove_from_sprite_lists()
+    
+    visibility = property(_get_visibility, _set_visibility)
+    position = property(_get_position, _set_position)
+    rotation = property(_get_rotation, _set_rotation)
+
+
 class Pawn2D(Actor2D):
     
     def __init__(self, 
@@ -219,7 +236,5 @@ class Character2D(Actor2D):
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(): return False
-        for attr in self.__dict__:
-            if isinstance(self.__dict__[attr], ActorComponent):
-                self.__dict__[attr].tick(delta_time)
+        
     
