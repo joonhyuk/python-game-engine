@@ -35,6 +35,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         vec2 samplep = fragCoord - lightPosition;
 
         float angleFromHeading = acos(dot(samplep, lightDirectionV) / length(samplep));
+        // float angleFromHeading = acos(dot(samplep, vec2(0,1)) / length(samplep)) - radians(lightDirectionV);
 
         // if (distanceToLight > lightSize)
         // {
@@ -81,7 +82,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 
             // Find out how much light we have based on the distance to our light
-            lightAmount *= 1.0 - smoothstep(100, lightSize, distanceToLight);
+            lightAmount *= 1.0 - smoothstep(50, lightSize, distanceToLight);
 
             // smoothing edge of eye sight
             lightAmount *= 1.0 - smoothstep(0.5, radians(lightAngle), angleFromHeading);

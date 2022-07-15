@@ -26,7 +26,7 @@ class TitleScreen(View):
         self.time = 0
     
     def draw_contents(self):
-        # self.shadertoy.render(time=self.time)
+        self.shadertoy.render(time=self.time)
         arcade.draw_text(PROJECT_NAME, 
                          self.window.width // 2, self.window.height // 2, 
                          arcade.color.CYAN, 
@@ -47,7 +47,7 @@ class TitleScreen(View):
     def on_update(self, delta_time: float):
         self.time += delta_time
         # print('titleview.onupdate')
-        print(CLOCK.delta_time)
+        # print(CLOCK.delta_time)
         CLOCK.tick()
         
     def start_game(self):
@@ -221,7 +221,7 @@ class EscapeGameView(View):
                     placed = True
             self.bomb_list.append(bomb)
 
-        self.light_layer.add(lights.Light(*field_center, 750, arcade.color.WHITE, 'hard'))
+        self.light_layer.add(lights.Light(*field_center, 1200, arcade.color.WHITE, 'soft'))
         
         
     def on_mouse_motion(self, x, y, dx, dy):
@@ -281,20 +281,25 @@ class EscapeGameView(View):
         p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
              (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
 
-        player_heading_vec_norm = Vector(self.mousex - p[0], self.mousey - p[1]).normalize()
-        pa_rad = math.acos(Vector(0, 1) * player_heading_vec_norm)
-        if player_heading_vec_norm[0] > 0: pa_rad *= -1
+        desired_heading_vector = Vector(self.mousex - p[0], self.mousey - p[1]).normalize()
+        desired_heading_angle_rad = math.acos(Vector(0, 1) * desired_heading_vector)
+        if desired_heading_vector[0] > 0: desired_heading_angle_rad *= -1
+        desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
         
-        turn_to_angle = math.degrees(pa_rad)
-        if turn_to_angle < 0: turn_to_angle += 360.0
-        
+        # if desired_heading_angle_deg < 0: desired_heading_angle_deg += 360.0
+        # self.player_sprite.angle += get_shortest_angle(self.player_sprite.angle, turn_to_angle) * CLOCK.delta_time * 1
+        self.player_sprite.angle = rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5)
+        # turn_to_angle = turn_to_angle // 45 * 45
+        # self.player_sprite.angle = turn_to_angle
+        current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
         # self.player_sprite.angle = math.degrees(pa_rad)
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = p
         self.shader.program['lightSize'] = 500 * self.render_ratio
-        self.shader.program['lightAngle'] = 120.0
-        self.shader.program['lightDirectionV'] = player_heading_vec_norm
+        self.shader.program['lightAngle'] = 75.0
+        self.shader.program['lightDirectionV'] = current_heading_vector
+        # self.shader.program['lightDirectionV'] = self.player_sprite.angle
         
         with self.light_layer:
         
