@@ -26,7 +26,7 @@ class TitleScreen(View):
         self.time = 0
     
     def draw_contents(self):
-        self.shadertoy.render(time=self.time)
+        # self.shadertoy.render(time=self.time)
         arcade.draw_text(PROJECT_NAME, 
                          self.window.width // 2, self.window.height // 2, 
                          arcade.color.CYAN, 
@@ -171,6 +171,7 @@ class EscapeGameView(View):
         self.mousey = 64
         self.fps = 0
         self.render_ratio = self.window.render_ratio
+        self.character_heading = None
         
         self.channel_static = None
         self.channel_dynamic = None
@@ -282,6 +283,7 @@ class EscapeGameView(View):
              (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
 
         desired_heading_vector = Vector(self.mousex - p[0], self.mousey - p[1]).normalize()
+        self.desired_heading = desired_heading_vector
         desired_heading_angle_rad = math.acos(Vector(0, 1) * desired_heading_vector)
         if desired_heading_vector[0] > 0: desired_heading_angle_rad *= -1
         desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
@@ -292,6 +294,7 @@ class EscapeGameView(View):
         # turn_to_angle = turn_to_angle // 45 * 45
         # self.player_sprite.angle = turn_to_angle
         current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
+        self.character_heading = current_heading_vector
         # self.player_sprite.angle = math.degrees(pa_rad)
         
         self.shader.program['activated'] = CONFIG.fog_of_war
@@ -328,8 +331,13 @@ class EscapeGameView(View):
         pan.
         """
 
-        position = Vector(self.player_sprite.center_x - self.window.width / 2,
+        
+        character_position = Vector(self.player_sprite.center_x - self.window.width / 2,
                         self.player_sprite.center_y - self.window.height / 2)
+        # cursor_distance = (Vector(self.mousex, self.mousey) - character_position).length
+        
+        
+        position = character_position + self.character_heading * 100
         self.camera_sprites.move_to(position, speed)
 
     
