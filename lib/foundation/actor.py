@@ -75,6 +75,15 @@ class ActorComponent:
         return True
 
 
+class CameraHandler(ActorComponent):
+    '''handling actor camera
+    should be possesed by engine camera system'''
+    def __init__(self) -> None:
+        super().__init__()
+        self.offset = Vector()
+        
+        
+
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
@@ -157,8 +166,9 @@ class Actor2D(MObject):
     def tick(self, delta_time:float = None) -> bool:
         if delta_time is None: delta_time = CLOCK.delta_time
         if not super().tick(): return False
-        for ticker in self.ticker:
-            ticker.tick(delta_time)
+        if self.ticker:
+            for ticker in self.ticker:
+                ticker.tick(delta_time)
         return True
     
     def destroy(self) -> bool:
@@ -234,6 +244,7 @@ class Character2D(Actor2D):
         super().__init__(body, **kwargs)
         self.hp = hp
         self.movement = CharacterMovement(self.body)
+        self.camera = CameraHandler()
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(): return False
