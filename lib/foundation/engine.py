@@ -92,6 +92,11 @@ class SpriteCircle(arcade.SpriteCircle):
                  soft: bool = False):
         super().__init__(radius, color, soft)
 
+class Objects:
+    '''
+    Singleton class for manage game objects(like actor) and SpriteList
+    Has full list of every objects spawned, SpriteLists for drawing
+    '''
 
 class SoundBank:
     def __init__(self, path:str) -> None:

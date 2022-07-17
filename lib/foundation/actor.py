@@ -29,7 +29,7 @@ class MObject(object):
         
         if self._lifetime:
             CLOCK.timer_start(self.id)
-    
+        
         self._spawned = True
     
     def tick(self) -> bool:
@@ -208,6 +208,7 @@ class Actor2D(MObject):
                 self.tick_group.append(self.__dict__[k])
     
     def register_body(self, sprite_list:arcade.SpriteList):
+        self.body_groups.append(sprite_list)
         return sprite_list.append(self.body)
     
     def remove_body(self):
@@ -216,7 +217,7 @@ class Actor2D(MObject):
     visibility = property(_get_visibility, _set_visibility)
     position = property(_get_position, _set_position)
     rotation = property(_get_rotation, _set_rotation)
-
+    
     @property
     def forawrd_vector(self):
         return Vector(0,1).rotate(self.body.angle)
@@ -241,7 +242,7 @@ class Pawn2D(Actor2D):
     def tick(self, delta_time:float = None) -> bool:
         if not super().tick(): return False
         if delta_time is None: delta_time = CLOCK.delta_time
-        if self.velocity < self.max_velocity: self.velocity += self.acceleration
+        # if self.velocity < self.max_velocity: self.velocity += self.acceleration
         
     
     def turn_to(self, rotation:float):
@@ -250,7 +251,7 @@ class Pawn2D(Actor2D):
     def turn_left(self, rotation_speed:float = None, delta_time:float = None):
         '''if delta_time is 1, will turn immediately'''
         if delta_time is None: delta_time = CLOCK.delta_time
-        if rotation_speed is None: rotation_speed = self.rotation_speed
+        # if rotation_speed is None: rotation_speed = self.rotation_speed
         
         theta = rotation_speed * delta_time
         return self.body.turn_left(theta)
@@ -261,8 +262,13 @@ class Character2D(Actor2D):
     def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.hp = hp
-        self.movement = CharacterMovement(self.body)
+        self.movement = CharacterMovement()
         self.camera = CameraHandler()
+        
+        self.constructor()
+    
+    def constructor(self):
+        pass
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(): return False
