@@ -77,8 +77,7 @@ class MObject(object):
 class ActorComponent:
     '''component base class'''
     def __init__(self) -> None:
-        # self.owner = owner
-        pass
+        self.owner:Actor2D = None
     
     def tick(self, delta_time:float = None):
         return True
@@ -96,14 +95,12 @@ class CameraHandler(ActorComponent):
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
-                 body:Sprite, 
                  max_speed = 100, 
                  acceleration = 100, 
                  braking = None, 
                  max_rotation_speed = 360
                  ) -> None:
         super().__init__()
-        self.body = body
         self.max_speed = max_speed
         self.max_rotation_speed = max_rotation_speed
         self.acceleration = acceleration
@@ -115,43 +112,45 @@ class CharacterMovement(ActorComponent):
         
     
     def move_forward(self, speed):
-        self.body.forward(speed)
+        self.owner.body.forward(speed)
         self.velocity
     
     def _get_velocity(self):
-        return self.body.velocity
+        return self.owner.body.velocity
     
     def _set_velocity(self, velocity:Vector = Vector()):
-        self.body.velocity = velocity.clamp_length(self.max_speed)
+        self.owner.body.velocity = velocity.clamp_length(self.max_speed)
     
     velocity = property(_get_velocity, _set_velocity)
     
     def _get_rotation(self):
-        return get_positive_angle(self.body.angle)
+        return get_positive_angle(self.owner.body.angle)
     
     def _set_rotation(self, rotation:float):
-        self.body.angle = get_positive_angle(rotation)
+        self.owner.body.angle = get_positive_angle(rotation)
     
     rotation = property(_get_rotation, _set_rotation)
     
     @property
     def speed(self):
-        return Vector(self.body.velocity).length
+        return Vector(self.owner.body.velocity).length
     
 
 class Actor2D(MObject):
-    '''top-down, 위치, 방향, 컬리전을 가지는 객체'''
+    ''' top-down based actor object which has position, rotation, collision '''
     def __init__(self, 
                  body:Sprite = None, 
                  **kwargs) -> None:
         super().__init__(**kwargs)
+        self.body = None
+        ''' actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...) '''
+        self.body_groups:arcade.SpriteList = []
         self.set_body(body)
-        """actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...)"""
         
-        if 'visibility' in kwargs: visibility = kwargs['visibility']
-        else: visibility = True
-        self.visibility = visibility
-        self.ticker = []
+        self.visibility = get_from_dict(kwargs, 'visibility', True)
+        
+        self.tick_group = []
+        ''' tick group '''
     
     def set_body(self, body:Sprite = None) -> None:
         self.body = body or SpriteCircle()
@@ -175,8 +174,8 @@ class Actor2D(MObject):
     def tick(self, delta_time:float = None) -> bool:
         if delta_time is None: delta_time = CLOCK.delta_time
         if not super().tick(): return False
-        if self.ticker:
-            for ticker in self.ticker:
+        if self.tick_group:
+            for ticker in self.tick_group:
                 ticker.tick(delta_time)
         return True
     
@@ -204,6 +203,13 @@ class Actor2D(MObject):
     def _set_visibility(self, switch:bool = None):
         if switch is None: switch = not switch
         self.body.visible = switch
+    
+    def register_components(self):
+        for k in self.__dict__:
+            if isinstance(self.__dict__[k], (ActorComponent, )): 
+                if isinstance(self.__dict__[k], ActorComponent): self.__dict__[k].owner = self
+                ''' for components that have owner '''
+                self.tick_group.append(self.__dict__[k])
     
     def register_body(self, sprite_list:arcade.SpriteList):
         return sprite_list.append(self.body)
