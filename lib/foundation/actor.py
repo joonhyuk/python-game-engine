@@ -162,7 +162,8 @@ class Actor2D(MObject):
               lifetime=0) -> None:
         self.position = position
         self.rotation = rotation
-        if sprite_list: self.register_body(sprite_list)
+        # if sprite_list:
+        self.register_body(sprite_list)
         self.register_components()
         return super().spawn(lifetime)
     
@@ -207,7 +208,7 @@ class Actor2D(MObject):
                 self.tick_group.append(self.__dict__[k])
     
     def register_body(self, sprite_list:arcade.SpriteList):
-        self.body_groups.append(sprite_list)
+        print('body visible :',self.body.visible)
         return sprite_list.append(self.body)
     
     def remove_body(self):

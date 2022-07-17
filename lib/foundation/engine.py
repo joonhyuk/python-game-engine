@@ -4,6 +4,8 @@ might be coupled with base framwork(i.e. arcade, pygame, ...)
 joonhyuk@me.com
 """
 import os
+from dataclasses import dataclass
+
 import arcade
 from arcade.experimental import Shadertoy, lights
 
@@ -24,8 +26,29 @@ def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade
     
     return shadertoy
 
+
+@dataclass
+class appio:
+    
+    render_scale:float = 1.0
+    mouse_input:Vector = Vector(0, 0)
+    
+    
+    def _get_cursor_position(self) -> Vector:
+        # return tuple(x * self.render_scale for x in self._cursor_position) 
+        return self.mouse_input * self.render_scale
+    
+    def _set_cursor_position(self, position:Vector):
+        return
+    
+    cursor_position:Vector = property(_get_cursor_position, _set_cursor_position)
+
+
 class Window(arcade.Window):
     
+    def on_show(self):
+        appio.render_scale = self.get_framebuffer_size()[0] / self.get_size()[0]
+        
     def on_key_press(self, symbol: int, modifiers: int):
         print('key input :', symbol)
         pass
@@ -38,9 +61,16 @@ class Window(arcade.Window):
     def on_draw(self):
         pass
     
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        appio.mouse_input = Vector(x, y)
+    
     @property
     def render_ratio(self):
         return self.get_framebuffer_size()[0] / self.get_size()[0]
+    
+    @property
+    def cursor_position(self) -> Vector:
+        return appio.mouse_input * appio.render_scale
 
 class View(arcade.View):
     
@@ -97,6 +127,13 @@ class Objects:
     Singleton class for manage game objects(like actor) and SpriteList
     Has full list of every objects spawned, SpriteLists for drawing
     '''
+    def __init__(self) -> None:
+        self.layers:list[arcade.SpriteList] = []
+        self.hidden_layers:list[arcade.SpriteList] = []
+    
+    def draw(self):
+        for layer in self.layers:
+            layer.draw()
 
 class SoundBank:
     def __init__(self, path:str) -> None:

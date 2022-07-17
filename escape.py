@@ -181,11 +181,16 @@ class EscapeGameView(View):
         self.shader = None
         self.light_layer = None
         
+        self.debug_timer:float = time.perf_counter()
+        
     def setup(self):
         
-        self.player_sprite = arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png')
-        self.player_sprite.position = -100, -100
-        self.player_list.append(self.player_sprite)
+        # self.player_sprite = arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png')
+        # self.player_sprite.position = -100, -100
+        # self.player_list.append(self.player_sprite)
+        
+        self.player = Character2D(arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png'))
+        self.player.spawn(Vector(-100, -100), 0, self.player_list)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
@@ -193,8 +198,9 @@ class EscapeGameView(View):
         
         self._set_random_level()
         
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-        
+        # self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player.body, self.wall_list)
+
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 4
         field_center = field_size * 0.5
@@ -233,24 +239,38 @@ class EscapeGameView(View):
     
     def on_key_press(self, key: int, modifiers: int):
         
+        # if key in (arcade.key.UP, arcade.key.W):
+        #     self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
+        # elif key in (arcade.key.DOWN, arcade.key.S):
+        #     self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
+        # if key in (arcade.key.LEFT, arcade.key.A):
+        #     self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
+        # elif key in (arcade.key.RIGHT, arcade.key.D):
+        #     self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
+        
         if key in (arcade.key.UP, arcade.key.W):
-            self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
+            self.player.body.change_y = PLAYER_MOVEMENT_SPEED
         elif key in (arcade.key.DOWN, arcade.key.S):
-            self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
+            self.player.body.change_y = -PLAYER_MOVEMENT_SPEED
         if key in (arcade.key.LEFT, arcade.key.A):
-            self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
+            self.player.body.change_x = -PLAYER_MOVEMENT_SPEED
         elif key in (arcade.key.RIGHT, arcade.key.D):
-            self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
+            self.player.body.change_x = PLAYER_MOVEMENT_SPEED
             
         if key == arcade.key.F1: CONFIG.fog_of_war = not CONFIG.fog_of_war
     
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
+        # if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
+        #     self.player_sprite.change_y = 0
+        # elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
+        #     self.player_sprite.change_x = 0
+            
         if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
-            self.player_sprite.change_y = 0
+            self.player.body.change_y = 0
         elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
-            self.player_sprite.change_x = 0
+            self.player.body.change_x = 0
             
         if key == arcade.key.ESCAPE: arcade.exit()
     
@@ -280,30 +300,30 @@ class EscapeGameView(View):
         
         self.clear()
         
-        p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
-             (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
+        # p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
+        #      (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
+        p = (self.player.position - Vector(self.camera_sprites.position)) * appio.render_scale
+        # desired_heading_vector = (appio.mouse_input * appio.render_scale - Vector(p)).normalize()
+        desired_heading_vector = (appio.mouse_input * appio.render_scale - p).normalize()
 
-        desired_heading_vector = Vector(self.mousex - p[0], self.mousey - p[1]).normalize()
         self.desired_heading = desired_heading_vector
         desired_heading_angle_rad = math.acos(Vector(0, 1) * desired_heading_vector)
         if desired_heading_vector[0] > 0: desired_heading_angle_rad *= -1
         desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
         
-        # if desired_heading_angle_deg < 0: desired_heading_angle_deg += 360.0
-        # self.player_sprite.angle += get_shortest_angle(self.player_sprite.angle, turn_to_angle) * CLOCK.delta_time * 1
-        self.player_sprite.angle = get_positive_angle(rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5))
-        # turn_to_angle = turn_to_angle // 45 * 45
-        # self.player_sprite.angle = turn_to_angle
-        current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
-        self.character_heading = current_heading_vector
-        # self.player_sprite.angle = math.degrees(pa_rad)
+        # self.player_sprite.angle = get_positive_angle(rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5))
+        self.player.rotation = get_positive_angle(rinterp_to(self.player.rotation, desired_heading_angle_deg, CLOCK.delta_time, 5))
+
+        # current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
+        # self.character_heading = current_heading_vector
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = p
-        self.shader.program['lightSize'] = 500 * self.render_ratio
+        self.shader.program['lightSize'] = 500 * appio.render_scale
         self.shader.program['lightAngle'] = 75.0
-        self.shader.program['lightDirectionV'] = current_heading_vector
-        # self.shader.program['lightDirectionV'] = self.player_sprite.angle
+        # self.shader.program['lightDirectionV'] = current_heading_vector
+        self.shader.program['lightDirectionV'] = self.player.forward_vector
+
         
         with self.light_layer:
         
@@ -324,7 +344,8 @@ class EscapeGameView(View):
         self.debug_timer = time.perf_counter()
         self.physics_engine.update()
         CLOCK.tick()
-        # self.render_ratio = self.window.get_framebuffer_size()[0] / self.window.get_size()[0]   # should be moved to os level hidpi change event
+        # print(CLOCK.fps_current)
+        
     
     def scroll_to_player(self, speed = 0.1):
         """
@@ -336,12 +357,14 @@ class EscapeGameView(View):
         """
 
         
-        character_position = Vector(self.player_sprite.center_x - self.window.width / 2,
-                        self.player_sprite.center_y - self.window.height / 2)
-        # cursor_distance = (Vector(self.mousex, self.mousey) - character_position).length
+        # character_position = Vector(self.player_sprite.center_x - self.window.width / 2,
+        #                 self.player_sprite.center_y - self.window.height / 2)
         
+        character_position = self.player.position - CONFIG.screen_size / 2
         
-        position = character_position + self.character_heading * 100
+        # position = character_position + self.character_heading * 100
+        position = character_position + self.player.forward_vector * 100
+
         self.camera_sprites.move_to(position, speed)
 
     
