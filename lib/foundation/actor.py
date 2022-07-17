@@ -52,6 +52,7 @@ class MObject(object):
         self._alive = False
         CLOCK.timer_remove(self.id)
         # del self    # ????? do we need it?
+        return False
     
     def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
         self.__dict__[keyword] = get_from_dict(kwargs, keyword, default)
@@ -88,8 +89,7 @@ class CameraHandler(ActorComponent):
     should be possesed by engine camera system'''
     def __init__(self) -> None:
         super().__init__()
-        self.offset = Vector()
-        
+        self.offset:Vector = None
         
 
 class CharacterMovement(ActorComponent):
@@ -153,12 +153,8 @@ class Actor2D(MObject):
         ''' tick group '''
     
     def set_body(self, body:Sprite = None) -> None:
+        if self.body: self.remove_body()
         self.body = body or SpriteCircle()
-    
-    def register_components(self):
-        for k in self.__dict__:
-            if isinstance(self.__dict__[k], (ActorComponent, )):
-                self.ticker.append(self.__dict__[k])
     
     def spawn(self, 
               position:Vector = Vector(), 
@@ -180,7 +176,7 @@ class Actor2D(MObject):
         return True
     
     def destroy(self) -> bool:
-        self.remove_body()
+        if self.body: self.remove_body()
         return super().destroy()
     
     def _get_position(self) -> Vector:
@@ -220,6 +216,11 @@ class Actor2D(MObject):
     visibility = property(_get_visibility, _set_visibility)
     position = property(_get_position, _set_position)
     rotation = property(_get_rotation, _set_rotation)
+
+    @property
+    def forawrd_vector(self):
+        return Vector(0,1).rotate(self.body.angle)
+    
 
 
 class Pawn2D(Actor2D):
