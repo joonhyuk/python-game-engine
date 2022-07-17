@@ -92,5 +92,10 @@ def save_json(filepath:str, json_data) -> None:
 def flip_coin(prob = 0.5) -> bool:
     return random() <= prob
 
+def get_from_dict(dict:dict, keyword:str, default:... = None):
+    if keyword in dict:
+        return dict[keyword]
+    return default
+
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

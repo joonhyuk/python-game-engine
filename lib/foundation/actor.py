@@ -15,7 +15,8 @@ class MObject(object):
         # """rendering optimization"""
         if kwargs:
             for k in kwargs:
-                setattr(self, k, kwargs[k])
+                # setattr(self, k, kwargs[k])
+                self.__setattr__(k, kwargs[k])
         
     def get_id(self) -> str:
         return str(id(self))
@@ -45,7 +46,9 @@ class MObject(object):
         self._alive = False
         CLOCK.timer_remove(self.id)
         # del self    # ????? do we need it?
-        return True
+    
+    def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
+        self.__dict__[keyword] = get_from_dict(kwargs, keyword, default)
 
     def check_super(f):
         @functools.wraps(f)
@@ -213,10 +216,12 @@ class Pawn2D(Actor2D):
                  body: Sprite = None, 
                  **kwargs) -> None:
         super().__init__(body, **kwargs)
-        self.max_velocity = kwargs['max_velocity'] or 100
-        self.rotation_speed = kwargs['rotation_speed'] or 90
-        self.acceleration = kwargs['acceleration'] or 1
-        self.braking = kwargs['braking'] or self.acceleration
+        # self.max_velocity = kwargs['max_velocity'] or 100
+        self.max_velocity = get_from_dict(kwargs, 'max_velocity')
+        # self.rotation_speed = kwargs['rotation_speed'] or 90
+        self.set_kwargs(kwargs, 'rotation_speed', 90)
+        # self.acceleration = kwargs['acceleration'] or 1
+        # self.braking = kwargs['braking'] or self.acceleration
         
         '''rotation speed in degrees per second'''
         
