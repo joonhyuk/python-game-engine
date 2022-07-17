@@ -10,6 +10,7 @@ class MObject(object):
         """object alive state. if not, should be destroyed"""
         self._lifetime:float = None
         self._update_tick:bool = True
+        self._spawned = False
         """tick optimization"""
         # self._update_render:bool = True
         # """rendering optimization"""
@@ -21,15 +22,20 @@ class MObject(object):
     def get_id(self) -> str:
         return str(id(self))
     
-    def spawn(self, lifetime = 0.0) -> None:
-        if lifetime:
-            self._lifetime:float = lifetime
+    def spawn(self, lifetime:float = None) -> None:
+        
+        if lifetime is not None:
+            self._lifetime = lifetime
+        
+        if self._lifetime:
             CLOCK.timer_start(self.id)
+    
+        self._spawned = True
     
     def tick(self) -> bool:
         """alive, ticking check\n
         if false, tick deactivated"""
-        if not (self._update_tick and self._alive): return False
+        if not (self._spawned and self._update_tick and self._alive): return False
         if self._lifetime:
             if self._lifetime > CLOCK.timer_get(self.id):
                 return True
