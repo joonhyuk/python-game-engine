@@ -142,9 +142,8 @@ class Actor2D(MObject):
                  body:Sprite = None, 
                  **kwargs) -> None:
         super().__init__(**kwargs)
-        self.body = None
+        self.body:Sprite = None
         ''' actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...) '''
-        self.body_groups:arcade.SpriteList = []
         self.set_body(body)
         
         self.visibility = get_from_dict(kwargs, 'visibility', True)
@@ -219,10 +218,9 @@ class Actor2D(MObject):
     rotation = property(_get_rotation, _set_rotation)
     
     @property
-    def forawrd_vector(self):
+    def forward_vector(self):
         return Vector(0,1).rotate(self.body.angle)
     
-
 
 class Pawn2D(Actor2D):
     
@@ -271,6 +269,7 @@ class Character2D(Actor2D):
         pass
     
     def tick(self, delta_time: float = None) -> bool:
-        if not super().tick(): return False
+        if not super().tick(delta_time): return False
         
-    
+    def apply_damage(self, damage:float):
+        self.hp -= damage

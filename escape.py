@@ -1,6 +1,6 @@
 from config import *
 from lib.foundation import *
-import random, math
+import random, math, time
 
 # --- Constants ---
 SPRITE_SCALING_PLAYER = 0.5
@@ -152,9 +152,11 @@ class GameScreen(arcade.View):
             view = GameOverScreen()
             self.window.show_view(view)
 
+
 class EscapeGameView(View):
     def __init__(self, window: Window = None):
         super().__init__(window)
+        self.window.set_mouse_visible(True)
         # Sprites and sprite lists
         self.field_list = arcade.SpriteList()
         self.player_sprite = None
@@ -189,12 +191,11 @@ class EscapeGameView(View):
         self.light_layer.set_background_color(arcade.color.BLACK)
         self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
         
-        self._draw_random_level()
+        self._set_random_level()
         
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
         
-            
-    def _draw_random_level(self, wall_prob = 0.2):
+    def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 4
         field_center = field_size * 0.5
         
@@ -318,6 +319,9 @@ class EscapeGameView(View):
         self.scroll_to_player()
         
     def on_update(self, delta_time: float):
+        debug_time = time.perf_counter() - self.debug_timer
+        if debug_time > 0.02 :print(debug_time)
+        self.debug_timer = time.perf_counter()
         self.physics_engine.update()
         CLOCK.tick()
         # self.render_ratio = self.window.get_framebuffer_size()[0] / self.window.get_size()[0]   # should be moved to os level hidpi change event
