@@ -203,9 +203,12 @@ class Actor2D(MObject):
     def register_components(self):
         for k in self.__dict__:
             if isinstance(self.__dict__[k], (ActorComponent, )): 
-                if isinstance(self.__dict__[k], ActorComponent): self.__dict__[k].owner = self
+                if isinstance(self.__dict__[k], ActorComponent):
+                    self.__dict__[k].owner = self
                 ''' for components that have owner '''
+                if hasattr(self.__dict__[k], 'tick'):
                 self.tick_group.append(self.__dict__[k])
+                    ''' for components that have tick '''
     
     def register_body(self, sprite_list:arcade.SpriteList):
         print('body visible :',self.body.visible)
