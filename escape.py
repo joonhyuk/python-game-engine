@@ -190,7 +190,7 @@ class EscapeGameView(View):
         # self.player_list.append(self.player_sprite)
         
         self.player = Character2D(arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png'))
-        self.player.spawn(Vector(-100, -100), 0, self.player_list)
+        self.player.spawn(Vector(-100, -100), 0, self.player_list, 5.0)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
@@ -273,6 +273,13 @@ class EscapeGameView(View):
             self.player.body.change_x = 0
             
         if key == arcade.key.ESCAPE: arcade.exit()
+        if key == arcade.key.KEY_1: schedule_once(self.test_schedule_func, 1, '1 sec delayed schedule')
+        # if key == arcade.key.KEY_1: arcade.window_commands.schedule(self.test_schedule_func, 1)
+        if key == arcade.key.KEY_2: schedule_interval(self.test_schedule_func, 1, '1 sec repeating schedule')
+        if key == arcade.key.KEY_3: unschedule(self.test_schedule_func)
+    
+    def test_schedule_func(self, dt, text:str = 'testing schedule'):
+        return print(text)
     
     def on_draw(self):
 
@@ -344,6 +351,7 @@ class EscapeGameView(View):
         self.debug_timer = time.perf_counter()
         self.physics_engine.update()
         CLOCK.tick()
+        self.player.tick()
         # print(CLOCK.fps_current)
         
     

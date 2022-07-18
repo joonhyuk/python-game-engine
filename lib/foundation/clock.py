@@ -5,6 +5,7 @@ by joonhyuk@me.com
 maybe it's reinventing the wheel, the goal was reducing dependance on any frameworks
 """
 import threading
+from pyglet.clock import schedule, schedule_once, schedule_interval, schedule_interval_soft, unschedule, check_schedule
 
 class Clock:
     """SUPER PRECISE timer"""
