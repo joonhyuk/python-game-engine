@@ -29,6 +29,7 @@ class MObject(object):
         
         if self._lifetime:
             CLOCK.timer_start(self.id)
+            # schedule_once(self.destroy, lifetime)
         
         self._spawned = True
     
@@ -57,13 +58,13 @@ class MObject(object):
     def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
         self.__dict__[keyword] = get_from_dict(kwargs, keyword, default)
 
-    def check_super(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            if not super().f(*args, **kwargs): return False
-            return f(*args, **kwargs)
-        return wrapper
-        
+    # def check_super(f):
+    #     @functools.wraps(f)
+    #     def wrapper(*args, **kwargs):
+    #         if not super().f(*args, **kwargs): return False
+    #         return f(*args, **kwargs)
+    #     return wrapper
+    
     @property
     def remain_lifetime(self) -> float:
         if self._lifetime:
@@ -75,14 +76,12 @@ class MObject(object):
         return self._alive
 
 
-class ActorComponent:
+class ActorComponent(MObject):
     '''component base class'''
     def __init__(self) -> None:
+        super().__init__()
         self.owner:Actor2D = None
     
-    def tick(self, delta_time:float = None):
-        return True
-
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -172,30 +171,47 @@ class Actor2D(MObject):
         if not super().tick(): return False
         if self.tick_group:
             for ticker in self.tick_group:
-                ticker.tick(delta_time)
+                ticker.tick()
         return True
     
     def destroy(self) -> bool:
-        if self.body: self.remove_body()
+        if self.body:
+            self.remove_body()
+            self.body = None
         return super().destroy()
     
     def _get_position(self) -> Vector:
+        if not self.body: return False
         return Vector(self.body.position)
     
     def _set_position(self, new_position:Vector = Vector(0., 0.)) -> bool:
+        if not self.body: return False
         self.body.position = new_position
         return True
     
+    # @classmethod
+    def check_body(f):
+        @functools.wraps(f)
+        def wrapper(self, *args, **kwargs):
+            if not self.body: return False
+            return f(self, *args, **kwargs)
+        return wrapper
+
+    
+    @check_body
     def _get_rotation(self) -> float:
         return self.body.angle
     
+    @check_body
     def _set_rotation(self, rotation:float = 0.0) -> bool:
         self.body.angle = rotation
         return True
     
+    @check_body
     def _get_visibility(self) -> bool:
         return self.body.visible
     
+    @check_body
     def _set_visibility(self, switch:bool = None):
         if switch is None: switch = not switch
         self.body.visible = switch
@@ -205,15 +221,16 @@ class Actor2D(MObject):
             if isinstance(self.__dict__[k], (ActorComponent, )): 
                 if isinstance(self.__dict__[k], ActorComponent):
                     self.__dict__[k].owner = self
-                ''' for components that have owner '''
+                    ''' for components that have owner '''
                 if hasattr(self.__dict__[k], 'tick'):
-                self.tick_group.append(self.__dict__[k])
+                    self.tick_group.append(self.__dict__[k])
                     ''' for components that have tick '''
     
+    @check_body
     def register_body(self, sprite_list:arcade.SpriteList):
-        print('body visible :',self.body.visible)
         return sprite_list.append(self.body)
     
+    @check_body
     def remove_body(self):
         return self.body.remove_from_sprite_lists()
     
@@ -222,6 +239,7 @@ class Actor2D(MObject):
     rotation = property(_get_rotation, _set_rotation)
     
     @property
+    @check_body
     def forward_vector(self):
         return Vector(0,1).rotate(self.body.angle)
     
