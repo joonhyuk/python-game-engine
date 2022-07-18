@@ -82,6 +82,8 @@ class ActorComponent(MObject):
         super().__init__()
         self.owner:Actor2D = None
     
+    def tick(self) -> bool:
+        return super().tick()
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -94,45 +96,79 @@ class CameraHandler(ActorComponent):
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
-                 max_speed = 100, 
-                 acceleration = 100, 
-                 braking = None, 
+                 max_speed = 200, 
+                 acceleration = 10, 
+                 braking = 5, 
                  max_rotation_speed = 360
                  ) -> None:
         super().__init__()
         self.max_speed = max_speed
         self.max_rotation_speed = max_rotation_speed
         self.acceleration = acceleration
-        self.braking = braking if braking is not None else acceleration
-    
+        self._braking = braking if braking is not None else acceleration
+        ''' default braking friction. if set to 0, no braking '''
+        self.desired_velocity:Vector = Vector()
+        self.move_input:Vector = Vector()
+        self._spawned = True
+        
     def tick(self, delta_time:float = None) -> bool:
         if not super().tick(): return False
         if delta_time is None: delta_time = CLOCK.delta_time
         
+        if self.velocity.almost_there(self.desired_velocity, 0.1): return False
+        
+        if self.desired_velocity.is_zero:
+            if not self.velocity.is_zero:
+                # print(self.velocity.norm())
+                self.velocity += self.velocity * -1 * self.braking * delta_time
+        
+        self.velocity = (self.velocity + self.desired_velocity * self.acceleration * delta_time).clamp_length(self.max_speed * delta_time)
+        # accel = (-1 * self.braking if self.desired_velocity.is_zero else self.acceleration) * self.desired_velocity.normalize()
+        # self.velocity = (self.velocity + accel * delta_time).clamp_length(self.max_speed * delta_time)
+        # self.velocity = vinterp_to(self.velocity, self.desired_velocity, delta_time, 1).clamp_length(self.max_speed * delta_time)
+        # print(self.desired_velocity, self.velocity)
+        
+    def move(self, input:Vector = Vector()):
+        self.move_input = input
+        if not self.desired_velocity.almost_there(input * self.max_speed):
+            self.desired_velocity = input * self.max_speed
+        # if self.velocity.almost_there(self.desired_velocity): return False
+        
+        # if velocity.is_zero: accel = self.braking
+        # else: accel = self.acceleration
+    
+    def stop(self):
+        # print('stop')
+        self.move()
     
     def move_forward(self, speed):
         self.owner.body.forward(speed)
-        self.velocity
     
-    def _get_velocity(self):
-        return self.owner.body.velocity
+    def _get_velocity(self) -> Vector:
+        return self.owner.velocity
     
     def _set_velocity(self, velocity:Vector = Vector()):
-        self.owner.body.velocity = velocity.clamp_length(self.max_speed)
+        self.owner.velocity = velocity.clamp_length(self.max_speed)
     
-    velocity = property(_get_velocity, _set_velocity)
+    velocity:Vector = property(_get_velocity, _set_velocity)
     
     def _get_rotation(self):
-        return get_positive_angle(self.owner.body.angle)
+        return get_positive_angle(self.owner.rotation)
     
     def _set_rotation(self, rotation:float):
-        self.owner.body.angle = get_positive_angle(rotation)
+        self.owner.rotation = get_positive_angle(rotation)
     
     rotation = property(_get_rotation, _set_rotation)
     
     @property
     def speed(self):
         return Vector(self.owner.body.velocity).length
+    
+    @property
+    def braking(self):
+        if hasattr(self.owner, 'braking_friction'):
+            return self._braking * self.owner.braking_friction
+        else: return self._braking
     
 
 class Actor2D(MObject):
@@ -215,7 +251,15 @@ class Actor2D(MObject):
     def _set_visibility(self, switch:bool = None):
         if switch is None: switch = not switch
         self.body.visible = switch
+        
+    @check_body
+    def _get_velocity(self):
+        return Vector(self.body.velocity)
     
+    @check_body
+    def _set_velocity(self, velocity:Vector = Vector()):
+        self.body.velocity = list(velocity)
+        
     def register_components(self):
         for k in self.__dict__:
             if isinstance(self.__dict__[k], (ActorComponent, )): 
@@ -237,6 +281,7 @@ class Actor2D(MObject):
     visibility = property(_get_visibility, _set_visibility)
     position = property(_get_position, _set_position)
     rotation = property(_get_rotation, _set_rotation)
+    velocity = property(_get_velocity, _set_velocity)
     
     @property
     @check_body

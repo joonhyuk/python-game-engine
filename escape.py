@@ -190,7 +190,7 @@ class EscapeGameView(View):
         # self.player_list.append(self.player_sprite)
         
         self.player = Character2D(arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png'))
-        self.player.spawn(Vector(-100, -100), 0, self.player_list, 5.0)
+        self.player.spawn(Vector(-100, -100), 0, self.player_list)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
@@ -248,16 +248,23 @@ class EscapeGameView(View):
         # elif key in (arcade.key.RIGHT, arcade.key.D):
         #     self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
         
-        if key in (arcade.key.UP, arcade.key.W):
-            self.player.body.change_y = PLAYER_MOVEMENT_SPEED
-        elif key in (arcade.key.DOWN, arcade.key.S):
-            self.player.body.change_y = -PLAYER_MOVEMENT_SPEED
-        if key in (arcade.key.LEFT, arcade.key.A):
-            self.player.body.change_x = -PLAYER_MOVEMENT_SPEED
-        elif key in (arcade.key.RIGHT, arcade.key.D):
-            self.player.body.change_x = PLAYER_MOVEMENT_SPEED
+        # if key in (arcade.key.UP, arcade.key.W):
+        #     self.player.body.change_y = PLAYER_MOVEMENT_SPEED
+        # elif key in (arcade.key.DOWN, arcade.key.S):
+        #     self.player.body.change_y = -PLAYER_MOVEMENT_SPEED
+        # if key in (arcade.key.LEFT, arcade.key.A):
+        #     self.player.body.change_x = -PLAYER_MOVEMENT_SPEED
+        # elif key in (arcade.key.RIGHT, arcade.key.D):
+        #     self.player.body.change_x = PLAYER_MOVEMENT_SPEED
             
         if key == arcade.key.F1: CONFIG.fog_of_war = not CONFIG.fog_of_war
+        
+        # if key == arcade.key.I: self.player.movement.move(Vector(0,1))
+        # elif key == arcade.key.M: self.player.movement.move(Vector(0,-1))
+        # if key == arcade.key.J: self.player.movement.move(Vector(-1,0))
+        # elif key == arcade.key.K: self.player.movement.move(Vector(1,0))
+        
+        
     
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
@@ -267,11 +274,16 @@ class EscapeGameView(View):
         # elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
         #     self.player_sprite.change_x = 0
             
-        if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
-            self.player.body.change_y = 0
-        elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
-            self.player.body.change_x = 0
-            
+        # if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
+        #     self.player.body.change_y = 0
+        # elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
+        #     self.player.body.change_x = 0
+        
+        # if key == arcade.key.I: self.player.movement.move()
+        # elif key == arcade.key.M: self.player.movement.move()
+        # elif key == arcade.key.J: self.player.movement.move()
+        # elif key == arcade.key.K: self.player.movement.move()
+        
         if key == arcade.key.ESCAPE: arcade.exit()
         if key == arcade.key.KEY_1: schedule_once(self.test_schedule_func, 1, '1 sec delayed schedule')
         # if key == arcade.key.KEY_1: arcade.window_commands.schedule(self.test_schedule_func, 1)
@@ -350,8 +362,18 @@ class EscapeGameView(View):
         if debug_time > 0.02 :print(debug_time)
         self.debug_timer = time.perf_counter()
         self.physics_engine.update()
-        CLOCK.tick()
         self.player.tick()
+        if not self.player.is_alive:
+            view = GameOverScreen()
+            self.window.show_view(view)
+            
+        input_vec = self.window.move_input
+        # print(input_vec)
+        if not input_vec.is_zero:
+            self.player.movement.move(input_vec)
+        else: self.player.movement.stop()
+        
+        CLOCK.tick()
         # print(CLOCK.fps_current)
         
     

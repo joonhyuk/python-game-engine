@@ -46,17 +46,34 @@ class appio:
 
 class Window(arcade.Window):
     
+    lstick_vector = Vector()
+    joystick:arcade.joysticks.Joystick = None
+    
     def on_show(self):
         appio.render_scale = self.get_framebuffer_size()[0] / self.get_size()[0]
         self.get_input_device()
         
-    def on_key_press(self, symbol: int, modifiers: int):
-        print('key input :', symbol)
-        pass
-    
+    def on_key_press(self, key: int, modifiers: int):
+        print('key input :', key)
+        # self.lstick_vector = Vector()
+        if key in (arcade.key.W, arcade.key.UP): self.lstick_vector += (0,1)
+        if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector += (0,-1)
+        if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector += (-1,0)
+        if key in (arcade.key.D, arcade.key.RIGHT): self.lstick_vector += (1,0)
+        
+    def on_key_release(self, key: int, modifiers: int):
+        if key in (arcade.key.W, arcade.key.UP): self.lstick_vector -= (0,1)
+        if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector -= (0,-1)
+        if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector -= (-1,0)
+        if key in (arcade.key.D, arcade.key.RIGHT): self.lstick_vector -= (1,0)
+        
     def on_update(self, delta_time: float):
         # return super().on_update(delta_time)
         # print(delta_time)
+        if self.joystick:
+            self.move_input = Vector(self.joystick.x, self.joystick.y)
+        else:
+            self.move_input = self.lstick_vector.clamp_length(1)
         pass
     
     def on_draw(self):

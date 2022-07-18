@@ -127,7 +127,7 @@ class Vector(object):
     
     def __add__(self, other):
         """ Returns the vector addition of self and other """
-        if isinstance(other, Vector):
+        if isinstance(other, (Vector, tuple, list)):
             added = tuple( a + b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
             added = tuple( a + other for a in self )
@@ -142,7 +142,7 @@ class Vector(object):
     
     def __sub__(self, other):
         """ Returns the vector difference of self and other """
-        if isinstance(other, Vector):
+        if isinstance(other, (Vector, tuple, list)):
             subbed = tuple( a - b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
             subbed = tuple( a - other for a in self )
@@ -201,6 +201,15 @@ class Vector(object):
         clamped = tuple( x * max_length / norm for x in self )
         return self.__class__(*clamped)
     
+    def almost_there(self, other, precision = 0.001):
+        ''' check if nearly equality and set to target if true '''
+        if not isinstance(other, Vector): 
+            raise ValueError('nearly_equal requires another vector')
+        ''' 차원 수 비교체크는 성능상 생략 '''
+        result = all(math.isclose(a, b, abs_tol = precision) for a, b in zip(self, other))
+        if result: self.values = other.values
+        return result
+        
     # def __sum__(self, *others):
     #     pass
     # no need for it. yay!
@@ -213,7 +222,7 @@ class Vector(object):
     
     @property
     def is_zero(self) -> bool:
-        return self.norm() == 0
+        return math.isclose(self.norm(), 0, abs_tol = 0.001)
     
     @property
     def x(self):
