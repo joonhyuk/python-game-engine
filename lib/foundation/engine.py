@@ -48,6 +48,7 @@ class Window(arcade.Window):
     
     def on_show(self):
         appio.render_scale = self.get_framebuffer_size()[0] / self.get_size()[0]
+        self.get_input_device()
         
     def on_key_press(self, symbol: int, modifiers: int):
         print('key input :', symbol)
@@ -63,6 +64,12 @@ class Window(arcade.Window):
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         appio.mouse_input = Vector(x, y)
+    
+    def get_input_device(self):
+        joysticks = arcade.get_joysticks()
+        if joysticks:
+            self.joystick = joysticks[0]
+        else: self.joystick = None
     
     @property
     def render_ratio(self):
