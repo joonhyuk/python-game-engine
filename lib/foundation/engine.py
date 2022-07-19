@@ -35,7 +35,7 @@ class appio:
     
     render_scale:float = 1.0
     mouse_input:Vector = Vector(0, 0)
-    key = arcade.key
+    
     
     def _get_cursor_position(self) -> Vector:
         # return tuple(x * self.render_scale for x in self._cursor_position) 

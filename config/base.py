@@ -13,12 +13,6 @@ DEFAULT_UI_SCALE = 100
 
 RESOURCE_PATH = 'resources/'
 
-class settings(int, Enum):
-    screen_width = DEFAULT_SCREEN_WIDTH
-    screen_height = DEFAULT_SCREEN_HEIGHT
-    tile_size = DEFAULT_TILE_SIZE
-    fps = DEFAULT_FPS
-
 @dataclass
 class default_settings:
     screen_size = Vector(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
