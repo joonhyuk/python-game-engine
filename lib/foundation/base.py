@@ -6,7 +6,10 @@ import os, sys, json, functools, inspect
 from random import random
 from enum import Enum
 from typing import Iterable
+from config import *
 from lib.foundation.vector import Vector
+from lib.foundation.clock import *
+
 # from lib.foundation.clock import *
 
 class EnumVector(Vector, Enum):
@@ -62,7 +65,11 @@ def rinterp_to(current:float,
     '''rotation angle interp. in degrees'''
     delta = get_shortest_angle(current, target)
     if abs(delta) < precision: return target
-    return current + delta * clamp(delta_time * speed, 0, 1)
+    a = delta * clamp(delta_time * speed, 0, 1)
+    if abs(a) > 180 * delta_time:
+        if a < 0: a = -180 * delta_time
+        else: a = 180 * delta_time
+    return current + a
 
 def get_shortest_angle(start:float,
                        end:float):
@@ -77,9 +84,26 @@ def get_positive_angle(degrees:float):
 def clamp(value, in_min, in_max):
     return min(in_max, max(in_min, value))
 
+def clamp_abs(value, in_min, in_max):
+    result = min(abs(in_max), max(abs(in_min), abs(value)))
+    if value < 0 : result *= -1
+    return result
+
 def map_range(value, in_min, in_max, out_min, out_max, clamped = False):
     if clamped: value = clamp(value, in_min, in_max)
     return ((value - in_min) / (in_max - in_min)) * (out_max - out_min) + out_min
+
+def map_range_abs(value, in_min, in_max, out_min, out_max, clamped = False):
+    if clamped: value = clamp_abs(value, in_min, in_max)
+    result = map_range(abs(value), in_min, in_max, out_min, out_max)
+    if value < 0: result *= -1
+    return result
+
+def map_range_attenuation(value, in_min, in_max, out_start, out_min, out_max):
+    ''' need to be revised '''
+    if value < in_min:
+        return map_range(value, 0, in_min, out_start, out_min)
+    return map_range(value, in_min, in_max, out_min, out_max)
 
 def load_json(filepath:str) -> dict:
     with open(get_path(filepath), 'r') as json_file:

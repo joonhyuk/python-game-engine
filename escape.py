@@ -271,15 +271,12 @@ class EscapeGameView(View):
             view = GameOverScreen()
             self.window.show_view(view)
             
-        input_vec = self.window.move_input
+        # input_vec = self.window.move_input
         # print(input_vec)
-        if not input_vec.is_zero:
-            self.player.movement.move(input_vec)
-        else: self.player.movement.stop()
-        
-        CLOCK.tick()
-        # print(CLOCK.fps_current)
-        
+        # if not input_vec.is_zero:
+        #     self.player.movement.move(input_vec)
+        # else: self.player.movement.stop()
+        self.player.movement.move(self.window.move_input)
     
     def scroll_to_player(self, speed = 0.1):
         """

@@ -1,3 +1,5 @@
+from config.base import *
+
 from lib.foundation.base import *
 from lib.foundation.clock import *
 from lib.foundation.engine import *
@@ -97,43 +99,106 @@ class CameraHandler(ActorComponent):
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
-                 max_speed = 200, 
+                 max_speed_run = 200, 
+                 max_speed_walk = 70, 
                  acceleration = 10, 
-                 braking = 5, 
-                 max_rotation_speed = 360
+                 braking = 3, 
+                 max_rotation_speed = 360, 
+                 rotation_interp_speed = 1, 
                  ) -> None:
         super().__init__()
-        self.max_speed = max_speed
+        self.max_speed_run = max_speed_run
+        ''' pixel per sec '''
+        self.max_speed_walk = max_speed_walk
+        ''' pixel per sec '''
         self.max_rotation_speed = max_rotation_speed
+        ''' degree per sec '''
+        self.rotation_interp_speed = rotation_interp_speed
+        
         self.acceleration = acceleration
+        ''' speed per sec^2 '''
         self._braking = braking if braking is not None else acceleration
         ''' default braking friction. if set to 0, no braking '''
-        self.desired_velocity:Vector = Vector()
         self.move_input:Vector = Vector()
+        self.desired_rotation:float = 0.0
+        
         self._spawned = True
+        
+        self._debug_speedq = []
         
     def tick(self, delta_time:float = None) -> bool:
         if not super().tick(): return False
         if delta_time is None: delta_time = CLOCK.delta_time
         if not delta_time: return False
         
-        if self.velocity.almost_there(self.desired_velocity, 0.1): return False
+        self._set_movement(delta_time)
+        # # print(self.velocity.is_close(self.desired_velocity, 0.00001))
+        # if self.velocity.is_close(self.desired_velocity):
+        #     if self.velocity != self.desired_velocity:
+        #         self.velocity = self.desired_velocity
+        #     return False
         
-        if self.desired_velocity.is_zero:
-            if not self.velocity.is_zero:
-                # print(self.velocity.norm())
-                self.velocity += self.velocity * -1 * self.braking * delta_time
+        # if self.desired_velocity.is_zero:
+        #     # print(self.velocity.norm())
+        #     if not self.velocity.is_zero:
+        #         # print(self.velocity.norm(), self.braking * delta_time)
+        #         self.velocity += self.velocity.normalize() * -1 * self.braking * delta_time
+        # else:
+        #     max_speed_map = map_range_attenuation(self.move_input.norm(), 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
+        #     self.velocity = (self.velocity + self.desired_velocity.normalize() * self.acceleration * delta_time).clamp_length(max_speed_map * delta_time)
+        # # accel = (-1 * self.braking if self.desired_velocity.is_zero else self.acceleration) * self.desired_velocity.normalize()
+        # # self.velocity = (self.velocity + accel * delta_time).clamp_length(self.max_speed * delta_time)
+        # # self.velocity = vinterp_to(self.velocity, self.desired_velocity, delta_time, 1).clamp_length(self.max_speed * delta_time)
+        # # print(self.desired_velocity, self.velocity)
+        # # print(self.velocity.norm())
         
-        self.velocity = (self.velocity + self.desired_velocity * self.acceleration * delta_time).clamp_length(self.max_speed * delta_time)
-        # accel = (-1 * self.braking if self.desired_velocity.is_zero else self.acceleration) * self.desired_velocity.normalize()
-        # self.velocity = (self.velocity + accel * delta_time).clamp_length(self.max_speed * delta_time)
-        # self.velocity = vinterp_to(self.velocity, self.desired_velocity, delta_time, 1).clamp_length(self.max_speed * delta_time)
-        # print(self.desired_velocity, self.velocity)
+        # self.rotation = get_positive_angle(rinterp_to(self.rotation, 
+        #                                               self.desired_rotation, 
+        #                                               delta_time, 
+        #                                               self.rotation_interp_speed))
+    
+    def _set_heading(self, delta_time:float):
+        pass
+    
+    def turn(self, rotation:float):
+        pass
+    
+    def _set_movement(self, delta_time:float):
+        self._debug_check_speed(delta_time)
+        if self.move_input.near_zero:
+            ''' stop / braking '''
+            if self.velocity.is_zero: return False
+            
+            if not self.velocity.near_zero:
+                self.velocity += -1 * self.velocity.unit * self.braking * delta_time
+                return True
+            else:
+                self.velocity = Vector()
+                return False
+        
+        max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
+        self.velocity = (self.velocity + self.move_input.unit * self.acceleration * delta_time).clamp_length(max_speed * delta_time)
+        
+        ### debug start
+        a = max_speed * delta_time
+        b = self.velocity.norm()
+        if abs(a - b) > 0.001:
+            if b > 150:
+                print('missing something')
+        ### debug end
+        
+        return True
+        
+    def _debug_check_speed(self, delta_time):
+        
+        if len(self._debug_speedq) > 5: self._debug_speedq.pop(0)
+        self._debug_speedq.append(self.velocity.length / delta_time)
+        print(sum(self._debug_speedq) // len(self._debug_speedq))
         
     def move(self, input:Vector = Vector()):
         self.move_input = input
-        if not self.desired_velocity.almost_there(input * self.max_speed):
-            self.desired_velocity = input * self.max_speed
+        # if not self.desired_velocity.almost_there(input * self.max_speed):
+        self.desired_velocity = input * self.max_speed_run
         # if self.velocity.almost_there(self.desired_velocity): return False
         
         # if velocity.is_zero: accel = self.braking
@@ -150,7 +215,7 @@ class CharacterMovement(ActorComponent):
         return self.owner.velocity
     
     def _set_velocity(self, velocity:Vector = Vector()):
-        self.owner.velocity = velocity.clamp_length(self.max_speed)
+        self.owner.velocity = velocity
     
     velocity:Vector = property(_get_velocity, _set_velocity)
     
@@ -164,7 +229,7 @@ class CharacterMovement(ActorComponent):
     
     @property
     def speed(self):
-        return Vector(self.owner.body.velocity).length
+        return Vector(self.owner.velocity).length / CLOCK.delta_time
     
     @property
     def braking(self):

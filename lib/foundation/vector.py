@@ -202,13 +202,15 @@ class Vector(object):
         clamped = tuple( x * max_length / norm for x in self )
         return self.__class__(*clamped)
     
-    def almost_there(self, other, precision = 0.001):
-        ''' check if nearly equality and set to target if true '''
+    def is_close(self, other, precision = 0.001):
+        ''' check if nearly equality '''
+        if self == other: return True
         if not isinstance(other, Vector): 
             raise ValueError('nearly_equal requires another vector')
         ''' 차원 수 비교체크는 성능상 생략 '''
         result = all(math.isclose(a, b, abs_tol = precision) for a, b in zip(self, other))
-        if result: self.values = other.values
+        # if result:
+            # self.values = other.values # 소용 없음...
         return result
         
     # def __sum__(self, *others):
@@ -227,7 +229,13 @@ class Vector(object):
     
     @property
     def is_zero(self) -> bool:
-        return math.isclose(self.norm(), 0, abs_tol = 0.001)
+        return self.norm() == 0.0
+    
+    @property
+    def near_zero(self) -> bool:
+        length = self.norm()
+        if length == 0.0 : return True
+        return math.isclose(length, 0, abs_tol = 0.01)
     
     @property
     def x(self):

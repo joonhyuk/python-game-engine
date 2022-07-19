@@ -35,7 +35,7 @@ class appio:
     
     render_scale:float = 1.0
     mouse_input:Vector = Vector(0, 0)
-    
+    key = arcade.key
     
     def _get_cursor_position(self) -> Vector:
         # return tuple(x * self.render_scale for x in self._cursor_position) 
@@ -46,39 +46,62 @@ class appio:
     
     cursor_position:Vector = property(_get_cursor_position, _set_cursor_position)
 
+class Gamepad(arcade.joysticks.Joystick):
+    
+    @property
+    def rstick_angle(self):
+        return Vector(self.rx, self.ry).argument()
 
 class Window(arcade.Window):
     
     lstick_vector = Vector()
+    rstick_vector = Vector()
     joystick:arcade.joysticks.Joystick = None
+    lshift_applied = False
+    lctrl_applied = False
     
     def on_show(self):
         appio.render_scale = self.get_framebuffer_size()[0] / self.get_size()[0]
+        self.direction_input = Vector()
         self.get_input_device()
+        if self.joystick: self.set_mouse_visible(False)
         
     def on_key_press(self, key: int, modifiers: int):
-        print('key input :', key)
         # self.lstick_vector = Vector()
         if key in (arcade.key.W, arcade.key.UP): self.lstick_vector += (0,1)
         if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector += (0,-1)
         if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector += (-1,0)
         if key in (arcade.key.D, arcade.key.RIGHT): self.lstick_vector += (1,0)
+        if key == arcade.key.LSHIFT: self.lshift_applied = True
+        if key == arcade.key.LCTRL: self.lctrl_applied = True
         
     def on_key_release(self, key: int, modifiers: int):
         if key in (arcade.key.W, arcade.key.UP): self.lstick_vector -= (0,1)
         if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector -= (0,-1)
         if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector -= (-1,0)
         if key in (arcade.key.D, arcade.key.RIGHT): self.lstick_vector -= (1,0)
+        if key == arcade.key.LSHIFT: self.lshift_applied = False
+        if key == arcade.key.LCTRL: self.lctrl_applied = False
         
     def on_update(self, delta_time: float):
         # return super().on_update(delta_time)
-        # print(delta_time)
+        
         if self.joystick:
-            self.move_input = Vector(self.joystick.x, self.joystick.y)
+            x = map_range_abs(self.joystick.x, 0.1, 1, 0, 1, True)
+            y = map_range_abs(self.joystick.y, 0.1, 1, 0, 1, True) * -1
+            self.move_input = Vector(x, y).clamp_length()
+            if abs(self.joystick.rx) > 0.25 or abs(self.joystick.ry) > 0.25:
+                rx = map_range_abs(self.joystick.rx, 0.25, 1, 0, 300, True)
+                ry = map_range_abs(self.joystick.ry, 0.25, 1, 0, 300, True) * -1
+                ar = Vector(-1 * self.joystick.rx, -1 * self.joystick.ry).argument()
+                rv = Vector(0, 300).rotate(ar)
+                self.direction_input = (rv + Vector(self.size) / 2) * appio.render_scale
         else:
+            self.move_input = self.lstick_vector.clamp_length(1) * (0.5 if self.lctrl_applied else 1)
+            self.direction_input = appio.mouse_input * appio.render_scale
             pass
         CLOCK.tick()
-    
+        
     def on_draw(self):
         pass
     
@@ -89,6 +112,8 @@ class Window(arcade.Window):
         joysticks = arcade.get_joysticks()
         if joysticks:
             self.joystick = joysticks[0]
+            self.joystick.open()
+            self.joystick.push_handlers(self)
         else: self.joystick = None
     
     @property
@@ -182,7 +207,7 @@ class SoundBank:
         self.sounds:dict[str, arcade.Sound] = {}
         self.mute:bool = False
         self.volume_master:float = 0.5
-        print('hello-sound')
+        print('SOUND initialized')
         self.load()
         
     def load(self, path:str = None):
@@ -223,5 +248,6 @@ class SoundBank:
         self.volume_master = amount
 
 if __name__ != "__main__":
-    SOUND = SoundBank('resources/sfx/')
     print("include", __name__, ":", __file__)
+    SOUND = SoundBank('resources/sfx/')
+    
