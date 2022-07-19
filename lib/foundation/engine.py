@@ -67,6 +67,7 @@ class Window(arcade.Window):
         if self.joystick: self.set_mouse_visible(False)
         
     def on_key_press(self, key: int, modifiers: int):
+        print('[window]key input')
         # self.lstick_vector = Vector()
         if key in (arcade.key.W, arcade.key.UP): self.lstick_vector += (0,1)
         if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector += (0,-1)
@@ -114,6 +115,7 @@ class Window(arcade.Window):
             self.joystick = joysticks[0]
             self.joystick.open()
             self.joystick.push_handlers(self)
+            print('Gamepad attached')
         else: self.joystick = None
     
     @property

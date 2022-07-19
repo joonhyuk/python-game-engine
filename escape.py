@@ -39,9 +39,11 @@ class TitleScreen(View):
                          anchor_x='center')
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        print('[title]key input')
         self.start_game()
     
     def on_key_press(self, symbol: int, modifiers: int):
+        print('[title]key input')
         self.start_game()
     
     def on_update(self, delta_time: float):
@@ -141,6 +143,7 @@ class EscapeGameView(View):
         # print(x, y)
     
     def on_key_press(self, key: int, modifiers: int):
+        print('[game]key input')
         
         # if key in (arcade.key.UP, arcade.key.W):
         #     self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED

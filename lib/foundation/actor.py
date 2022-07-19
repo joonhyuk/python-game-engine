@@ -101,8 +101,8 @@ class CharacterMovement(ActorComponent):
     def __init__(self, 
                  max_speed_run = 200, 
                  max_speed_walk = 70, 
-                 acceleration = 10, 
-                 braking = 3, 
+                 acceleration = 100, 
+                 braking = 10, 
                  max_rotation_speed = 360, 
                  rotation_interp_speed = 1, 
                  ) -> None:
@@ -119,12 +119,14 @@ class CharacterMovement(ActorComponent):
         ''' speed per sec^2 '''
         self._braking = braking if braking is not None else acceleration
         ''' default braking friction. if set to 0, no braking '''
+        self._last_tick_speed = 0.0
         self.move_input:Vector = Vector()
         self.desired_rotation:float = 0.0
         
         self._spawned = True
         
         self._debug_speedq = []
+        self._debug_braking_time = 0
         
     def tick(self, delta_time:float = None) -> bool:
         if not super().tick(): return False
@@ -164,13 +166,20 @@ class CharacterMovement(ActorComponent):
         pass
     
     def _set_movement(self, delta_time:float):
+        ''' set movement by user input '''
         self._debug_check_speed(delta_time)
+        if self.move_input is None: return False
         if self.move_input.near_zero:
             ''' stop / braking '''
             if self.velocity.is_zero: return False
+            # if not self._braking_start_speed:
+            #     self._braking_start_speed = self.velocity.length
             
             if not self.velocity.near_zero:
-                self.velocity += -1 * self.velocity.unit * self.braking * delta_time
+                # self.velocity += -1 * self.velocity.unit * min(self.braking * delta_time, self.speed)
+                self.velocity *= (1 - self.braking * delta_time / self._last_tick_speed)
+                self._debug_braking_time += delta_time
+                # print(self.speed, round(self.sec_counter, 1))
                 return True
             else:
                 self.velocity = Vector()
@@ -178,6 +187,9 @@ class CharacterMovement(ActorComponent):
         
         max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
         self.velocity = (self.velocity + self.move_input.unit * self.acceleration * delta_time).clamp_length(max_speed * delta_time)
+
+        self._last_tick_speed = self.velocity.length
+        self._debug_braking_time = 0.0
         
         ### debug start
         a = max_speed * delta_time
@@ -191,9 +203,9 @@ class CharacterMovement(ActorComponent):
         
     def _debug_check_speed(self, delta_time):
         
-        if len(self._debug_speedq) > 5: self._debug_speedq.pop(0)
+        if len(self._debug_speedq) > 60: self._debug_speedq.pop(0)
         self._debug_speedq.append(self.velocity.length / delta_time)
-        print(sum(self._debug_speedq) // len(self._debug_speedq))
+        print(round(self._debug_braking_time, 1), sum(self._debug_speedq) // len(self._debug_speedq))
         
     def move(self, input:Vector = Vector()):
         self.move_input = input
@@ -225,14 +237,20 @@ class CharacterMovement(ActorComponent):
     def _set_rotation(self, rotation:float):
         self.owner.rotation = get_positive_angle(rotation)
     
-    rotation = property(_get_rotation, _set_rotation)
+    rotation:float = property(_get_rotation, _set_rotation)
     
     @property
-    def speed(self):
-        return Vector(self.owner.velocity).length / CLOCK.delta_time
+    def speed(self) -> float:
+        ''' speed per sec '''
+        return self.speed_tick / CLOCK.delta_time
     
     @property
-    def braking(self):
+    def speed_tick(self) -> float:
+        ''' speed per tick '''
+        return self.owner.velocity.length
+    
+    @property
+    def braking(self) -> float:
         if hasattr(self.owner, 'braking_friction'):
             return self._braking * self.owner.braking_friction
         else: return self._braking
@@ -319,11 +337,11 @@ class Actor2D(MObject):
         if switch is None: switch = not switch
         self.body.visible = switch
         
-    @check_body
-    def _get_velocity(self):
+    # @check_body
+    def _get_velocity(self) -> Vector:
         return Vector(self.body.velocity)
     
-    @check_body
+    # @check_body
     def _set_velocity(self, velocity:Vector = Vector()):
         self.body.velocity = list(velocity)
         
@@ -345,10 +363,10 @@ class Actor2D(MObject):
     def remove_body(self):
         return self.body.remove_from_sprite_lists()
     
-    visibility = property(_get_visibility, _set_visibility)
-    position = property(_get_position, _set_position)
-    rotation = property(_get_rotation, _set_rotation)
-    velocity = property(_get_velocity, _set_velocity)
+    visibility:bool = property(_get_visibility, _set_visibility)
+    position:Vector = property(_get_position, _set_position)
+    rotation:float = property(_get_rotation, _set_rotation)
+    velocity:Vector = property(_get_velocity, _set_velocity)
     
     @property
     @check_body
