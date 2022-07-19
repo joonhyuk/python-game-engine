@@ -158,16 +158,16 @@ class EscapeGameView(View):
         super().__init__(window)
         self.window.set_mouse_visible(True)
         # Sprites and sprite lists
-        self.field_list = arcade.SpriteList()
+        self.field_list = Layer()
         self.player_sprite = None
-        self.wall_list = arcade.SpriteList()
-        self.player_list = arcade.SpriteList()
-        self.bomb_list = arcade.SpriteList()
+        self.wall_list = Layer()
+        self.player_list = Layer()
+        self.bomb_list = Layer()
         self.physics_engine = None
 
         # Create cameras used for scrolling
-        self.camera_sprites = arcade.Camera(*CONFIG.screen_size)
-        self.camera_gui = arcade.Camera(*CONFIG.screen_size)
+        self.camera_sprites = Camera(*CONFIG.screen_size)
+        self.camera_gui = Camera(*CONFIG.screen_size)
         
         self.mousex = 64
         self.mousey = 64
@@ -177,7 +177,7 @@ class EscapeGameView(View):
         
         self.channel_static = None
         self.channel_dynamic = None
-        self.channels:list[arcade.Texture] = [self.channel_static, self.channel_dynamic]
+        self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
         self.shader = None
         self.light_layer = None
         
@@ -185,11 +185,11 @@ class EscapeGameView(View):
         
     def setup(self):
         
-        # self.player_sprite = arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png')
+        # self.player_sprite = Sprite(RESOURCE_PATH + '/art/player_handgun.png')
         # self.player_sprite.position = -100, -100
         # self.player_list.append(self.player_sprite)
         
-        self.player = Character2D(arcade.Sprite(RESOURCE_PATH + '/art/player_handgun.png'))
+        self.player = Character2D(Sprite(RESOURCE_PATH + '/art/player_handgun.png'))
         self.player.spawn(Vector(-100, -100), 0, self.player_list)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
@@ -207,20 +207,20 @@ class EscapeGameView(View):
         
         for x in range(0, field_size.x, 64):
             for y in range(0, field_size.y, 64):
-                ground = arcade.Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
+                ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
                 
                 ground.position = x, y
                 ground.color = (30, 30, 30)
                 self.field_list.append(ground)
                 
                 if flip_coin(wall_prob):
-                    wall = arcade.Sprite(':resources:images/tiles/boxCrate_double.png', 0.5)
+                    wall = Sprite(':resources:images/tiles/boxCrate_double.png', 0.5)
                     
                     wall.position = x, y
                     self.wall_list.append(wall)
         
         for _ in range(30):
-            bomb = arcade.Sprite(":resources:images/tiles/bomb.png", 0.125)
+            bomb = Sprite(":resources:images/tiles/bomb.png", 0.125)
             
             placed = False
             while not placed:
@@ -309,6 +309,7 @@ class EscapeGameView(View):
         self.field_list.draw()
         self.bomb_list.draw()
         self.wall_list.draw()
+        debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
         
         
         # self.field_list.draw()

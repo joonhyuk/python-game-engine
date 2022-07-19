@@ -91,6 +91,7 @@ class CameraHandler(ActorComponent):
     def __init__(self) -> None:
         super().__init__()
         self.offset:Vector = None
+        self.camera:Camera(*CONFIG.screen_size)
         
 
 class CharacterMovement(ActorComponent):
@@ -193,12 +194,12 @@ class Actor2D(MObject):
     def spawn(self, 
               position:Vector = Vector(), 
               rotation:float = None, 
-              sprite_list:arcade.SpriteList = None, 
+              layer:Layer = None, 
               lifetime=0) -> None:
         self.position = position
         self.rotation = rotation
         # if sprite_list:
-        self.register_body(sprite_list)
+        self.register_body(layer)
         self.register_components()
         return super().spawn(lifetime)
     
@@ -271,7 +272,7 @@ class Actor2D(MObject):
                     ''' for components that have tick '''
     
     @check_body
-    def register_body(self, sprite_list:arcade.SpriteList):
+    def register_body(self, sprite_list:Layer):
         return sprite_list.append(self.body)
     
     @check_body

@@ -26,6 +26,9 @@ def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade
     
     return shadertoy
 
+def debug_draw_line(start:Vector = Vector(), end:Vector = Vector(), color = arcade.color.WHITE, thickness = 1):
+    arcade.draw_commands
+    return arcade.draw_line(start.x, start.y, end.x, end.y, color, thickness)
 
 @dataclass
 class appio:
@@ -145,6 +148,19 @@ class SpriteCircle(arcade.SpriteCircle):
                  color: arcade.Color = arcade.color.ALLOY_ORANGE, 
                  soft: bool = False):
         super().__init__(radius, color, soft)
+
+
+class Layer(arcade.SpriteList):
+    pass
+
+
+class Camera(arcade.Camera):
+    pass
+
+
+class GLTexture(arcade.Texture):
+    pass
+
 
 class Objects:
     '''
