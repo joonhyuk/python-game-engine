@@ -9,7 +9,7 @@ import math
 class Vector(object):
     def __init__(self, *args):
         """ Create a vector, example: v = Vector(1,2) """
-        if not args : self.values = (0,0)
+        if not args : self.values = (0.,0.)
         elif len(args) == 1:  # add more usability and risk...!
             if isinstance(args[0], (tuple, list, Vector)):
                 self.values = tuple(args[0])
@@ -40,6 +40,7 @@ class Vector(object):
     def normalize(self):
         """ Returns a normalized unit vector """
         norm = self.norm()
+        if norm == 1.0: return self
         normed = tuple( x / norm for x in self )
         return self.__class__(*normed)
     
@@ -221,6 +222,10 @@ class Vector(object):
         return cls(va)
     
     @property
+    def unit(self):
+        return self.normalize()
+    
+    @property
     def is_zero(self) -> bool:
         return math.isclose(self.norm(), 0, abs_tol = 0.001)
     
@@ -282,29 +287,7 @@ class Vector(object):
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
 else:
-    v1 = Vector([1,2,3])
-    v2 = v1
-    v1 = Vector(v1 * 2)
-    print(v1, v2)
-    l1 = [1, 2, 3]
-    l2 = l1
-    l1 += [4, 5]
-    print(l1, l2)
-    vv = Vector (1, 0)
-    vvv = Vector (-1, 0)
-    ll = [1, 0]
-    lll = [1, 0]
-    print(vv, vvv, (vv != vvv))
-    print(ll == lll)
-    vd = Vector.diagonal(3,3)
-    vd.x = 2.3
-    print(vd)
-    vs = Vector((22,3))
-    print(type(vs))
+    v1 = Vector()
+    v2 = Vector(0.001, -0.0011)
+    print(v2.is_close(v1))
     
-    v3 = Vector(1,2,3)
-    v4 = Vector(0,4,2)
-    print(v3.clamp_max((0,4,2)))
-    
-    vvv = Vector(1.3, 2, 3.141592)
-    print(vvv.floor)    

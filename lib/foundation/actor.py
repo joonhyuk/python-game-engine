@@ -115,6 +115,7 @@ class CharacterMovement(ActorComponent):
     def tick(self, delta_time:float = None) -> bool:
         if not super().tick(): return False
         if delta_time is None: delta_time = CLOCK.delta_time
+        if not delta_time: return False
         
         if self.velocity.almost_there(self.desired_velocity, 0.1): return False
         

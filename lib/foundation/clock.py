@@ -37,6 +37,7 @@ class Clock:
         self.raw_time = self.cur_time - self.eof_time
         
         # self.pgclock = pygame.time.Clock()
+        print('CLOCK initialized')
         
     def tick(self, fps_limit:float = None, magic_num = 1):    # replacement for pygame.Clock.tick
         """refresh frame and wait for actual framerate\n
@@ -176,5 +177,5 @@ class Clock:
         return self.__class__.get_time() - self.start_time
 
 if __name__ != "__main__":
-    CLOCK = Clock()
     print("include", __name__, ":", __file__)
+    CLOCK = Clock()

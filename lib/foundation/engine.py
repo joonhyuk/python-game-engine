@@ -76,8 +76,8 @@ class Window(arcade.Window):
         if self.joystick:
             self.move_input = Vector(self.joystick.x, self.joystick.y)
         else:
-            self.move_input = self.lstick_vector.clamp_length(1)
-        pass
+            pass
+        CLOCK.tick()
     
     def on_draw(self):
         pass
