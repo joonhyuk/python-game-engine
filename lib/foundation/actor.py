@@ -1,3 +1,4 @@
+import math
 from config.base import *
 
 from lib.foundation.base import *
@@ -14,8 +15,6 @@ class MObject(object):
         self._update_tick:bool = True
         self._spawned = False
         """tick optimization"""
-        # self._update_render:bool = True
-        # """rendering optimization"""
         if kwargs:
             for k in kwargs:
                 # setattr(self, k, kwargs[k])
@@ -35,7 +34,7 @@ class MObject(object):
         
         self._spawned = True
     
-    def tick(self) -> bool:
+    def tick(self, delta_time:float) -> bool:
         """alive, ticking check\n
         if false, tick deactivated"""
         if not (self._spawned and self._update_tick and self._alive): return False
@@ -59,13 +58,6 @@ class MObject(object):
     
     def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
         self.__dict__[keyword] = get_from_dict(kwargs, keyword, default)
-
-    # def check_super(f):
-    #     @functools.wraps(f)
-    #     def wrapper(*args, **kwargs):
-    #         if not super().f(*args, **kwargs): return False
-    #         return f(*args, **kwargs)
-    #     return wrapper
     
     @property
     def remain_lifetime(self) -> float:
@@ -84,8 +76,8 @@ class ActorComponent(MObject):
         super().__init__()
         self.owner:Actor2D = None
     
-    def tick(self) -> bool:
-        return super().tick()
+    def tick(self, delta_time:float) -> bool:
+        return super().tick(delta_time)
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -129,30 +121,10 @@ class CharacterMovement(ActorComponent):
         self._debug_braking_time = 0
         
     def tick(self, delta_time:float = None) -> bool:
-        if not super().tick(): return False
-        if delta_time is None: delta_time = CLOCK.delta_time
         if not delta_time: return False
+        if not super().tick(delta_time): return False
         
         self._set_movement(delta_time)
-        # # print(self.velocity.is_close(self.desired_velocity, 0.00001))
-        # if self.velocity.is_close(self.desired_velocity):
-        #     if self.velocity != self.desired_velocity:
-        #         self.velocity = self.desired_velocity
-        #     return False
-        
-        # if self.desired_velocity.is_zero:
-        #     # print(self.velocity.norm())
-        #     if not self.velocity.is_zero:
-        #         # print(self.velocity.norm(), self.braking * delta_time)
-        #         self.velocity += self.velocity.normalize() * -1 * self.braking * delta_time
-        # else:
-        #     max_speed_map = map_range_attenuation(self.move_input.norm(), 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
-        #     self.velocity = (self.velocity + self.desired_velocity.normalize() * self.acceleration * delta_time).clamp_length(max_speed_map * delta_time)
-        # # accel = (-1 * self.braking if self.desired_velocity.is_zero else self.acceleration) * self.desired_velocity.normalize()
-        # # self.velocity = (self.velocity + accel * delta_time).clamp_length(self.max_speed * delta_time)
-        # # self.velocity = vinterp_to(self.velocity, self.desired_velocity, delta_time, 1).clamp_length(self.max_speed * delta_time)
-        # # print(self.desired_velocity, self.velocity)
-        # # print(self.velocity.norm())
         
         # self.rotation = get_positive_angle(rinterp_to(self.rotation, 
         #                                               self.desired_rotation, 
@@ -169,7 +141,7 @@ class CharacterMovement(ActorComponent):
         ''' set movement by user input '''
         self._debug_check_speed(delta_time)
         if self.move_input is None: return False
-        if self.move_input.near_zero:
+        if self.move_input.near_zero():
             ''' stop / braking '''
             if self.velocity.is_zero: return False
             # if not self._braking_start_speed:
@@ -193,7 +165,7 @@ class CharacterMovement(ActorComponent):
         
         ### debug start
         a = max_speed * delta_time
-        b = self.velocity.norm()
+        b = self.velocity.length
         if abs(a - b) > 0.001:
             if b > 150:
                 print('missing something')
@@ -242,7 +214,7 @@ class CharacterMovement(ActorComponent):
     @property
     def speed(self) -> float:
         ''' speed per sec '''
-        return self.speed_tick / CLOCK.delta_time
+        return self.speed_tick / CLOCK.delta_time   # need to be removed
     
     @property
     def speed_tick(self) -> float:
@@ -289,10 +261,10 @@ class Actor2D(MObject):
     
     def tick(self, delta_time:float = None) -> bool:
         if delta_time is None: delta_time = CLOCK.delta_time
-        if not super().tick(): return False
+        if not super().tick(delta_time): return False
         if self.tick_group:
             for ticker in self.tick_group:
-                ticker.tick()
+                ticker.tick(delta_time)
         return True
     
     def destroy(self) -> bool:
@@ -375,37 +347,7 @@ class Actor2D(MObject):
     
 
 class Pawn2D(Actor2D):
-    
-    def __init__(self, 
-                 body: Sprite = None, 
-                 **kwargs) -> None:
-        super().__init__(body, **kwargs)
-        # self.max_velocity = kwargs['max_velocity'] or 100
-        self.max_velocity = get_from_dict(kwargs, 'max_velocity')
-        # self.rotation_speed = kwargs['rotation_speed'] or 90
-        self.set_kwargs(kwargs, 'rotation_speed', 90)
-        # self.acceleration = kwargs['acceleration'] or 1
-        # self.braking = kwargs['braking'] or self.acceleration
-        
-        '''rotation speed in degrees per second'''
-        
-    def tick(self, delta_time:float = None) -> bool:
-        if not super().tick(): return False
-        if delta_time is None: delta_time = CLOCK.delta_time
-        # if self.velocity < self.max_velocity: self.velocity += self.acceleration
-        
-    
-    def turn_to(self, rotation:float):
-        self.rotation = rotation
-    
-    def turn_left(self, rotation_speed:float = None, delta_time:float = None):
-        '''if delta_time is 1, will turn immediately'''
-        if delta_time is None: delta_time = CLOCK.delta_time
-        # if rotation_speed is None: rotation_speed = self.rotation_speed
-        
-        theta = rotation_speed * delta_time
-        return self.body.turn_left(theta)
-    
+    pass
 
 class Character2D(Actor2D):
     

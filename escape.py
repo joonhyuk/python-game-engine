@@ -50,7 +50,6 @@ class TitleScreen(View):
         self.time += delta_time
         # print('titleview.onupdate')
         # print(CLOCK.delta_time)
-        CLOCK.tick()
         
     def start_game(self):
         game = EscapeGameView()
@@ -247,7 +246,6 @@ class EscapeGameView(View):
         self.shader.program['lightPosition'] = p
         self.shader.program['lightSize'] = 500 * appio.render_scale
         self.shader.program['lightAngle'] = 75.0
-        # self.shader.program['lightDirectionV'] = current_heading_vector
         self.shader.program['lightDirectionV'] = self.player.forward_vector
 
         
@@ -273,13 +271,6 @@ class EscapeGameView(View):
         if not self.player.is_alive:
             view = GameOverScreen()
             self.window.show_view(view)
-            
-        # input_vec = self.window.move_input
-        # print(input_vec)
-        # if not input_vec.is_zero:
-        #     self.player.movement.move(input_vec)
-        # else: self.player.movement.stop()
-        self.player.movement.move(self.window.move_input)
     
     def scroll_to_player(self, speed = 0.1):
         """
@@ -289,14 +280,12 @@ class EscapeGameView(View):
         Anything between 0 and 1 will have the camera move to the location with a smoother
         pan.
         """
-
-        
         # character_position = Vector(self.player_sprite.center_x - self.window.width / 2,
         #                 self.player_sprite.center_y - self.window.height / 2)
         
         character_position = self.player.position - CONFIG.screen_size / 2
         
-        # position = character_position + self.character_heading * 100
+        # position = character_position
         position = character_position + self.player.forward_vector * 100
 
         self.camera_sprites.move_to(position, speed)
