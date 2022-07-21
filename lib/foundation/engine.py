@@ -164,7 +164,7 @@ class Window(arcade.Window):
     def on_key_press(self, key: int, modifiers: int):
         print('[window]key input')
         # self.lstick_vector = Vector()
-        ENV.key_inputs.append(key)
+        # ENV.key_inputs.append(key)
         if key in (arcade.key.W, arcade.key.UP): self.lstick_vector += (0,1)
         if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector += (0,-1)
         if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector += (-1,0)
@@ -175,7 +175,7 @@ class Window(arcade.Window):
         if key == arcade.key.F2: CONFIG.debug_draw = not CONFIG.debug_draw
         
     def on_key_release(self, key: int, modifiers: int):
-        ENV.key_inputs.remove(key)
+        # ENV.key_inputs.remove(key)
         if key in (arcade.key.W, arcade.key.UP): self.lstick_vector -= (0,1)
         if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector -= (0,-1)
         if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector -= (-1,0)

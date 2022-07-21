@@ -95,7 +95,7 @@ class EscapeGameView(View):
         self._set_random_level()
         
         # self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-        self.physics_simple = arcade.PhysicsEngineSimple(self.player.body, (self.wall_list, self.npc_list))
+        self.physics_simple = arcade.PhysicsEngineSimple(self.player.body, [self.wall_list, self.npc_list])
         
         self.physics_complex = PymunkPhysicsEngine()
         
