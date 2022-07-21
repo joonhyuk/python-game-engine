@@ -1,5 +1,5 @@
-from config import *
 from lib.foundation import *
+from config import *
 import random, math, time
 
 # --- Constants ---

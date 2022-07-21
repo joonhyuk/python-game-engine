@@ -1,8 +1,9 @@
-from config.base import *
+from .engine import *
 
 RELEASE_BUILD = False
 SCREEN_TITLE = PROJECT_NAME + 'dev'
-IMG_PATH = RESOURCE_PATH + 'arcade_images/'
+IMG_PATH = RESOURCE_PATH + 'art/'
+SFX_PATH = RESOURCE_PATH + 'sfx/'
 
 # Constants used to scale our sprites from their original size (arcade example - simple platformer)
 CHARACTER_SCALING = 1

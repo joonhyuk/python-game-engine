@@ -2,21 +2,24 @@
 base feature codes
 joonhyuk@me.com
 """
-import os, sys, json, functools, inspect
+import os, sys, json
 from random import random
 from enum import Enum
 from typing import Iterable
-from config import *
+
+# from config import *
 from lib.foundation.vector import Vector
 from lib.foundation.clock import *
 
 # from lib.foundation.clock import *
+
 
 class EnumVector(Vector, Enum):
     __class__ = Vector
     
     def __repr__(self) -> Vector:
         return self.value
+
 
 def get_path(path):
     """return proper path for packaging platform"""

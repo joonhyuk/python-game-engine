@@ -3,6 +3,8 @@ framework wrapper for audio / video / control
 might be coupled with base framwork(i.e. arcade, pygame, ...)
 joonhyuk@me.com
 """
+from __future__ import annotations
+
 import os
 from dataclasses import dataclass
 
@@ -10,6 +12,7 @@ import arcade
 from arcade.experimental import Shadertoy, lights
 
 from lib.foundation.base import *
+from config.game import *
 
 def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade.Texture]):
     

@@ -1,1 +1,1 @@
-from config.dev import *
+from .game import *
