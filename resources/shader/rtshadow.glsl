@@ -20,7 +20,7 @@ float terrain(vec2 samplePoint)
     float result = 1.0 - sampleStepped;
     // Soften the shadows. Comment out for hard shadows.
     // The closer the first number is to 1.0, the softer the shadows.
-    result = mix(0.9, 1.0, result);
+    result = mix(0.75, 1.0, result);
     return result;
 }
 

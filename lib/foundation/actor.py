@@ -85,10 +85,10 @@ class CameraHandler(ActorComponent):
     
     def __init__(self) -> None:
         super().__init__()
-        self.offset:Vector = None
+        self.offset:Vector = Vector(0,0)
         self.camera = Camera(*CONFIG.screen_size)
         self.camera_interp_speed = 0.1
-        self.boom_length = 0.0
+        self.boom_length = 100.0
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -105,18 +105,21 @@ class CameraHandler(ActorComponent):
         return self.camera.position + CONFIG.screen_size / 2
     
     def _set_center(self, new_center:Vector = Vector()):
-        self.camera.move_to(new_center - CONFIG.screen_size / 2, self.camera_interp_speed)
+        self.camera.move_to(new_center - CONFIG.screen_size / 2 + self.offset + self._get_boom_vector(), self.camera_interp_speed)
     
     center:Vector = property(_get_center, _set_center)
+    
+    def _get_boom_vector(self) -> Vector:
+        return self.owner.forward_vector.unit * self.boom_length
 
 
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
-                 max_speed_run = 500, 
+                 max_speed_run = 250, 
                  max_speed_walk = 70, 
-                 acceleration = 5, 
-                 braking = 50, 
+                 acceleration = 25, 
+                 braking = 20, 
                  max_rotation_speed = 1080, 
                  rotation_interp_speed = 3, 
                  ) -> None:
@@ -203,8 +206,8 @@ class CharacterMovement(ActorComponent):
             self.rotation = self.desired_rotation
             return False
 
-        # rot = rinterp_to(self.rotation, self.desired_rotation, delta_time, self.rotation_interp_speed)
-        rot = self.desired_rotation
+        rot = rinterp_to(self.rotation, self.desired_rotation, delta_time, self.rotation_interp_speed)
+        # rot = self.desired_rotation
         self.rotation = get_positive_angle(rot)
         return True
     
@@ -220,7 +223,6 @@ class CharacterMovement(ActorComponent):
         ''' turn character to an absolute position '''
         # print(f'player position {self.owner.position}, mouse position {abs_position}')
         angle = (abs_position - self.owner.position).argument()
-        print(angle)
         self.turn(angle)
     
     def turn_toward_rel(self, rel_position:Vector = Vector()):
@@ -397,6 +399,10 @@ class Actor2D(MObject):
     @check_body
     def forward_vector(self):
         return Vector(1,0).rotate(self.body.angle)
+    
+    @property
+    def rel_position(self) -> Vector:
+        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
     
 
 class Pawn2D(Actor2D):
