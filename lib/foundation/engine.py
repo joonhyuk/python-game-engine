@@ -120,11 +120,10 @@ class Environment:
     
     def _get_direction_input(self):
         if self.gamepad:
-            if self.rstick.length > 0.25:
-                return (self.rstick.unit * CONFIG.screen_size.y / 2 + CONFIG.screen_size) * self.render_scale
-            return Vector()
+            if self.rstick.length > 0.5:
+                return (self.rstick.unit * CONFIG.screen_size.y / 2 + ENV.abs_screen_center) * self.render_scale
         else:
-            return self.cursor_position
+            return self.abs_cursor_position
     
     direction_input:Vector = property(_get_direction_input)
     ''' returns relative target point '''
@@ -141,6 +140,7 @@ class Environment:
     
     abs_cursor_position:Vector = property(_get_abs_cursor_position)
     ''' get absolute position in world, pointed by mouse cursor '''
+
 
 ENV = Environment()
 

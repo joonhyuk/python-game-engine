@@ -149,7 +149,7 @@ class EscapeGameView(View):
         return print(text)
     
     def on_draw(self):
-        self.scroll_to_player()
+        # self.scroll_to_player()
 
         # self.camera_sprites.use()
         self.camera.use()
@@ -169,7 +169,6 @@ class EscapeGameView(View):
         self.wall_list.draw()
         self.npc_list.draw()
         
-        debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
         
         
         # self.field_list.draw()
@@ -215,32 +214,34 @@ class EscapeGameView(View):
         # debug_draw_marker(ENV.abs_cursor_position)
         # debug_draw_marker(p, 16, arcade.color.ORANGE)
         debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
+        debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
+        
         
         # print(ENV.abs_cursor_position)
         
         self.camera_gui.use()
         
-        
     def on_update(self, delta_time: float):
         
         self.physics_engine.update()
         
-        p = (self.player.position - Vector(self.camera_sprites.position)) * ENV.render_scale
-        desired_heading_vector = (ENV.direction_input - p).normalize()
+        # p = (self.player.position - Vector(self.camera_sprites.position)) * ENV.render_scale
+        # desired_heading_vector = (ENV.direction_input - p).normalize()
         # desired_heading_vector = (self.window.direction_input - p).normalize()
-        self.desired_heading = desired_heading_vector
-        desired_heading_angle_rad = desired_heading_vector.argument(Vector(1,0))
-        if desired_heading_vector[1] < 0: desired_heading_angle_rad *= -1
-        desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
+        # self.desired_heading = desired_heading_vector
+        # desired_heading_angle_rad = desired_heading_vector.argument(Vector(1,0))
+        # if desired_heading_vector[1] < 0: desired_heading_angle_rad *= -1
+        # desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
         
-        cursor_pos = ENV.direction_input + Vector(self.camera_sprites.position)
+        # cursor_pos = ENV.direction_input + Vector(self.camera_sprites.position)
         # cursor_pos = self.window.direction_input + Vector(self.camera_sprites.position)
         # print(f'cam{self.camera_sprites.position}, mouse{self.window.direction_input}')
         
         
         
         # self.player.movement.turn_angle(desired_heading_angle_deg)
-        self.player.movement.turn_toward(ENV.abs_cursor_position)
+        direction = ENV.direction_input
+        if direction: self.player.movement.turn_toward(ENV.direction_input)
         self.player.movement.move(ENV.move_input)
         # self.player.movement.move(self.window.move_input)
         

@@ -42,6 +42,7 @@ class Vector(object):
         """ Returns a normalized unit vector """
         norm = self.norm()
         if norm == 1.0: return self
+        if norm == 0.0: return self.__class__()
         normed = tuple( x / norm for x in self )
         return self.__class__(*normed)
     
@@ -144,6 +145,7 @@ class Vector(object):
     
     def __sub__(self, other):
         """ Returns the vector difference of self and other """
+        if other is None: return self
         if isinstance(other, (Vector, tuple, list)):
             subbed = tuple( a - b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
