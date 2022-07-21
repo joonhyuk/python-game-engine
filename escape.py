@@ -1,3 +1,4 @@
+from arcade import PymunkPhysicsEngine
 from lib.foundation import *
 from config import *
 import random, math, time
@@ -57,7 +58,7 @@ class EscapeGameView(View):
         self.player_list = Layer()
         self.npc_list = Layer()
         self.bomb_list = Layer()
-        self.physics_engine = None
+        self.physics_simple = None
 
         # Create cameras used for scrolling
         self.camera_sprites = Camera(*CONFIG.screen_size)
@@ -94,8 +95,22 @@ class EscapeGameView(View):
         self._set_random_level()
         
         # self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player.body, (self.wall_list, self.npc_list))
-
+        self.physics_simple = arcade.PhysicsEngineSimple(self.player.body, (self.wall_list, self.npc_list))
+        
+        self.physics_complex = PymunkPhysicsEngine()
+        
+        self.physics_complex.add_sprite(self.player.body, 
+                                collision_type='player')
+                                
+        self.physics_complex.add_sprite_list(self.wall_list,
+                                     friction=0.2, 
+                                     collision_type = 'wall', 
+                                     body_type = PymunkPhysicsEngine.STATIC)
+        
+        self.physics_complex.add_sprite_list(self.bomb_list, 
+                                     friction = 1.0, 
+                                     collision_type = 'movable')
+        
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2
         field_center = field_size * 0.5
@@ -144,20 +159,16 @@ class EscapeGameView(View):
         if key == arcade.key.C: 
             self.camera = self.player.camera
             self.player.camera.camera.position = self.window.current_camera.position
+        if key == arcade.key.F:
+            # self.player.body.change_x = -100
+            self.physics_complex.apply_force(self.player.body, (10000,0)) 
     
     def test_schedule_func(self, dt, text:str = 'testing schedule'):
         return print(text)
     
     def on_draw(self):
-        # self.scroll_to_player()
-
-        # self.camera_sprites.use()
         self.camera.use()
         
-        # self.use()
-        
-        # self.channel_static.use()
-        # self.channel_static.clear()
         self.channels[0].use()
         self.channels[0].clear()
         self.wall_list.draw()
@@ -169,28 +180,9 @@ class EscapeGameView(View):
         self.wall_list.draw()
         self.npc_list.draw()
         
-        
-        
-        # self.field_list.draw()
-        # self.wall_list.draw()
-        # self.bomb_list.draw()
-        
         self.window.use()
         
         self.clear()
-        
-        # p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
-        #      (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
-        # desired_heading_vector = (appio.mouse_input * appio.render_scale - Vector(p)).normalize()
-        # print(self.window.direction_input)
-        
-        
-        # self.player_sprite.angle = get_positive_angle(rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5))
-        # self.player.rotation = get_positive_angle(rinterp_to(self.player.rotation, desired_heading_angle_deg, CLOCK.delta_time, 5))
-
-        # current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
-        # self.character_heading = current_heading_vector
-        # p = (self.player.position - Vector(self.camera.camera.position)) * ENV.render_scale
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = self.player.rel_position * ENV.render_scale
@@ -215,6 +207,7 @@ class EscapeGameView(View):
         # debug_draw_marker(p, 16, arcade.color.ORANGE)
         debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
         debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
+        debug_draw_marker(self.player.position)
         
         
         # print(ENV.abs_cursor_position)
@@ -223,43 +216,21 @@ class EscapeGameView(View):
         
     def on_update(self, delta_time: float):
         
-        self.physics_engine.update()
-        
-        # p = (self.player.position - Vector(self.camera_sprites.position)) * ENV.render_scale
-        # desired_heading_vector = (ENV.direction_input - p).normalize()
-        # desired_heading_vector = (self.window.direction_input - p).normalize()
-        # self.desired_heading = desired_heading_vector
-        # desired_heading_angle_rad = desired_heading_vector.argument(Vector(1,0))
-        # if desired_heading_vector[1] < 0: desired_heading_angle_rad *= -1
-        # desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
-        
-        # cursor_pos = ENV.direction_input + Vector(self.camera_sprites.position)
-        # cursor_pos = self.window.direction_input + Vector(self.camera_sprites.position)
-        # print(f'cam{self.camera_sprites.position}, mouse{self.window.direction_input}')
-        
-        
-        
-        # self.player.movement.turn_angle(desired_heading_angle_deg)
-        direction = ENV.direction_input
-        if direction: self.player.movement.turn_toward(ENV.direction_input)
-        self.player.movement.move(ENV.move_input)
-        # self.player.movement.move(self.window.move_input)
-        
-        self.player.tick(delta_time)
-        # print('game tick update', CLOCK.delta_time)
         if not self.player.is_alive:
             view = GameOverScreen()
             self.window.show_view(view)
         
-    
+        self.physics_simple.update()
+        # self.physics.step(delta_time)
+        
         # direction = ENV.direction_input
         # if direction: self.player.movement.turn_toward(ENV.direction_input)
         # self.player.movement.move(ENV.move_input)
         
         self.player.tick(delta_time)
         # print('game tick update', CLOCK.delta_time)
-
-
+        
+    
     
 class GameOverScreen(TitleScreen):
     pass

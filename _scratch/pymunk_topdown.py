@@ -317,6 +317,12 @@ class MyWindow(arcade.Window):
         self.gem_list.draw()
         self.movable_list.draw()
         self.player_list.draw()
+        
+        self.rock_list.draw_hit_boxes()
+        self.gem_list.draw_hit_boxes()
+        self.movable_list.draw_hit_boxes()
+        self.player_list.draw_hit_boxes()
+        
 
 
 def main():
