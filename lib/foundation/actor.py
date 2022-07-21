@@ -423,6 +423,9 @@ class Character2D(Actor2D):
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
+        direction = ENV.direction_input
+        if direction: self.movement.turn_toward(ENV.direction_input)
+        self.movement.move(ENV.move_input)
         
     def apply_damage(self, damage:float):
         self.hp -= damage

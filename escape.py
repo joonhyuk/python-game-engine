@@ -252,28 +252,18 @@ class EscapeGameView(View):
             self.window.show_view(view)
         
     
-    def scroll_to_player(self, speed = 0.1):
-        """
-        Scroll the window to the player.
-
-        if CAMERA_SPEED is 1, the camera will immediately move to the desired position.
-        Anything between 0 and 1 will have the camera move to the location with a smoother
-        pan.
-        """
-        # character_position = Vector(self.player_sprite.center_x - self.window.width / 2,
-        #                 self.player_sprite.center_y - self.window.height / 2)
+        # direction = ENV.direction_input
+        # if direction: self.player.movement.turn_toward(ENV.direction_input)
+        # self.player.movement.move(ENV.move_input)
         
-        character_position = self.player.position - CONFIG.screen_size / 2
-        
-        # position = character_position
-        position = character_position + self.player.forward_vector * 100
+        self.player.tick(delta_time)
+        # print('game tick update', CLOCK.delta_time)
 
-        # self.camera_sprites.move_to(position, speed)
-        # self.player.camera.camera.move_to(position, speed)
 
     
 class GameOverScreen(TitleScreen):
     pass
+
 
 def main():
     CLOCK.use_engine_tick = True
