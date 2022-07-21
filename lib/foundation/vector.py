@@ -25,14 +25,15 @@ class Vector(object):
     def length(self):
         return self.norm()
         
-    def argument(self, radians=False):
-        """ Returns the argument of the vector, the angle clockwise from +y. In degress by default, 
+    def argument(self, origin=None, radians=False):
+        """ Returns the argument of the vector, the angle clockwise from +x. In degress by default, 
             set radians=True to get the result in radians. This only works for 2D vectors. """
-        arg_in_rad = math.acos(Vector(0, 1)*self/self.norm())
+        if origin is None: origin = Vector(1, 0)
+        arg_in_rad = math.acos(origin*self/self.norm())
         if radians:
             return arg_in_rad
         arg_in_deg = math.degrees(arg_in_rad)
-        if self.values[0] < 0: 
+        if self.values[1] < 0: 
             return 360 - arg_in_deg
         else: 
             return arg_in_deg
@@ -231,11 +232,11 @@ class Vector(object):
     def is_zero(self) -> bool:
         return self.norm() == 0.0
     
-    @property
-    def near_zero(self) -> bool:
+    # @property
+    def near_zero(self, precision = 0.01) -> bool:
         length = self.norm()
         if length == 0.0 : return True
-        return math.isclose(length, 0, abs_tol = 0.01)
+        return math.isclose(length, 0, abs_tol = precision)
     
     @property
     def x(self):

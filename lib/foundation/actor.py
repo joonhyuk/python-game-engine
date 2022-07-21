@@ -1,5 +1,5 @@
-import math
-from config.base import *
+import math, functools
+from config.engine import *
 
 from lib.foundation.base import *
 from lib.foundation.clock import *
@@ -82,21 +82,43 @@ class ActorComponent(MObject):
 class CameraHandler(ActorComponent):
     '''handling actor camera
     should be possesed by engine camera system'''
+    
     def __init__(self) -> None:
         super().__init__()
         self.offset:Vector = None
-        self.camera:Camera(*CONFIG.screen_size)
-        
+        self.camera = Camera(*CONFIG.screen_size)
+        self.camera_interp_speed = 0.1
+        self.boom_length = 0.0
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        self.center = self.owner.position
+        ENV.abs_screen_center = self.center
+        self._spawned = False
+        # print('camera_tick')
+    
+    def use(self):
+        self._spawned = True
+        self.camera.use()
+    
+    def _get_center(self) -> Vector:
+        return self.camera.position + CONFIG.screen_size / 2
+    
+    def _set_center(self, new_center:Vector = Vector()):
+        self.camera.move_to(new_center - CONFIG.screen_size / 2, self.camera_interp_speed)
+    
+    center:Vector = property(_get_center, _set_center)
+
 
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
-                 max_speed_run = 200, 
+                 max_speed_run = 500, 
                  max_speed_walk = 70, 
-                 acceleration = 100, 
-                 braking = 10, 
-                 max_rotation_speed = 360, 
-                 rotation_interp_speed = 1, 
+                 acceleration = 5, 
+                 braking = 50, 
+                 max_rotation_speed = 1080, 
+                 rotation_interp_speed = 3, 
                  ) -> None:
         super().__init__()
         self.max_speed_run = max_speed_run
@@ -125,21 +147,11 @@ class CharacterMovement(ActorComponent):
         if not super().tick(delta_time): return False
         
         self._set_movement(delta_time)
-        
-        # self.rotation = get_positive_angle(rinterp_to(self.rotation, 
-        #                                               self.desired_rotation, 
-        #                                               delta_time, 
-        #                                               self.rotation_interp_speed))
-    
-    def _set_heading(self, delta_time:float):
-        pass
-    
-    def turn(self, rotation:float):
-        pass
+        self._set_heading(delta_time)
     
     def _set_movement(self, delta_time:float):
         ''' set movement by user input '''
-        self._debug_check_speed(delta_time)
+        # self._debug_check_speed(delta_time)
         if self.move_input is None: return False
         if self.move_input.near_zero():
             ''' stop / braking '''
@@ -147,9 +159,13 @@ class CharacterMovement(ActorComponent):
             # if not self._braking_start_speed:
             #     self._braking_start_speed = self.velocity.length
             
-            if not self.velocity.near_zero:
+            # if not self.velocity.near_zero(0.01):
+            if not math.isclose(self._last_tick_speed, 0, abs_tol=0.01):
                 # self.velocity += -1 * self.velocity.unit * min(self.braking * delta_time, self.speed)
-                self.velocity *= (1 - self.braking * delta_time / self._last_tick_speed)
+                braking_ratio = clamp((1 - self.braking * delta_time / self._last_tick_speed), 0.0, 1.0)
+                # print(round(self._debug_braking_time,1) ,braking_ratio)
+                self.velocity *= braking_ratio
+                # self.velocity = self.velocity - self.velocity.unit * self.braking * delta_time
                 self._debug_braking_time += delta_time
                 # print(self.speed, round(self.sec_counter, 1))
                 return True
@@ -161,6 +177,7 @@ class CharacterMovement(ActorComponent):
         self.velocity = (self.velocity + self.move_input.unit * self.acceleration * delta_time).clamp_length(max_speed * delta_time)
 
         self._last_tick_speed = self.velocity.length
+        # print(self._last_tick_speed)
         self._debug_braking_time = 0.0
         
         ### debug start
@@ -175,21 +192,56 @@ class CharacterMovement(ActorComponent):
         
     def _debug_check_speed(self, delta_time):
         
-        if len(self._debug_speedq) > 60: self._debug_speedq.pop(0)
+        if len(self._debug_speedq) > 10: self._debug_speedq.pop(0)
         self._debug_speedq.append(self.velocity.length / delta_time)
         print(round(self._debug_braking_time, 1), sum(self._debug_speedq) // len(self._debug_speedq))
-        
+    
+    def _set_heading(self, delta_time:float):
+        ''' set player rotation per tick '''
+        if self.rotation == self.desired_rotation: return False
+        if math.isclose(self.rotation, self.desired_rotation):
+            self.rotation = self.desired_rotation
+            return False
+
+        # rot = rinterp_to(self.rotation, self.desired_rotation, delta_time, self.rotation_interp_speed)
+        rot = self.desired_rotation
+        self.rotation = get_positive_angle(rot)
+        return True
+    
     def move(self, input:Vector = Vector()):
         self.move_input = input
         # if not self.desired_velocity.almost_there(input * self.max_speed):
-        self.desired_velocity = input * self.max_speed_run
         # if self.velocity.almost_there(self.desired_velocity): return False
         
         # if velocity.is_zero: accel = self.braking
         # else: accel = self.acceleration
     
+    def turn_toward(self, abs_position:Vector = Vector()):
+        ''' turn character to an absolute position '''
+        # print(f'player position {self.owner.position}, mouse position {abs_position}')
+        angle = (abs_position - self.owner.position).argument()
+        print(angle)
+        self.turn(angle)
+    
+    def turn_toward_rel(self, rel_position:Vector = Vector()):
+        angle = ()
+    
+    def turn_angle(self, angle:float = 0.0):
+        if not angle: return False
+        self.desired_rotation += angle
+    
+    def turn_left(self, angle:float = 0.0):
+        ''' turn counter clockwise '''
+        return self.turn_angle(angle)
+    
+    def turn_right(self, angle:float = 0.0):
+        ''' turn clockwise '''
+        return self.turn_angle(-angle)
+    
+    def turn(self, rotation:float = 0.0):
+        self.desired_rotation = rotation
+    
     def stop(self):
-        # print('stop')
         self.move()
     
     def move_forward(self, speed):
@@ -265,6 +317,7 @@ class Actor2D(MObject):
         if self.tick_group:
             for ticker in self.tick_group:
                 ticker.tick(delta_time)
+                # print('character_tick', delta_time)
         return True
     
     def destroy(self) -> bool:
@@ -343,7 +396,7 @@ class Actor2D(MObject):
     @property
     @check_body
     def forward_vector(self):
-        return Vector(0,1).rotate(self.body.angle)
+        return Vector(1,0).rotate(self.body.angle)
     
 
 class Pawn2D(Actor2D):

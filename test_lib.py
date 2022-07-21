@@ -1,5 +1,12 @@
 from lib.foundation import *
 from config import *
 
-vv = Vector(1,2)
-vv2 = Vector(2,3)
+a = Environment()
+
+
+print(type(Environment.cursor_position))
+print(type(a.lstick))
+print(ENV.rstick)
+print(CONFIG.screen_size)
+
+print(ENV.direction_input)

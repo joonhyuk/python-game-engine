@@ -2,16 +2,6 @@ from lib.foundation import *
 from config import *
 import random, math, time
 
-# --- Constants ---
-SPRITE_SCALING_PLAYER = 0.5
-SPRITE_SCALING_COIN = .25
-COIN_COUNT = 50
-
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-
-
-
 
 class TitleScreen(View):
     
@@ -72,6 +62,7 @@ class EscapeGameView(View):
         # Create cameras used for scrolling
         self.camera_sprites = Camera(*CONFIG.screen_size)
         self.camera_gui = Camera(*CONFIG.screen_size)
+        self.camera:CameraHandler = None
         
         self.mousex = 64
         self.mousey = 64
@@ -89,12 +80,12 @@ class EscapeGameView(View):
         
     def setup(self):
         
-        # self.player_sprite = Sprite(RESOURCE_PATH + '/art/player_handgun.png')
-        # self.player_sprite.position = -100, -100
-        # self.player_list.append(self.player_sprite)
-        
-        self.player = Character2D(Sprite(RESOURCE_PATH + '/art/player_handgun.png'))
+        self.player = Character2D(Sprite(IMG_PATH + 'player_handgun.png'))
         self.player.spawn(Vector(-100, -100), 0, self.player_list)
+        self.camera = self.player.camera
+        
+        self.enemy = Character2D(Sprite(":resources:images/tiles/bomb.png", 1))
+        self.enemy.spawn(Vector(500, 500), 90, self.player_list)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
@@ -106,7 +97,7 @@ class EscapeGameView(View):
         self.physics_engine = arcade.PhysicsEngineSimple(self.player.body, self.wall_list)
 
     def _set_random_level(self, wall_prob = 0.2):
-        field_size = CONFIG.screen_size * 4
+        field_size = CONFIG.screen_size * 2
         field_center = field_size * 0.5
         
         for x in range(0, field_size.x, 64):
@@ -134,73 +125,35 @@ class EscapeGameView(View):
             self.bomb_list.append(bomb)
 
         self.light_layer.add(lights.Light(*field_center, 1200, arcade.color.WHITE, 'soft'))
-        
-        
-    def on_mouse_motion(self, x, y, dx, dy):
-        self.mousex = x * self.render_ratio
-        self.mousey = y * self.render_ratio
-        # print(x, y)
     
     def on_key_press(self, key: int, modifiers: int):
         print('[game]key input')
-        
-        # if key in (arcade.key.UP, arcade.key.W):
-        #     self.player_sprite.change_y = PLAYER_MOVEMENT_SPEED
-        # elif key in (arcade.key.DOWN, arcade.key.S):
-        #     self.player_sprite.change_y = -PLAYER_MOVEMENT_SPEED
-        # if key in (arcade.key.LEFT, arcade.key.A):
-        #     self.player_sprite.change_x = -PLAYER_MOVEMENT_SPEED
-        # elif key in (arcade.key.RIGHT, arcade.key.D):
-        #     self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
-        
-        # if key in (arcade.key.UP, arcade.key.W):
-        #     self.player.body.change_y = PLAYER_MOVEMENT_SPEED
-        # elif key in (arcade.key.DOWN, arcade.key.S):
-        #     self.player.body.change_y = -PLAYER_MOVEMENT_SPEED
-        # if key in (arcade.key.LEFT, arcade.key.A):
-        #     self.player.body.change_x = -PLAYER_MOVEMENT_SPEED
-        # elif key in (arcade.key.RIGHT, arcade.key.D):
-        #     self.player.body.change_x = PLAYER_MOVEMENT_SPEED
-            
         if key == arcade.key.F1: CONFIG.fog_of_war = not CONFIG.fog_of_war
         
-        # if key == arcade.key.I: self.player.movement.move(Vector(0,1))
-        # elif key == arcade.key.M: self.player.movement.move(Vector(0,-1))
-        # if key == arcade.key.J: self.player.movement.move(Vector(-1,0))
-        # elif key == arcade.key.K: self.player.movement.move(Vector(1,0))
-        
-        
-    
+        if key == arcade.key.C:
+            self.camera = self.enemy.camera
+            self.enemy.camera.camera.position = self.window.current_camera.position
+
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
-        # if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
-        #     self.player_sprite.change_y = 0
-        # elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
-        #     self.player_sprite.change_x = 0
-            
-        # if key in (arcade.key.UP, arcade.key.W) or key in (arcade.key.DOWN, arcade.key.S):
-        #     self.player.body.change_y = 0
-        # elif key in (arcade.key.LEFT, arcade.key.A) or key in (arcade.key.RIGHT, arcade.key.D):
-        #     self.player.body.change_x = 0
-        
-        # if key == arcade.key.I: self.player.movement.move()
-        # elif key == arcade.key.M: self.player.movement.move()
-        # elif key == arcade.key.J: self.player.movement.move()
-        # elif key == arcade.key.K: self.player.movement.move()
-        
         if key == arcade.key.ESCAPE: arcade.exit()
         if key == arcade.key.KEY_1: schedule_once(self.test_schedule_func, 1, '1 sec delayed schedule')
-        # if key == arcade.key.KEY_1: arcade.window_commands.schedule(self.test_schedule_func, 1)
         if key == arcade.key.KEY_2: schedule_interval(self.test_schedule_func, 1, '1 sec repeating schedule')
         if key == arcade.key.KEY_3: unschedule(self.test_schedule_func)
+        if key == arcade.key.C: 
+            self.camera = self.player.camera
+            self.player.camera.camera.position = self.window.current_camera.position
     
     def test_schedule_func(self, dt, text:str = 'testing schedule'):
         return print(text)
     
     def on_draw(self):
+        self.scroll_to_player()
 
-        self.camera_sprites.use()
+        # self.camera_sprites.use()
+        self.camera.use()
+        
         # self.use()
         
         # self.channel_static.use()
@@ -227,24 +180,20 @@ class EscapeGameView(View):
         
         # p = ((self.player_sprite.position[0] - self.camera_sprites.position[0]) * self.render_ratio,
         #      (self.player_sprite.position[1] - self.camera_sprites.position[1]) * self.render_ratio)
-        p = (self.player.position - Vector(self.camera_sprites.position)) * appio.render_scale
         # desired_heading_vector = (appio.mouse_input * appio.render_scale - Vector(p)).normalize()
-        desired_heading_vector = (self.window.direction_input - p).normalize()
         # print(self.window.direction_input)
-        self.desired_heading = desired_heading_vector
-        desired_heading_angle_rad = math.acos(Vector(0, 1) * desired_heading_vector)
-        if desired_heading_vector[0] > 0: desired_heading_angle_rad *= -1
-        desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
+        
         
         # self.player_sprite.angle = get_positive_angle(rinterp_to(self.player_sprite.angle, desired_heading_angle_deg, CLOCK.delta_time, 5))
-        self.player.rotation = get_positive_angle(rinterp_to(self.player.rotation, desired_heading_angle_deg, CLOCK.delta_time, 5))
+        # self.player.rotation = get_positive_angle(rinterp_to(self.player.rotation, desired_heading_angle_deg, CLOCK.delta_time, 5))
 
         # current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
         # self.character_heading = current_heading_vector
+        p = (self.player.position - Vector(self.camera.camera.position)) * ENV.render_scale
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = p
-        self.shader.program['lightSize'] = 500 * appio.render_scale
+        self.shader.program['lightSize'] = 500 * ENV.render_scale
         self.shader.program['lightAngle'] = 75.0
         self.shader.program['lightDirectionV'] = self.player.forward_vector
 
@@ -256,21 +205,46 @@ class EscapeGameView(View):
         
         self.light_layer.draw(ambient_color=(128,128,128))
         
-        self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
+        if CONFIG.debug_draw: self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
         # self.wall_list.draw_hit_boxes(color=(128,128,255,128), line_thickness=1)
+        debug_draw_circle(ENV.abs_cursor_position, line_thickness=1, line_color = (0, 255, 0, 128), fill_color= (255, 0, 0, 128))
+        # debug_draw_marker(ENV.abs_cursor_position)
+        debug_draw_marker(p, 16, arcade.color.YELLOW)
+        
+        # print(ENV.abs_cursor_position)
         
         self.camera_gui.use()
-        self.scroll_to_player()
+        
         
     def on_update(self, delta_time: float):
-        debug_time = time.perf_counter() - self.debug_timer
-        if debug_time > 0.02 :print(debug_time)
-        self.debug_timer = time.perf_counter()
+        
         self.physics_engine.update()
-        self.player.tick()
+        
+        p = (self.player.position - Vector(self.camera_sprites.position)) * ENV.render_scale
+        desired_heading_vector = (ENV.direction_input - p).normalize()
+        # desired_heading_vector = (self.window.direction_input - p).normalize()
+        self.desired_heading = desired_heading_vector
+        desired_heading_angle_rad = desired_heading_vector.argument(Vector(1,0))
+        if desired_heading_vector[1] < 0: desired_heading_angle_rad *= -1
+        desired_heading_angle_deg = math.degrees(desired_heading_angle_rad)
+        
+        cursor_pos = ENV.direction_input + Vector(self.camera_sprites.position)
+        # cursor_pos = self.window.direction_input + Vector(self.camera_sprites.position)
+        # print(f'cam{self.camera_sprites.position}, mouse{self.window.direction_input}')
+        
+        
+        
+        # self.player.movement.turn_angle(desired_heading_angle_deg)
+        self.player.movement.turn_toward(ENV.abs_cursor_position)
+        self.player.movement.move(ENV.move_input)
+        # self.player.movement.move(self.window.move_input)
+        
+        self.player.tick(delta_time)
+        # print('game tick update', CLOCK.delta_time)
         if not self.player.is_alive:
             view = GameOverScreen()
             self.window.show_view(view)
+        
     
     def scroll_to_player(self, speed = 0.1):
         """
@@ -288,7 +262,8 @@ class EscapeGameView(View):
         # position = character_position
         position = character_position + self.player.forward_vector * 100
 
-        self.camera_sprites.move_to(position, speed)
+        # self.camera_sprites.move_to(position, speed)
+        # self.player.camera.camera.move_to(position, speed)
 
     
 class GameOverScreen(TitleScreen):

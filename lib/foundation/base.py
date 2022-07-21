@@ -67,11 +67,14 @@ def rinterp_to(current:float,
                precision:float = 0.001):
     '''rotation angle interp. in degrees'''
     delta = get_shortest_angle(current, target)
+    speedo = map_range(abs(delta), 15, 90, 3, 1, clamped=True)
+    # print(speedo)
     if abs(delta) < precision: return target
-    a = delta * clamp(delta_time * speed, 0, 1)
-    if abs(a) > 180 * delta_time:
-        if a < 0: a = -180 * delta_time
-        else: a = 180 * delta_time
+    a = delta * clamp(delta_time * speed * speedo, 0, 1)
+    # if abs(a) > 180 * delta_time:
+    #     if a < 0: a = -180 * delta_time
+    #     else: a = 180 * delta_time
+    # print(a // delta_time)
     return current + a
 
 def get_shortest_angle(start:float,
