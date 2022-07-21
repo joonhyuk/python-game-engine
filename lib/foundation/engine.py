@@ -269,6 +269,7 @@ class Sprite(arcade.Sprite):
                  hit_box_algorithm: str = "Simple", hit_box_detail: float = 4.5, 
                  texture: arcade.Texture = None, 
                  angle: float = 0):
+        self.owner = None
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
 
         

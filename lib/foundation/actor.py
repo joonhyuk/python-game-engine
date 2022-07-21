@@ -300,6 +300,7 @@ class Actor2D(MObject):
     def set_body(self, body:Sprite = None) -> None:
         if self.body: self.remove_body()
         self.body = body or SpriteCircle()
+        self.body.owner = self
     
     def spawn(self, 
               position:Vector = Vector(), 
