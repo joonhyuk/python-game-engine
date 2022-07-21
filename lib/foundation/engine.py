@@ -136,7 +136,7 @@ class Environment:
     cursor_position:Vector = property(_get_cursor_position)
     
     def _get_abs_cursor_position(self) -> Vector:
-        return self.mouse_input - self.abs_screen_center + CONFIG.screen_size / 2
+        return self.mouse_input + self.abs_screen_center - CONFIG.screen_size / 2
         # return self.mouse_input + self.window.current_camera.position
     
     abs_cursor_position:Vector = property(_get_abs_cursor_position)
