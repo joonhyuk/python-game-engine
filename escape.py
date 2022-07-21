@@ -191,7 +191,7 @@ class EscapeGameView(View):
 
         # current_heading_vector = Vector(0, 1).rotate(self.player_sprite.angle)
         # self.character_heading = current_heading_vector
-        p = (self.player.position - Vector(self.camera.camera.position)) * ENV.render_scale
+        # p = (self.player.position - Vector(self.camera.camera.position)) * ENV.render_scale
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = self.player.rel_position * ENV.render_scale
@@ -211,8 +211,9 @@ class EscapeGameView(View):
             self.npc_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
         # self.wall_list.draw_hit_boxes(color=(128,128,255,128), line_thickness=1)
         debug_draw_circle(ENV.abs_cursor_position, line_thickness=1, line_color = (0, 255, 0, 128), fill_color= (255, 0, 0, 128))
+        ''' put debug marker to absolute position of mouse cursor '''
         # debug_draw_marker(ENV.abs_cursor_position)
-        debug_draw_marker(p, 16, arcade.color.ORANGE)
+        # debug_draw_marker(p, 16, arcade.color.ORANGE)
         debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
         
         # print(ENV.abs_cursor_position)
