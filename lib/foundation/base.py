@@ -3,13 +3,13 @@ base feature codes
 joonhyuk@me.com
 """
 import os, sys, json
-from random import random
 from enum import Enum
+from typing import Iterable, Union
+
 from easing_functions import *
 
 # from config import *
 from lib.foundation.vector import Vector
-from lib.foundation.clock import *
 
 cubic_easeinout = CubicEaseInOut()
 
@@ -117,9 +117,6 @@ def load_json(filepath:str) -> dict:
 def save_json(filepath:str, json_data) -> None:
     with open(get_path(filepath), 'w') as json_file:
         json.dump(json_data, json_file, indent = 4)
-
-def flip_coin(prob = 0.5) -> bool:
-    return random() <= prob
 
 def get_from_dict(dict:dict, keyword:str, default:... = None):
     if keyword in dict:

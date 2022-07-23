@@ -1,5 +1,10 @@
 import random, re
 
+
+def flip_coin(prob = 0.5) -> bool:
+    return random.random() <= prob
+
+
 class Dice:
     def __init__(self, 
                  faces = range(1, 7), 

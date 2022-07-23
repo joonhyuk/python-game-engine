@@ -153,7 +153,7 @@ class CharacterMovement(ActorComponent):
         self._set_heading(delta_time)
     
     def _set_movement(self, delta_time:float):
-        ''' set movement by user input '''
+        ''' set movement of tick by user input '''
         # self._debug_check_speed(delta_time)
         if self.move_input is None: return False
         if self.move_input.near_zero():
@@ -185,7 +185,6 @@ class CharacterMovement(ActorComponent):
         self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
 
         self._last_tick_speed = self.velocity.length
-        # print(self._last_tick_speed)
         self._debug_braking_time = 0.0
         
         ### debug start
