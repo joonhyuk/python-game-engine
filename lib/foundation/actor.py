@@ -183,7 +183,7 @@ class CharacterMovement(ActorComponent):
         ''' apply directional speed limit '''
         
         self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
-
+        
         self._last_tick_speed = self.velocity.length
         self._debug_braking_time = 0.0
         
@@ -298,8 +298,8 @@ class Actor2D(MObject):
         super().__init__(**kwargs)
         self.body:Sprite = None
         ''' actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...) '''
+        # self.attachments:list[Sprite] = []
         self.set_body(body)
-        
         self.visibility = get_from_dict(kwargs, 'visibility', True)
         
         self.tick_group = []
@@ -336,6 +336,8 @@ class Actor2D(MObject):
             self.remove_body()
             self.body = None
         return super().destroy()
+    
+    # def add_attachment(self, )
     
     def _get_position(self) -> Vector:
         if not self.body: return False

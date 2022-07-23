@@ -274,6 +274,10 @@ class Sprite(arcade.Sprite):
         self.owner = None
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
 
+    # def on_update(self, delta_time: float = 1 / 60):
+    #     print(self.owner)
+    #     return super().on_update(delta_time)
+    
         
 class SpriteCircle(arcade.SpriteCircle):
     def __init__(self, 

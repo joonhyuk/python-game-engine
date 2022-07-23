@@ -163,6 +163,9 @@ class EscapeGameView(View):
             # self.player.body.change_x = -100
             self.physics_complex.apply_force(self.player.body, (10000,0)) 
     
+    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
+        self.raycast_fire_check(self.player.position, Vector(x, y))
+        
     def test_schedule_func(self, dt, text:str = 'testing schedule'):
         return print(text)
     
@@ -229,7 +232,12 @@ class EscapeGameView(View):
         
         self.player.tick(delta_time)
         # print('game tick update', CLOCK.delta_time)
-        
+    
+    def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
+        target = ENV.abs_cursor_position
+        bullet = arcade.SpriteSolidColor(500, 2, arcade.color.ORANGE)
+        # print(arcade.has_line_of_sight(start, target.unit * 1000, self.wall_list))
+        print(arcade.get_sprites_at_point(target, self.wall_list))
     
     
 class GameOverScreen(TitleScreen):
