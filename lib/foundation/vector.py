@@ -29,7 +29,9 @@ class Vector(object):
         """ Returns the argument of the vector, the angle clockwise from +x. In degress by default, 
             set radians=True to get the result in radians. This only works for 2D vectors. """
         if origin is None: origin = Vector(1, 0)
-        arg_in_rad = math.acos(origin*self/self.norm())
+        norm = self.norm()
+        if not norm: return 0
+        arg_in_rad = math.acos(origin*self/norm)
         if radians:
             return arg_in_rad
         arg_in_deg = math.degrees(arg_in_rad)

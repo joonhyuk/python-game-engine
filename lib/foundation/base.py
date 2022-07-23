@@ -5,14 +5,13 @@ joonhyuk@me.com
 import os, sys, json
 from random import random
 from enum import Enum
-from typing import Iterable
+from easing_functions import *
 
 # from config import *
 from lib.foundation.vector import Vector
 from lib.foundation.clock import *
 
-# from lib.foundation.clock import *
-
+cubic_easeinout = CubicEaseInOut()
 
 class EnumVector(Vector, Enum):
     __class__ = Vector
@@ -126,6 +125,59 @@ def get_from_dict(dict:dict, keyword:str, default:... = None):
     if keyword in dict:
         return dict[keyword]
     return default
+
+def map_range_easeinout(value, in_min, in_max, out_min, out_max, clamped = False):
+    # if clamped: value = clamp(value, in_min, in_max)
+    if value <= in_min: return out_min
+    if value >= in_max: return out_max
+    return map_range(cubic_easeinout(map_range(value, in_min, in_max, 0, 1)), 0, 1, out_min, out_max)
+    
+
+def get_curve_value(x:float, curve:dict, get_value_func = map_range):
+    '''
+    Get unreal style curve value from dict data.
+    Keys could be float, int, 'rclamp', 'lclamp'
+    
+    rclamp / lclamp: clamping to right / left end value
+        
+    Get_value_func arguments should be;
+    x : in_value
+    in_min : start x
+    in_max : end x
+    out_min : start y
+    out_max : end y
+    clamped : if true, value will be clamped
+    '''
+    
+    keys = curve.keys()
+    dots = []
+    for key in keys:
+        if isinstance(key, (float, int)):
+            dots.append(key)
+    rclamp = get_from_dict(curve, 'rclamp')
+    lclamp = get_from_dict(curve, 'lclamp')
+    
+    if len(dots) == 1: return curve[dots[0]]
+    if x in dots: return curve[x]
+    
+    dots.append(x)
+    dots.sort()
+    idx_x = dots.index(x)
+    
+    def gcv(dots_idx:int):
+        ''' get curve value from the index of x '''
+        return curve[dots[dots_idx]]
+    
+    if idx_x == 0:
+        id_start, id_end = 1, 2
+    elif idx_x == len(dots) - 1:
+        id_start, id_end = idx_x - 2, idx_x - 1
+    else:
+        id_start, id_end = idx_x - 1, idx_x + 1
+    
+    return get_value_func(x, dots[id_start], dots[id_end], gcv(id_start), gcv(id_end))
+        
+    
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

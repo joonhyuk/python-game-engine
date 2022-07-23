@@ -176,8 +176,13 @@ class CharacterMovement(ActorComponent):
                 self.velocity = Vector()
                 return False
         
+        accel = self.acceleration
+        
         max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
-        self.velocity = (self.velocity + self.move_input.unit * self.acceleration * delta_time).clamp_length(max_speed * delta_time)
+        max_speed *= self._get_directional_speed_multiplier()
+        ''' apply directional speed limit '''
+        
+        self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
 
         self._last_tick_speed = self.velocity.length
         # print(self._last_tick_speed)
@@ -210,6 +215,10 @@ class CharacterMovement(ActorComponent):
         # rot = self.desired_rotation
         self.rotation = get_positive_angle(rot)
         return True
+    
+    def _get_directional_speed_multiplier(self):
+        angle = abs(get_shortest_angle(self.rotation, self.velocity.argument()))
+        return get_curve_value(angle, CONFIG.directional_speed)
     
     def move(self, input:Vector = Vector()):
         self.move_input = input
