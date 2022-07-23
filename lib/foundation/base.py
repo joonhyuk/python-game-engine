@@ -166,13 +166,13 @@ def get_curve_value(x:float, curve:dict, get_value_func = map_range):
         return curve[dots[dots_idx]]
     
     if idx_x == 0:
-        id_start, id_end = 1, 2
+        id_start, id_end, clamp = 1, 2, lclamp
     elif idx_x == len(dots) - 1:
-        id_start, id_end = idx_x - 2, idx_x - 1
+        id_start, id_end, clamp = idx_x - 2, idx_x - 1, rclamp
     else:
-        id_start, id_end = idx_x - 1, idx_x + 1
+        id_start, id_end, clamp = idx_x - 1, idx_x + 1, None
     
-    return get_value_func(x, dots[id_start], dots[id_end], gcv(id_start), gcv(id_end))
+    return get_value_func(x, dots[id_start], dots[id_end], gcv(id_start), gcv(id_end), clamp)
         
     
 
