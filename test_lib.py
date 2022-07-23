@@ -3,10 +3,4 @@ from config import *
 
 a = Environment()
 
-
-print(type(Environment.cursor_position))
-print(type(a.lstick))
-print(ENV.rstick)
-print(CONFIG.screen_size)
-
-print(ENV.direction_input)
+print(get_curve_value(3.5, {1:2, 2:4, 3:4, 4:2}, map_range_easeinout))
