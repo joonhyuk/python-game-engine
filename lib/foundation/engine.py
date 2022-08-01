@@ -66,6 +66,7 @@ class Environment:
     마우스 입력 raw
         - 뷰포트 내 상대좌표
         - 월드상의 절대 좌표
+    (나중에 Window 클래스에 통합시켜버릴 수도 있음)
     '''
     window:Window = None
     abs_screen_center:Vector = Vector()
@@ -123,7 +124,7 @@ class Environment:
     def _get_direction_input(self):
         if self.gamepad:
             if self.rstick.length > 0.5:
-                return (self.rstick.unit * CONFIG.screen_size.y / 2 + ENV.abs_screen_center) * self.render_scale
+                return (self.rstick.unit * CONFIG.screen_size.y / 2 + self.abs_screen_center) * self.render_scale
         else:
             return self.abs_cursor_position
     
@@ -150,18 +151,15 @@ ENV = Environment()
 
 class Window(arcade.Window):
     
-    lstick_vector = Vector()
-    rstick_vector = Vector()
-    joystick:arcade.joysticks.Joystick = None
     lshift_applied = False
     lctrl_applied = False
-    currnet_camera:arcade.Camera = None
+    current_camera:arcade.Camera = None
     
     def on_show(self):
         ENV.set_screen(self)
         # self.direction_input = Vector()
         # self.get_input_device()
-        if self.joystick: self.set_mouse_visible(False)
+        if ENV.gamepad: self.set_mouse_visible(False)
         
     def on_key_press(self, key: int, modifiers: int):
         print('[window]key input')

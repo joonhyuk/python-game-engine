@@ -231,6 +231,7 @@ class EscapeGameView(View):
         # self.player.movement.move(ENV.move_input)
         
         self.player.tick(delta_time)
+        
         # print('game tick update', CLOCK.delta_time)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
