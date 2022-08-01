@@ -313,7 +313,7 @@ class Actor2D(MObject):
     def spawn(self, 
               position:Vector = Vector(), 
               rotation:float = None, 
-              layer:Layer = None, 
+              layer:ObjectLayer = None, 
               lifetime=0) -> None:
         self.position = position
         self.rotation = rotation
@@ -394,7 +394,7 @@ class Actor2D(MObject):
                     ''' for components that have tick '''
     
     @check_body
-    def register_body(self, sprite_list:Layer):
+    def register_body(self, sprite_list:ObjectLayer):
         return sprite_list.append(self.body)
     
     @check_body

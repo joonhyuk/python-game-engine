@@ -287,7 +287,7 @@ class SpriteCircle(arcade.SpriteCircle):
         super().__init__(radius, color, soft)
 
 
-class Layer(arcade.SpriteList):
+class ObjectLayer(arcade.SpriteList):
     pass
 
 

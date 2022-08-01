@@ -53,11 +53,11 @@ class EscapeGameView(View):
         super().__init__(window)
         # self.window.set_mouse_visible(True)
         # Sprites and sprite lists
-        self.field_list = Layer()
-        self.wall_list = Layer()
-        self.player_list = Layer()
-        self.npc_list = Layer()
-        self.bomb_list = Layer()
+        self.field_list = ObjectLayer()
+        self.wall_list = ObjectLayer()
+        self.player_list = ObjectLayer()
+        self.npc_list = ObjectLayer()
+        self.bomb_list = ObjectLayer()
         self.physics_simple = None
 
         # Create cameras used for scrolling
