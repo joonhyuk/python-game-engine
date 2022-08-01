@@ -18,6 +18,69 @@ class EnumVector(Vector, Enum):
     
     def __repr__(self) -> Vector:
         return self.value
+    
+    
+class SingletonType(type):
+    def __call__(cls, *args, **kwargs):
+        try:
+            return cls.__instance
+        except AttributeError:
+            cls.__instance = super().__call__(*args, **kwargs)
+            return cls.__instance
+
+
+class Version(metaclass=SingletonType):
+    '''planned to convert into singleton class'''
+    def __init__(self, major:int = None, minor:int = None, patch:int = None, is_production = False, file = 'version.json', run_count_up = True) -> None:
+        import json
+        self.path = get_path(file)
+        
+        try:
+            with open(self.path) as self.version_file:
+                self.data = json.load(self.version_file)
+                if run_count_up and not is_production:
+                    self.data['run_count'] += 1
+                if major is not None: self.data['major'] = major
+                if minor is not None: self.data['minor'] = minor
+                if patch is not None: self.data['patch'] = patch
+            self._write(self.data)
+
+        except:
+            print('Version file unavailable. Create new one')
+            from collections import OrderedDict
+            new_json = OrderedDict()
+            new_json['major'] = 0
+            new_json['minor'] = 1
+            new_json['patch'] = 0
+            new_json['tag'] = 'initial'
+            new_json['run_count'] = 1
+            self.data = new_json
+            self._write(self.data)
+        
+        if not is_production:
+            debug_str = '-dev'
+            self.exec = ' build#' + str(self.data['run_count'])
+        else:
+            debug_str = self.exec = ''
+        
+        self.body = '.'.join((str(self.data['major']), 
+                              str(self.data['minor']), 
+                              str(self.data['patch'])))
+        self.tail = self.data['tag'] + debug_str + '@' + sys.platform
+        self.full = '.'.join((self.body, self.tail))
+        if not is_production:
+            self.full += self.exec
+    
+    def _write(self, data):
+        import json
+        with open(get_path(self.path), "w") as version_file:
+            json.dump(data, version_file, indent = '\t')
+     
+    def __str__(self):
+        return self.body
+    def __repr__(self):
+        return self.__str__()
+
 
 
 def get_path(path):
@@ -134,7 +197,7 @@ def get_curve_value(x:float, curve:dict, get_value_func = map_range):
     '''
     Get unreal style curve value from dict data.
     Keys could be float, int, 'rclamp', 'lclamp'
-    
+    i.e. curve = {0:0, 1:1, 'rclamp':True, 'lclamp':True}
     rclamp / lclamp: clamping to right / left end value
         
     Get_value_func arguments should be;

@@ -3,6 +3,7 @@ from lib.foundation import *
 from config import *
 import random, math, time
 
+VERSION = Version(0, 2, 11)
 
 class TitleScreen(View):
     
@@ -265,10 +266,11 @@ class GameOverScreen(TitleScreen):
 
 def main():
     CLOCK.use_engine_tick = True
-    window = Window(*CONFIG.screen_size, PROJECT_NAME)
+    window = Window(*CONFIG.screen_size, PROJECT_NAME + ' ' + str(VERSION.full))
     title = TitleScreen()
     window.show_view(title)
     arcade.run()
-    
+
+
 if __name__ == '__main__':
     main()
