@@ -1,296 +1,133 @@
 """
-Camera Example
+Sprites with Properties Example
 
-Artwork from: https://kenney.nl
-Tiled available from: https://www.mapeditor.org/
+Simple program to show how to store properties on sprites.
+
+Artwork from https://kenney.nl
 
 If Python and Arcade are installed, this example can be run from the command line with:
-python -m arcade.examples.camera_example
+python -m arcade.examples.sprite_properties
+
 """
 
-import time
-
 import arcade
-from arcade.experimental.crt_filter import CRTFilter
-from pyglet.math import Vec2
+import os
 
-
-TILE_SCALING = 0.5
-PLAYER_SCALING = 0.5
+# --- Constants ---
+SPRITE_SCALING_PLAYER = 0.5
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-
-SCREEN_TITLE = "Camera Example"
-SPRITE_PIXEL_SIZE = 128
-GRID_PIXEL_SIZE = SPRITE_PIXEL_SIZE * TILE_SCALING
-
-# How many pixels to keep as a minimum margin between the character
-# and the edge of the screen.
-VIEWPORT_MARGIN_TOP = 60
-VIEWPORT_MARGIN_BOTTOM = 60
-VIEWPORT_RIGHT_MARGIN = 270
-VIEWPORT_LEFT_MARGIN = 270
-
-# Physics
-MOVEMENT_SPEED = 5
-JUMP_SPEED = 23
-GRAVITY = 1.1
-
-# Map Layers
-LAYER_NAME_PLATFORMS = "Platforms"
-LAYER_NAME_COINS = "Coins"
-LAYER_NAME_BOMBS = "Bombs"
+SCREEN_TITLE = "Sprites with Properties Example"
 
 
 class MyGame(arcade.Window):
-    """Main application class."""
+    """ Our custom Window Class"""
 
     def __init__(self):
-        """
-        Initializer
-        """
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, resizable=True)
+        """ Initializer """
+        # Call the parent class initializer
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
-        self.crt_filter = CRTFilter(SCREEN_WIDTH, SCREEN_HEIGHT,
-                                    resolution_down_scale=2.0,
-                                    hard_scan=-8.0,
-                                    hard_pix=-3.0,
-                                    display_warp = Vec2(1.0 / 32.0, 1.0 / 24.0),
-                                    mask_dark=0.5,
-                                    mask_light=1.5)
+        # Set the working directory (where we expect to find files) to the same
+        # directory this .py file is in. You can leave this out of your own
+        # code, but it is needed to easily run the examples using "python -m"
+        # as mentioned at the top of this program.
+        file_path = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(file_path)
 
-        self.filter_on = True
-        
-        # Our TileMap Object
-        self.tile_map = None
+        # Variables that will hold sprite lists
+        self.player_list = None
+        self.coin_list = None
 
-        # Our Scene Object
-        self.scene = None
-
-        # Set up the player
-        self.score = 0
+        # Set up the player info
         self.player_sprite = None
 
-        self.physics_engine = None
-        self.top_of_map = 0
-        self.end_of_map = 0
-        self.game_over = False
-        self.last_time = None
-        self.frame_count = 0
-        self.fps_message = None
+        # Set up sprite that will serve as trigger
+        self.trigger_sprite = None
 
-        # Cameras
-        self.camera = None
-        self.gui_camera = None
+        # Don't show the mouse cursor
+        self.set_mouse_visible(False)
 
-        self.shake_offset_1 = 0
-        self.shake_offset_2 = 0
-        self.shake_vel_1 = 0
-        self.shake_vel_2 = 0
+        arcade.set_background_color(arcade.color.AMAZON)
 
     def setup(self):
-        """Set up the game and initialize the variables."""
+        """ Set up the game and initialize the variables. """
 
-        # Map name
-        # map_name = ":resources:tiled_maps/level_1.json"
-        map_name = 'resources/tile/test-map.json'
-        # Layer Specific Options for the Tilemap
-        layer_options = {
-            LAYER_NAME_PLATFORMS: {
-                "use_spatial_hash": True,
-            },
-            LAYER_NAME_COINS: {
-                "use_spatial_hash": True,
-            },
-            LAYER_NAME_BOMBS: {
-                "use_spatial_hash": True,
-            },
-        }
-
-        # Load in TileMap
-        self.tile_map = arcade.load_tilemap(map_name, TILE_SCALING, layer_options)
-
-        # Initiate New Scene with our TileMap, this will automatically add all layers
-        # from the map as SpriteLists in the scene in the proper order.
-        self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        # Sprite lists
+        self.player_list = arcade.SpriteList()
+        self.coin_list = arcade.SpriteList()
 
         # Set up the player
-        self.player_sprite = arcade.Sprite(
-            ":resources:images/animated_characters/female_person/femalePerson_idle.png",
-            PLAYER_SCALING,
-        )
+        # Character image from kenney.nl
+        self.player_sprite = arcade.Sprite(":resources:images/animated_characters/female_person/femalePerson_idle.png",
+                                           SPRITE_SCALING_PLAYER)
+        self.player_sprite.center_x = 50
+        self.player_sprite.center_y = 150
+        self.player_list.append(self.player_sprite)
 
-        # Starting position of the player
-        self.player_sprite.center_x = 196
-        self.player_sprite.center_y = 128
-        self.scene.add_sprite("Player", self.player_sprite)
+        # Create the sprites
+        for x in range(100, 800, 100):
+            coin = arcade.Sprite(":resources:images/items/coinGold.png", scale=0.3, center_x=x, center_y=400)
+            coin.intensity = 'dim'
+            coin.alpha = 64
+            self.coin_list.append(coin)
 
-        self.camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-        self.gui_camera = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-
-        # Center camera on user
-        self.pan_camera_to_user()
-
-        # Calculate the right edge of the my_map in pixels
-        self.top_of_map = self.tile_map.height * GRID_PIXEL_SIZE
-        self.end_of_map = self.tile_map.width * GRID_PIXEL_SIZE
-
-        # --- Other stuff
-        # Set the background color
-        if self.tile_map.background_color:
-            arcade.set_background_color(self.tile_map.background_color)
-
-        # Keep player from running through the wall_list layer
-        self.physics_engine = arcade.PhysicsEnginePlatformer(
-            self.player_sprite,
-            self.scene.get_sprite_list(LAYER_NAME_PLATFORMS),
-            gravity_constant=GRAVITY,
-        )
-
-        self.game_over = False
-
-    def on_resize(self, width, height):
-        """Resize window"""
-        self.camera.resize(width, height)
-        self.gui_camera.resize(width, height)
+        # Create trigger
+        self.trigger_sprite = arcade.Sprite(":resources:images/pinball/bumper.png", scale=0.5,
+                                            center_x=750, center_y=50)
 
     def on_draw(self):
-        """Render the screen."""
-        # print(self.camera.position)
-        if self.filter_on:
-            # Draw our stuff into the CRT filter instead of on screen
-            self.crt_filter.use()
-            self.crt_filter.clear()
-            self.scene.draw()
+        """ Draw everything """
+        self.clear()
+        self.coin_list.draw()
+        self.trigger_sprite.draw()
+        self.player_list.draw()
 
-            # Next, switch back to the screen and dump the contents of the CRT filter
-            # to it.
-            self.use()
-            self.camera.use()
-            self.clear()
-            self.crt_filter.draw()
-        else:
-            # Draw our stuff into the screen
-            self.use()
-            self.camera.use()
-            self.clear()
-            self.scene.draw()
-            self.gui_camera.use()
-            
+        # Put the instructions on the screen.
+        instructions1 = "Touch a coin to set its intensity property to 'bright'."
+        arcade.draw_text(instructions1, 10, 90, arcade.color.WHITE, 14)
+        instructions2 = "Touch the trigger at the bottom-right to destroy all 'bright' sprites."
+        arcade.draw_text(instructions2, 10, 70, arcade.color.WHITE, 14)
 
-        # self.camera.use()
-        # self.clear()
+        # Query the property on the coins and show results.
+        coins_are_bright = [coin.intensity == 'bright' for coin in self.coin_list]
+        output_any = f"Any sprites have intensity=bright? : {any(coins_are_bright)}"
+        arcade.draw_text(output_any, 10, 40, arcade.color.WHITE, 14)
+        output_all = f"All sprites have intensity=bright? : {all(coins_are_bright)}"
+        arcade.draw_text(output_all, 10, 20, arcade.color.WHITE, 14)
 
-        self.frame_count += 1
+    def on_mouse_motion(self, x, y, dx, dy):
+        """ Handle Mouse Motion """
 
-        # This command has to happen before we start drawing
-        # self.clear()
-
-        # Draw our Scene
-        # self.scene.draw()
-
-        # self.gui_camera.use()
-
-        # Draw FPS
-        if self.last_time and self.frame_count % 60 == 0:
-            fps = 1.0 / (time.time() - self.last_time) * 60
-            self.fps_message = f"FPS: {fps:5.0f}"
-
-        if self.fps_message:
-            x = 10
-            y = 40
-            arcade.draw_text(self.fps_message, x, y, arcade.color.BLACK, 14)
-
-        if self.frame_count % 60 == 0:
-            self.last_time = time.time()
-
-        # Draw Score
-        x = 10
-        y = 20
-        arcade.draw_text(f"Score: {self.score}", x, y, arcade.color.BLACK, 14)
-
-        # Draw game over
-        if self.game_over:
-            x = 200 + self.camera.position[0]
-            y = 200 + self.camera.position[1]
-            arcade.draw_text("Game Over", x, y, arcade.color.BLACK, 30)
-
-    def on_key_press(self, key, modifiers):
-        """
-        Called whenever a key is pressed
-        """
-        if key == arcade.key.UP:
-            if self.physics_engine.can_jump():
-                self.player_sprite.change_y = JUMP_SPEED
-        elif key == arcade.key.LEFT:
-            # self.player_sprite.change_x = -MOVEMENT_SPEED
-            self.player_sprite.velocity[0] = -MOVEMENT_SPEED
-        elif key == arcade.key.RIGHT:
-            self.player_sprite.change_x = MOVEMENT_SPEED
-        elif key == arcade.key.C:
-            self.filter_on = not self.filter_on
-
-    def on_key_release(self, key, modifiers):
-        """
-        Called when the user presses a mouse button.
-        """
-        if key == arcade.key.LEFT or key == arcade.key.RIGHT:
-            self.player_sprite.change_x = 0
-
-    def pan_camera_to_user(self, panning_fraction: float = 1.0):
-        """
-        Manage Scrolling
-
-        :param panning_fraction: Number from 0 to 1. Higher the number, faster we
-                                 pan the camera to the user.
-        """
-
-        # This spot would center on the user
-        screen_center_x = self.player_sprite.center_x - (self.camera.viewport_width / 2)
-        screen_center_y = self.player_sprite.center_y - (
-            self.camera.viewport_height / 2
-        )
-        if screen_center_x < 0:
-            screen_center_x = 0
-        if screen_center_y < 0:
-            screen_center_y = 0
-        user_centered = screen_center_x, screen_center_y
-
-        self.camera.move_to(user_centered, panning_fraction)
+        # Move the center of the player sprite to match the mouse x, y
+        self.player_sprite.center_x = x
+        self.player_sprite.center_y = y
 
     def on_update(self, delta_time):
-        """Movement and game logic"""
+        """ Movement and game logic """
 
-        if self.player_sprite.right >= self.end_of_map:
-            self.game_over = True
+        # Call update on all sprites (The sprites don't do much in this
+        # example though.)
+        self.coin_list.update()
 
-        # Call update on all sprites
-        if not self.game_over:
-            self.physics_engine.update()
+        # Generate a list of all sprites that collided with the player.
+        coins_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.coin_list)
 
-        coins_hit = arcade.check_for_collision_with_list(
-            self.player_sprite, self.scene.get_sprite_list("Coins")
-        )
-        for coin in coins_hit:
-            coin.remove_from_sprite_lists()
-            self.score += 1
+        # Loop through each colliding sprite to set intensity=bright
+        for coin in coins_hit_list:
+            coin.intensity = 'bright'
+            coin.alpha = 255
 
-        # Bomb hits
-        bombs_hit = arcade.check_for_collision_with_list(
-            self.player_sprite, self.scene.get_sprite_list("Bombs")
-        )
-        for bomb in bombs_hit:
-            bomb.remove_from_sprite_lists()
-            print("Pow")
-            self.camera.shake((4, 7))
-
-        # Pan to the user
-        self.pan_camera_to_user(panning_fraction=0.12)
+        hit_trigger = arcade.check_for_collision(self.player_sprite, self.trigger_sprite)
+        if hit_trigger:
+            intense_sprites = [sprite for sprite in self.coin_list if sprite.intensity == 'bright']
+            for coin in intense_sprites:
+                coin.remove_from_sprite_lists()
 
 
 def main():
-    """Get this game started."""
+    """ Main function """
     window = MyGame()
     window.setup()
     arcade.run()
