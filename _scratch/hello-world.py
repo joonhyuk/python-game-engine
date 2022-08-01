@@ -10,7 +10,9 @@ of Arcade. It will:
 """
 
 # Import arcade allows the program to run in Python IDLE
-import arcade
+import arcade, sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from lib.foundation import *
 
 # Set the width and height of your output window, in pixels
 WIDTH = 800

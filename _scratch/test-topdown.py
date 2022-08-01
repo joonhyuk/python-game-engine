@@ -1,3 +1,7 @@
+import os, sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
 from arcade import Window
 from lib.foundation import *
 from config import *
