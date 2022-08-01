@@ -59,6 +59,8 @@ class EscapeGameView(View):
         self.npc_list = ObjectLayer()
         self.bomb_list = ObjectLayer()
         self.physics_simple = None
+        
+        self.barrier_list = None
 
         # Create cameras used for scrolling
         self.camera_sprites = Camera(*CONFIG.screen_size)
@@ -78,21 +80,28 @@ class EscapeGameView(View):
         self.light_layer = None
         
         self.debug_timer:float = time.perf_counter()
+    
+    def on_show_view(self):
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
         
+        return super().on_show_view()
+    
     def setup(self):
         
         self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'))
         self.player.spawn(Vector(-100, -100), 0, self.player_list)
         self.camera = self.player.camera
         
-        self.enemy = Character2D(Sprite(":resources:images/tiles/bomb.png", 1))
-        self.enemy.spawn(Vector(500, 500), 90, self.npc_list)
+        self.enemy = NPC(Sprite(":resources:images/tiles/bomb.png", 0.5))
+        self.enemy.spawn(Vector(-200, -200), 90, self.npc_list)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
         self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
         
         self._set_random_level()
+        
+        # self._setup_pathfinding()
         
         # self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
         self.physics_simple = arcade.PhysicsEngineSimple(self.player.body, [self.wall_list, self.npc_list])
@@ -140,6 +149,12 @@ class EscapeGameView(View):
             self.bomb_list.append(bomb)
 
         self.light_layer.add(lights.Light(*field_center, 1200, arcade.color.WHITE, 'soft'))
+    
+    def _setup_pathfinding(self):
+        self.barrier_list = arcade.AStarBarrierList(self.enemy.body, 
+                                                    self.wall_list, 
+                                                    32, -500, 1000, -500, 1000)
+        
     
     def on_key_press(self, key: int, modifiers: int):
         print('[game]key input')
@@ -211,7 +226,10 @@ class EscapeGameView(View):
         debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
         debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
         debug_draw_marker(self.player.position)
-        
+        # path = arcade.astar_calculate_path(self.enemy.position, self.player.position, self.barrier_list)
+        # if path:
+            # arcade.draw_line_strip(path, arcade.color.BLUE, 2)
+            # self.enemy.controller.move_path = path
         
         # print(ENV.abs_cursor_position)
         

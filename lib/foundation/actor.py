@@ -79,6 +79,19 @@ class ActorComponent(MObject):
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
 
+class AIController(ActorComponent):
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self.move_path = None
+        self._spawned = True
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        # self.owner.movement.turn_toward(self.move_path[0])
+        # self.owner.movement.move_toward(self.move_path[0])
+        
+
 class CameraHandler(ActorComponent):
     '''handling actor camera
     should be possesed by engine camera system'''
@@ -93,7 +106,7 @@ class CameraHandler(ActorComponent):
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         self.center = self.owner.position
-        ENV.abs_screen_center = self.center
+        ENV.abs_screen_center = self.center # not cool...
         self._spawned = False
         # print('camera_tick')
     
@@ -426,6 +439,7 @@ class Character2D(Actor2D):
         self.hp = hp
         self.movement = CharacterMovement()
         self.camera = CameraHandler()
+        self.controller = None
         
         self.constructor()
     
@@ -440,3 +454,8 @@ class Character2D(Actor2D):
         
     def apply_damage(self, damage:float):
         self.hp -= damage
+
+class NPC(Character2D):
+    
+    def constructor(self):
+        self.controller = AIController()
