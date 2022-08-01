@@ -1,9 +1,8 @@
 from .engine import *
 
+PROJECT_NAME = 'ESCAPE'
 RELEASE_BUILD = False
 SCREEN_TITLE = PROJECT_NAME + 'dev'
-IMG_PATH = RESOURCE_PATH + 'art/'
-SFX_PATH = RESOURCE_PATH + 'sfx/'
 
 # Constants used to scale our sprites from their original size (arcade example - simple platformer)
 CHARACTER_SCALING = 1

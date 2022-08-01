@@ -14,7 +14,7 @@ from arcade.experimental import Shadertoy, lights
 from lib.foundation.base import *
 from lib.foundation.clock import *
 
-from config.game import *
+from config.engine import *
 
 def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade.Texture]):
     
