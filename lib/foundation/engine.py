@@ -73,6 +73,7 @@ class Environment:
     render_scale:float = 1.0
     mouse_input:Vector = Vector()
     gamepad:arcade.joysticks.Joystick = None
+    key_move:Vector = Vector()
     key = arcade.key
     key_inputs = []
     
@@ -93,7 +94,7 @@ class Environment:
         self.window = window
         self.render_scale = window.get_framebuffer_size()[0] / window.get_size()[0]
     
-    def on_key_presse(self, key:int, modifiers:int):
+    def on_key_press(self, key:int, modifiers:int):
         pass
     
     @property
@@ -116,7 +117,7 @@ class Environment:
         if self.gamepad:
             return self.lstick
         else:
-            return self.window.lstick_vector.clamp_length(1) * (0.5 if self.window.lctrl_applied else 1)
+            return self.key_move.clamp_length(1) * (0.5 if self.window.lctrl_applied else 1)
 
     move_input:Vector = property(_get_move_input)
     ''' returns movement direction vector (-1, -1) ~ (1, 1) '''
@@ -165,10 +166,10 @@ class Window(arcade.Window):
         print('[window]key input')
         # self.lstick_vector = Vector()
         # ENV.key_inputs.append(key)
-        if key in (arcade.key.W, arcade.key.UP): self.lstick_vector += (0,1)
-        if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector += (0,-1)
-        if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector += (-1,0)
-        if key in (arcade.key.D, arcade.key.RIGHT): self.lstick_vector += (1,0)
+        if key in (arcade.key.W, arcade.key.UP): ENV.key_move += (0,1)
+        if key in (arcade.key.S, arcade.key.DOWN): ENV.key_move += (0,-1)
+        if key in (arcade.key.A, arcade.key.LEFT): ENV.key_move += (-1,0)
+        if key in (arcade.key.D, arcade.key.RIGHT): ENV.key_move += (1,0)
         if key == arcade.key.LSHIFT: self.lshift_applied = True
         if key == arcade.key.LCTRL: self.lctrl_applied = True
         
@@ -176,10 +177,10 @@ class Window(arcade.Window):
         
     def on_key_release(self, key: int, modifiers: int):
         # ENV.key_inputs.remove(key)
-        if key in (arcade.key.W, arcade.key.UP): self.lstick_vector -= (0,1)
-        if key in (arcade.key.S, arcade.key.DOWN): self.lstick_vector -= (0,-1)
-        if key in (arcade.key.A, arcade.key.LEFT): self.lstick_vector -= (-1,0)
-        if key in (arcade.key.D, arcade.key.RIGHT): self.lstick_vector -= (1,0)
+        if key in (arcade.key.W, arcade.key.UP): ENV.key_move -= (0,1)
+        if key in (arcade.key.S, arcade.key.DOWN): ENV.key_move -= (0,-1)
+        if key in (arcade.key.A, arcade.key.LEFT): ENV.key_move -= (-1,0)
+        if key in (arcade.key.D, arcade.key.RIGHT): ENV.key_move -= (1,0)
         if key == arcade.key.LSHIFT: self.lshift_applied = False
         if key == arcade.key.LCTRL: self.lctrl_applied = False
         
