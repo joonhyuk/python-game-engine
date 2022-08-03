@@ -54,7 +54,63 @@ def debug_draw_marker(position:Vector = Vector(),
     debug_draw_line(position, position - corner_point, color)
     debug_draw_line(position, position + corner_point.rotate(90), color)
     debug_draw_line(position, position + corner_point.rotate(-90), color)
+
+
+class DebugTextLayer(dict, metaclass=SingletonType):
+    '''
+    use text_obj property to access text attributes
     
+    bgcolor not working now
+    
+    '''
+    def __init__(self, 
+                 font_name = 'Kenney Mini Square', 
+                 font_size = 10, 
+                 color = (255,255,255,128),
+                 bgcolor = None, 
+                 topleft_position:Vector = Vector.diagonal(10) 
+                 ):
+        self.text = ''
+        self._position = topleft_position
+    
+        self.font_name = font_name
+        self.font_size = font_size
+        self.color = color
+        self.bgcolor = bgcolor
+        self.text_obj:arcade.Text = None
+        self.width = CONFIG.screen_size.x
+        
+        self.setup()
+    
+    def setup(self):
+        self.width = CONFIG.screen_size.x
+        position = self._position
+        position.y = CONFIG.screen_size.y - position.y
+        self.text_obj = arcade.Text(self.text, *position, self.color, self.font_size, 
+                                    font_name=self.font_name, 
+                                    width = self.width, 
+                                    anchor_y = 'top', 
+                                    multiline=True)
+        print(position)
+    
+    def draw(self):
+        texts = ''
+        for k, v in self.items():
+            texts += ' : '.join((k, str(v)))
+            texts += '\n'
+        self.text_obj.value = texts
+        self.text_obj.draw()
+    
+    def _set_topleft_position(self, position:Vector):
+        self._position = position
+        self.setup()
+    
+    def _get_topleft_position(self):
+        return self._position
+    
+    position = property(_get_topleft_position, _set_topleft_position)
+    ''' topleft position of text box '''
+
 
 @dataclass
 class Environment:
@@ -76,6 +132,7 @@ class Environment:
     key_move:Vector = Vector()
     key = arcade.key
     key_inputs = []
+    debug_text:DebugTextLayer = None
     
     def __init__(self) -> None:
         self.gamepad = self.get_input_device()
@@ -155,12 +212,15 @@ class Window(arcade.Window):
     lshift_applied = False
     lctrl_applied = False
     current_camera:arcade.Camera = None
+    debug_text:DebugTextLayer = None
     
     def on_show(self):
         ENV.set_screen(self)
         # self.direction_input = Vector()
         # self.get_input_device()
         if ENV.gamepad: self.set_mouse_visible(False)
+        ENV.debug_text = DebugTextLayer()
+        ENV.debug_text['fps'] = 0
         
     def on_key_press(self, key: int, modifiers: int):
         print('[window]key input')
@@ -202,9 +262,11 @@ class Window(arcade.Window):
         #     self.direction_input = ENV.mouse_input * ENV.render_scale
         #     pass
         # print(ENV.get_current_window())
+        ENV.debug_text['fps'] = CLOCK.fps_average
         CLOCK.tick()
         
     def on_draw(self):
+        ENV.debug_text.draw()
         pass
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
@@ -359,6 +421,8 @@ class SoundBank:
     def set_volume_master(self, amount:float):
         self.volume_master = amount
 
+
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     SOUND = SoundBank(SFX_PATH)
+    # DEBUG = DebugTextLayer()

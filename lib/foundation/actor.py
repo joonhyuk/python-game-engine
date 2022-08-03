@@ -155,6 +155,8 @@ class CharacterMovement(ActorComponent):
         
         self._spawned = True
         
+        self._speed_debug_val = avg_generator(0)
+        next(self._speed_debug_val)
         self._debug_speedq = []
         self._debug_braking_time = 0
         
@@ -164,10 +166,14 @@ class CharacterMovement(ActorComponent):
         
         self._set_movement(delta_time)
         self._set_heading(delta_time)
+        
+        ENV.debug_text['player_speed'] = self.speed_avg // delta_time
+        # ENV.debug_text['player_heading'] = self.rotation
     
     def _set_movement(self, delta_time:float):
         ''' set movement of tick by user input '''
         # self._debug_check_speed(delta_time)
+        print(self.speed_avg)
         if self.move_input is None: return False
         if self.move_input.near_zero():
             ''' stop / braking '''
@@ -211,10 +217,13 @@ class CharacterMovement(ActorComponent):
         return True
         
     def _debug_check_speed(self, delta_time):
-        
         if len(self._debug_speedq) > 10: self._debug_speedq.pop(0)
         self._debug_speedq.append(self.velocity.length / delta_time)
         print(round(self._debug_braking_time, 1), sum(self._debug_speedq) // len(self._debug_speedq))
+    
+    @property
+    def speed_avg(self):
+        return round(self._speed_debug_val.send(self.velocity.length), 0)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''

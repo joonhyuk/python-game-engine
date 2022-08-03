@@ -7,6 +7,8 @@ maybe it's reinventing the wheel, the goal was reducing dependance on any framew
 import threading
 from pyglet.clock import schedule, schedule_once, schedule_interval, schedule_interval_soft, unschedule
 
+from lib.foundation.base import avg_generator
+
 class Clock:
     """SUPER PRECISE timer"""
     import time as pytime
@@ -28,6 +30,9 @@ class Clock:
         self.fps_limit = fps
         """initial fps limit"""
         self.fps_current = 0.0
+        
+        self._fps_avg = avg_generator(0.0)
+        next(self._fps_avg)
         
         self.timers:dict[str, list[bool,float,float]] = {}
         """{id:[pause, start time, paused time]}"""
@@ -166,6 +171,10 @@ class Clock:
         for tt in thread_list:
             if isinstance(tt, threading.Timer):
                 tt.cancel()
+    
+    @property
+    def fps_average(self):
+        return round(self._fps_avg.send(self.fps_current), 2)
     
     @property
     def process_time_ms(self) -> int:

@@ -236,8 +236,24 @@ def get_curve_value(x:float, curve:dict, get_value_func = map_range):
         id_start, id_end, clamp = idx_x - 1, idx_x + 1, None
     
     return get_value_func(x, dots[id_start], dots[id_end], gcv(id_start), gcv(id_end), clamp)
-        
+
+def avg_generator(value, num_limit:int = 10):
+    '''
+    generator for average value
     
+    usage;
+    
+    foo = avg_generator(initial value, limitation)
+    next(foo)
+    
+    bar = foo.send(value)
+    '''
+    _values = [value]
+    while True:
+        received = yield sum(_values) / len(_values)
+        _values.append(received)
+        if len(_values) > num_limit: _values.pop(0)
+        # print(value, _values)
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
