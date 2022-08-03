@@ -454,6 +454,11 @@ class Character2D(Actor2D):
         
     def apply_damage(self, damage:float):
         self.hp -= damage
+    
+    @property
+    def is_alive(self) -> bool:
+        if self.hp <= 0: return False
+        return super().is_alive
 
 class NPC(Character2D):
     

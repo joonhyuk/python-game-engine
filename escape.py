@@ -3,7 +3,7 @@ from lib.foundation import *
 from config import *
 import random, math, time
 
-VERSION = Version(0, 2, 11)
+VERSION = Version(0, 2, 12)
 
 class TitleScreen(View):
     
@@ -164,6 +164,9 @@ class EscapeGameView(View):
         if key == arcade.key.C:
             self.camera = self.enemy.camera
             self.enemy.camera.camera.position = self.window.current_camera.position
+        
+        if key == arcade.key.K:
+            self.player.hp = 0
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
