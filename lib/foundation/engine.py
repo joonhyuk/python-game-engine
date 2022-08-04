@@ -77,7 +77,7 @@ class DebugTextLayer(dict, metaclass=SingletonType):
         self.font_size = font_size
         self.color = color
         self.bgcolor = bgcolor
-        self.text_obj:arcade.Text = None
+        self.text:arcade.Text = None
         self.width = CONFIG.screen_size.x
         
         self.setup()
@@ -86,7 +86,7 @@ class DebugTextLayer(dict, metaclass=SingletonType):
         self.width = CONFIG.screen_size.x
         position = self._position
         position.y = CONFIG.screen_size.y - position.y
-        self.text_obj = arcade.Text(self.text, *position, self.color, self.font_size, 
+        self.text = arcade.Text(self.text, *position, self.color, self.font_size, 
                                     font_name=self.font_name, 
                                     width = self.width, 
                                     anchor_y = 'top', 
@@ -94,12 +94,12 @@ class DebugTextLayer(dict, metaclass=SingletonType):
         print(position)
     
     def draw(self):
-        texts = ''
+        text = ''
         for k, v in self.items():
-            texts += ' : '.join((k, str(v)))
-            texts += '\n'
-        self.text_obj.value = texts
-        self.text_obj.draw()
+            text += ' : '.join((k, str(v)))
+            text += '\n'
+        self.text.value = text
+        self.text.draw()
     
     def _set_topleft_position(self, position:Vector):
         self._position = position
