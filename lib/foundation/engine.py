@@ -42,7 +42,7 @@ def debug_draw_circle(center:Vector = Vector(),
                       fill_color = None):
     if not CONFIG.debug_draw: return False
     if fill_color is not None: arcade.draw_circle_filled(center.x, center.y, radius - line_thickness, fill_color)
-    return arcade.draw_circle_outline(center.x, center.y, radius, line_color, line_thickness)
+    return arcade.draw_circle_outline(*center, radius, line_color, line_thickness)
 
 def debug_draw_marker(position:Vector = Vector(), 
                       radius:float = DEFAULT_TILE_SIZE, 
