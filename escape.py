@@ -59,6 +59,7 @@ class EscapeGameView(View):
         self.player_list = ObjectLayer()
         self.npc_list = ObjectLayer()
         self.bomb_list = ObjectLayer()
+        self.movable_list = ObjectLayer()
         self.physics_simple = None
         
         self.barrier_list = None
@@ -89,12 +90,14 @@ class EscapeGameView(View):
     
     def setup(self):
         
-        self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'))
-        self.player.spawn(Vector(-100, -100), 0, self.player_list)
+        self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'), size = 32)
+        # self.player = Character2D(Capsule(24))
+        self.player.spawn(Vector(-100, -100), 0, self.player_list, self.movable_list)
         self.camera = self.player.camera
         
-        self.enemy = NPC(Sprite(":resources:images/tiles/bomb.png", 0.5))
-        self.enemy.spawn(Vector(-200, -200), 90, self.npc_list)
+        self.enemy = NPC(Sprite(":resources:images/tiles/boxCrate_double.png", 1))
+        # self.enemy = NPC(Capsule(64))
+        self.enemy.spawn(Vector(-200, -200), 90, self.npc_list, self.movable_list)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
@@ -105,7 +108,8 @@ class EscapeGameView(View):
         # self._setup_pathfinding()
         
         # self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-        self.physics_simple = arcade.PhysicsEngineSimple(self.player.body, [self.wall_list, self.npc_list])
+        body =  self.player.body_movement if self.player.body_movement else self.player.body
+        self.physics_simple = arcade.PhysicsEngineSimple(body, [self.wall_list, self.npc_list])
         
         self.physics_complex = PymunkPhysicsEngine()
         
@@ -225,11 +229,9 @@ class EscapeGameView(View):
         # self.wall_list.draw_hit_boxes(color=(128,128,255,128), line_thickness=1)
         debug_draw_circle(ENV.abs_cursor_position, line_thickness=1, line_color = (0, 255, 0, 128), fill_color= (255, 0, 0, 128))
         ''' put debug marker to absolute position of mouse cursor '''
-        # debug_draw_marker(ENV.abs_cursor_position)
-        # debug_draw_marker(p, 16, arcade.color.ORANGE)
-        debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
+        # debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
         debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
-        debug_draw_marker(self.player.position)
+        # debug_draw_marker(self.player.position)
         # path = arcade.astar_calculate_path(self.enemy.position, self.player.position, self.barrier_list)
         # if path:
             # arcade.draw_line_strip(path, arcade.color.BLUE, 2)

@@ -6,6 +6,10 @@ joonhyuk@me.com
 from __future__ import annotations
 
 import os
+import PIL.Image
+import PIL.ImageOps
+import PIL.ImageDraw
+
 from dataclasses import dataclass
 
 import arcade
@@ -348,6 +352,34 @@ class SpriteCircle(arcade.SpriteCircle):
         super().__init__(radius, color, soft)
 
 
+class Capsule(Sprite):
+    
+    def __init__(self, radius: int):
+        super().__init__()
+        
+        diameter = radius * 2
+        cache_name = arcade.sprite._build_cache_name("circle_texture", diameter, 255, 255, 255, 64, 0)
+        texture = None
+        
+        # texture = make_circle_texture(diameter, color, name=cache_name)
+        
+        img = PIL.Image.new('RGBA', (diameter, diameter), (0,0,0,0))
+        draw = PIL.ImageDraw.Draw(img)
+        draw.ellipse((0, 0, diameter - 1, diameter - 1), fill=(255,255,255,64))
+        texture = arcade.Texture(cache_name, img, 'Detailed', 1.0)
+        
+        arcade.texture.load_texture.texture_cache[cache_name] = texture
+        
+        self.texture = texture
+        self._points = self.texture.hit_box_points
+        self.collision_radius = radius
+        self.collides_with_radius = True
+        
+        print('points : ', self._points)
+
+    def draw_hit_box(self, color: arcade.Color = ..., line_thickness: float = 1):
+        return debug_draw_circle(self.position, self.collision_radius, color, line_thickness)
+    
 class ObjectLayer(arcade.SpriteList):
     pass
 
