@@ -74,7 +74,7 @@ class DebugTextLayer(dict, metaclass=SingletonType):
                  bgcolor = None, 
                  topleft_position:Vector = Vector.diagonal(10) 
                  ):
-        self.text = ''
+        self.content = ''
         self._position = topleft_position
     
         self.font_name = font_name
@@ -90,11 +90,11 @@ class DebugTextLayer(dict, metaclass=SingletonType):
         self.width = CONFIG.screen_size.x
         position = self._position
         position.y = CONFIG.screen_size.y - position.y
-        self.text = arcade.Text(self.text, *position, self.color, self.font_size, 
-                                    font_name=self.font_name, 
-                                    width = self.width, 
-                                    anchor_y = 'top', 
-                                    multiline=True)
+        self.text = arcade.Text('', *position, self.color, self.font_size, 
+                                font_name=self.font_name, 
+                                width = self.width, 
+                                anchor_y = 'top', 
+                                multiline=True)
         print(position)
     
     def draw(self):
