@@ -3,7 +3,7 @@ from lib.foundation import *
 from config import *
 import random, math, time
 
-VERSION = Version(0, 2, 13)
+VERSION = Version()
 
 class TitleScreen(View):
     

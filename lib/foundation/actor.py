@@ -173,7 +173,7 @@ class CharacterMovement(ActorComponent):
     def _set_movement(self, delta_time:float):
         ''' set movement of tick by user input '''
         # self._debug_check_speed(delta_time)
-        print(self.speed_avg)
+        # print(self.speed_avg)
         if self.move_input is None: return False
         if self.move_input.near_zero():
             ''' stop / braking '''
@@ -200,18 +200,16 @@ class CharacterMovement(ActorComponent):
         max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
         max_speed *= self._get_directional_speed_multiplier()
         ''' apply directional speed limit '''
-        
         self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
-        
         self._last_tick_speed = self.velocity.length
         self._debug_braking_time = 0.0
         
         ### debug start
-        a = max_speed * delta_time
-        b = self.velocity.length
-        if abs(a - b) > 0.001:
-            if b > 150:
-                print('missing something')
+        # a = max_speed * delta_time
+        # b = self.velocity.length
+        # if abs(a - b) > 0.001:
+        #     if b > 150:
+        #         print('missing something')
         ### debug end
         
         return True
@@ -223,7 +221,7 @@ class CharacterMovement(ActorComponent):
     
     @property
     def speed_avg(self):
-        return round(self._speed_debug_val.send(self.velocity.length), 0)
+        return self._speed_debug_val.send(self.velocity.length)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''
