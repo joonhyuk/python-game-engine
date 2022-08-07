@@ -31,7 +31,6 @@ class MObject(object):
         
         if self._lifetime:
             CLOCK.timer_start(self.id)
-            # schedule_once(self.destroy, lifetime)
         
         self._spawned = True
     
@@ -73,8 +72,8 @@ class MObject(object):
 
 class ActorComponent(MObject):
     '''component base class'''
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.owner:Actor2D = None
         self._spawned = True
     
@@ -83,10 +82,14 @@ class ActorComponent(MObject):
 
 class Body(ActorComponent):
     '''
-    has size, sprite for draw, move, hit
+    has size, sprite for draw, move(collision), hit(collision)
     draw(), 
     '''
-    def __init__(self) -> None:
+    def __init__(self, 
+                 mesh:Sprite, 
+                 move_collision:Sprite = None,
+                 hit_collision:Sprite = None, 
+                 ) -> None:
         super().__init__()
         self.mesh:Sprite = None
         ''' for draw. should be expanded for attachment and vfx '''
@@ -102,6 +105,10 @@ class Body(ActorComponent):
     
     def draw(self):
         self.mesh.draw()
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        self.mesh.position
     
 
 class AIController(ActorComponent):
