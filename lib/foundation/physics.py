@@ -41,7 +41,7 @@ def is_polygon_intersecting_with_circle(poly: PointList, p: Point, radius: float
         
         # if 0 < projection <= d12:
             if abs(projection) <= radius:
-                print('sides check [colliding]')
+                # print('sides check [colliding]')
                 return True
             # print('sides check [not colliding]')
             
