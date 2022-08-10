@@ -5,6 +5,7 @@ joonhyuk@me.com
 import os, sys, json
 from enum import Enum
 from typing import Iterable, Union
+from collections import deque
 
 from easing_functions import *
 
@@ -248,11 +249,14 @@ def avg_generator(value, num_limit:int = 10):
     
     bar = foo.send(value)
     '''
-    _values = [value]
+    # _values = [value]
+    _values = deque(maxlen=num_limit)
+    _values.append(value)
     while True:
         received = yield sum(_values) / len(_values)
         _values.append(received)
-        if len(_values) > num_limit: _values.pop(0)
+        # if len(_values) > num_limit:
+        #     _values.pop(0)
         # print(value, _values)
 
 if __name__ != "__main__":
