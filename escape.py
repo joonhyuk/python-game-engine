@@ -162,7 +162,7 @@ class EscapeGameView(View):
         
     
     def on_key_press(self, key: int, modifiers: int):
-        print('[game]key input')
+        # print('[game]key input')
         if key == arcade.key.F1: CONFIG.fog_of_war = not CONFIG.fog_of_war
         
         if key == arcade.key.C:
@@ -255,7 +255,7 @@ class EscapeGameView(View):
         # self.player.movement.move(ENV.move_input)
         
         self.player.tick(delta_time)
-        
+        print(f'vector : {Vector.num_instance}')
         # print('game tick update', CLOCK.delta_time)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):

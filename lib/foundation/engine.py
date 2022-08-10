@@ -213,6 +213,7 @@ ENV = Environment()
 
 class Window(arcade.Window):
     
+    ### class variables : are they needed?
     lshift_applied = False
     lctrl_applied = False
     current_camera:arcade.Camera = None
