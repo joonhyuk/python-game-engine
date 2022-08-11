@@ -132,8 +132,8 @@ class CameraHandler(ActorComponent):
         self._spawned = False
         self.offset:Vector = Vector(0,0)
         self.camera = Camera(*CONFIG.screen_size)
-        self.camera_interp_speed = 0.1
-        self.boom_length = 100.0
+        self.camera_interp_speed = 0.05
+        self.boom_length = 200.0
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -155,7 +155,11 @@ class CameraHandler(ActorComponent):
     center:Vector = property(_get_center, _set_center)
     
     def _get_boom_vector(self) -> Vector:
-        return self.owner.forward_vector.unit * self.boom_length
+        # distv = ENV.cursor_position - ENV.scren_center
+        distv = self.owner.position - ENV.abs_cursor_position
+        # print(self.owner.rel_position, ENV.cursor_position)
+        # return Vector()
+        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, 32, 300, 0, 1, clamped=True)
 
 
 class CharacterMovement(ActorComponent):
@@ -188,7 +192,7 @@ class CharacterMovement(ActorComponent):
         self.move_input:Vector = Vector()
         self.desired_rotation:float = 0.0
         
-        self._speed_debug_val = avg_generator(0)
+        self._speed_debug_val = avg_generator(0, 60)
         next(self._speed_debug_val)
         self._debug_speedq = []
         self._debug_braking_time = 0
