@@ -62,6 +62,8 @@ class EscapeGameView(View):
         self.movable_list = ObjectLayer()
         self.physics_simple = None
         
+        self.test_layers:list[ObjectLayer] = []
+        
         self.barrier_list = None
 
         # Create cameras used for scrolling
@@ -128,6 +130,17 @@ class EscapeGameView(View):
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2
         field_center = field_size * 0.5
+        
+        for _ in range(2):
+            layer = ObjectLayer()
+            for x in range(-6400, 6400, 64):
+                for y in range(-6400, 6400, 64):
+                    ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
+                    ground.position = x, y
+                    ground.color = (30, 30, 30)
+                    layer.append(ground)
+            layer.append(self.player.body)
+            self.test_layers.append(layer)
         
         for x in range(0, field_size.x, 64):
             for y in range(0, field_size.y, 64):
@@ -202,6 +215,9 @@ class EscapeGameView(View):
         self.channels[1].use()
         self.channels[1].clear()
         self.field_list.draw()
+        # for layer in self.test_layers:
+            # layer.draw()
+        self.test_layers[0].draw()
         self.bomb_list.draw()
         self.wall_list.draw()
         self.npc_list.draw()
@@ -209,6 +225,8 @@ class EscapeGameView(View):
         self.window.use()
         
         self.clear()
+        
+        
         
         self.shader.program['activated'] = CONFIG.fog_of_war
         self.shader.program['lightPosition'] = self.player.rel_position * ENV.render_scale
@@ -253,9 +271,9 @@ class EscapeGameView(View):
         # direction = ENV.direction_input
         # if direction: self.player.movement.turn_toward(ENV.direction_input)
         # self.player.movement.move(ENV.move_input)
+        # ENV.debug_text['player_pos'] = self.player.position
         
         self.player.tick(delta_time)
-        print(f'vector : {Vector.num_instance}')
         # print('game tick update', CLOCK.delta_time)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
