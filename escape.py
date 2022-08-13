@@ -84,8 +84,10 @@ class EscapeGameView(View):
         self.light_layer = None
         
         self.debug_timer:float = time.perf_counter()
+        self.emitter = None
     
     def on_show_view(self):
+        # print('view_show')
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
         
         return super().on_show_view()
@@ -167,6 +169,16 @@ class EscapeGameView(View):
             self.bomb_list.append(bomb)
 
         self.light_layer.add(lights.Light(*field_center, 1200, arcade.color.WHITE, 'soft'))
+        
+        self.emitter = arcade.Emitter(center_xy=(100, 100), 
+                           emit_controller=arcade.EmitBurst(500), 
+                           particle_factory=lambda emitter: arcade.LifetimeParticle(
+                               IMG_PATH + "smoke.png", 
+                               change_xy=arcade.rand_in_circle((0,0), 1.0), 
+                               lifetime = 100, 
+                               scale = 1, 
+                               alpha=128
+                           ))
     
     def _setup_pathfinding(self):
         self.barrier_list = arcade.AStarBarrierList(self.enemy.body, 
@@ -206,6 +218,7 @@ class EscapeGameView(View):
         return print(text)
     
     def on_draw(self):
+        # print('view_draw')
         self.camera.use()
         
         self.channels[0].use()
@@ -221,6 +234,7 @@ class EscapeGameView(View):
         self.bomb_list.draw()
         self.wall_list.draw()
         self.npc_list.draw()
+        # self.emitter.draw()
         
         self.window.use()
         
@@ -234,12 +248,13 @@ class EscapeGameView(View):
         self.shader.program['lightAngle'] = 75.0
         self.shader.program['lightDirectionV'] = self.player.forward_vector
         
-        with self.light_layer:
+        # with self.light_layer:
         
-            self.shader.render()
-            self.player_list.draw()
+        self.shader.render()
+        self.player_list.draw()
         
-        self.light_layer.draw(ambient_color=(128,128,128))
+        # self.light_layer.draw(ambient_color=(128,128,128))
+        
         
         if CONFIG.debug_draw:
             self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
@@ -260,7 +275,7 @@ class EscapeGameView(View):
         self.camera_gui.use()
         
     def on_update(self, delta_time: float):
-        
+        # print('view_update')
         if not self.player.is_alive:
             view = GameOverScreen()
             self.window.show_view(view)
@@ -273,12 +288,20 @@ class EscapeGameView(View):
         # self.player.movement.move(ENV.move_input)
         # ENV.debug_text['player_pos'] = self.player.position
         
+        # if self.emitter:
+            # self.emitter.update()
+        
         self.player.tick(delta_time)
         # print('game tick update', CLOCK.delta_time)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
         target = ENV.abs_cursor_position
-        bullet = arcade.SpriteSolidColor(500, 2, arcade.color.ORANGE)
+        # bullet = arcade.SpriteSolidColor(500, 2, arcade.color.ORANGE)
+        bullet:arcade.PointList = [Vector(-2,0).rotate(self.player.rotation), 
+                                    Vector(2,0).rotate(self.player.rotation), 
+                                    Vector(2, 500).rotate(self.player.rotation), 
+                                    Vector(-2,500).rotate(self.player.rotation)]
+        
         # print(arcade.has_line_of_sight(start, target.unit * 1000, self.wall_list))
         print(arcade.get_sprites_at_point(target, self.wall_list))
     
