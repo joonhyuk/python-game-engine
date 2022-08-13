@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math, functools
 from shutil import move
 from config.engine import *
@@ -122,6 +124,23 @@ class AIController(ActorComponent):
         # self.owner.movement.turn_toward(self.move_path[0])
         # self.owner.movement.move_toward(self.move_path[0])
         
+
+
+class InteractionHandler(ActorComponent):
+    '''
+    handling interaction for actor
+    그냥 언리얼처럼 컬리전에서 하는게 낫지 않을지?
+    '''
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.others:list[Actor2D] = []
+        
+    def begin_overlap(self, other:Actor2D):
+        self.others.append(other)
+    
+    def end_overlap(self, other:Actor2D):
+        self.others.remove(other)
+      
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -513,7 +532,28 @@ class Actor2D(MObject):
     def rel_position(self) -> Vector:
         ''' relative position in viewport '''
         return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+
+
+class Door(Actor2D):
+    def __init__(self, body: Sprite = None, hp:float = 1000, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+        self.hp = hp
+        self._open = False
+        self._locked = False
+        self._sealed = False
     
+    def _set_open(self):
+        if self._open: return False
+        if self._locked or self._sealed: return False
+        
+        self._open = True
+        return self._open
+    
+    def _get_open(self):
+        return self._open
+    
+    open = property(_get_open, _set_open)
+        
 
 class Pawn2D(Actor2D):
     ''' 그냥 character로 통합하여 개발 중. 나중에 분리 고려 '''
