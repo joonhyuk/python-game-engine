@@ -138,6 +138,9 @@ class Environment:
     key_inputs = []
     debug_text:DebugTextLayer = None
     
+    window_shortside = None
+    window_longside = None
+    
     def __init__(self) -> None:
         self.gamepad = self.get_input_device()
     
@@ -153,7 +156,12 @@ class Environment:
     
     def set_screen(self, window:Window):
         self.window = window
-        self.render_scale = window.get_framebuffer_size()[0] / window.get_size()[0]
+        window_x = window.get_size()[0]
+        window_y = window.get_size()[1]
+        self.window_shortside = min(window_x, window_y)
+        self.window_longside = max(window_x, window_y)
+        
+        self.render_scale = window.get_framebuffer_size()[0] / self.window_longside
     
     def on_key_press(self, key:int, modifiers:int):
         pass
@@ -220,6 +228,7 @@ class Window(arcade.Window):
     debug_text:DebugTextLayer = None
     
     def on_show(self):
+        # print('window_show')
         ENV.set_screen(self)
         # self.direction_input = Vector()
         # self.get_input_device()
@@ -250,6 +259,7 @@ class Window(arcade.Window):
         if key == arcade.key.LCTRL: self.lctrl_applied = False
         
     def on_update(self, delta_time: float):
+        # print('window_update')
         # return super().on_update(delta_time)
 
         # if self.joystick:
@@ -271,6 +281,7 @@ class Window(arcade.Window):
         CLOCK.tick()
         
     def on_draw(self):
+        # print('window_draw')
         ENV.debug_text.draw()
         pass
     
@@ -340,6 +351,7 @@ class Sprite(arcade.Sprite):
         self.owner = None
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
 
+    
     # def on_update(self, delta_time: float = 1 / 60):
     #     print(self.owner)
     #     return super().on_update(delta_time)

@@ -82,6 +82,7 @@ class ActorComponent(MObject):
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
 
+
 class Body(ActorComponent):
     '''
     has size, sprite for draw, move(collision), hit(collision)
@@ -123,7 +124,7 @@ class AIController(ActorComponent):
         if not super().tick(delta_time): return False
         # self.owner.movement.turn_toward(self.move_path[0])
         # self.owner.movement.move_toward(self.move_path[0])
-        
+
 
 
 class InteractionHandler(ActorComponent):
@@ -178,7 +179,10 @@ class CameraHandler(ActorComponent):
         distv = self.owner.position - ENV.abs_cursor_position
         # print(self.owner.rel_position, ENV.cursor_position)
         # return Vector()
-        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, 32, 300, 0, 1, clamped=True)
+        in_min = ENV.window_shortside // 5
+        in_max = ENV.window_shortside // 1.2
+        ''' 최적화 필요 '''
+        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True)
 
 
 class CharacterMovement(ActorComponent):
@@ -365,6 +369,11 @@ class CharacterMovement(ActorComponent):
             return self._braking * self.owner.braking_friction
         else: return self._braking
     
+
+class PhysicsMovement(ActorComponent):
+    ''' movement handler for actor based on pymunk physics engine '''
+    pass
+
 
 class Actor2D(MObject):
     ''' top-down based actor object which has body, position, rotation, collision '''
