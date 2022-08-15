@@ -6,6 +6,10 @@ joonhyuk@me.com
 from __future__ import annotations
 
 import os
+import PIL.Image
+import PIL.ImageOps
+import PIL.ImageDraw
+
 from dataclasses import dataclass
 
 import arcade
@@ -42,7 +46,7 @@ def debug_draw_circle(center:Vector = Vector(),
                       fill_color = None):
     if not CONFIG.debug_draw: return False
     if fill_color is not None: arcade.draw_circle_filled(center.x, center.y, radius - line_thickness, fill_color)
-    return arcade.draw_circle_outline(center.x, center.y, radius, line_color, line_thickness)
+    return arcade.draw_circle_outline(*center, radius, line_color, line_thickness)
 
 def debug_draw_marker(position:Vector = Vector(), 
                       radius:float = DEFAULT_TILE_SIZE, 
@@ -54,7 +58,63 @@ def debug_draw_marker(position:Vector = Vector(),
     debug_draw_line(position, position - corner_point, color)
     debug_draw_line(position, position + corner_point.rotate(90), color)
     debug_draw_line(position, position + corner_point.rotate(-90), color)
+
+
+class DebugTextLayer(dict, metaclass=SingletonType):
+    '''
+    use text_obj property to access text attributes
     
+    bgcolor not working now
+    
+    '''
+    def __init__(self, 
+                 font_name = 'Kenney Mini Square', 
+                 font_size = 10, 
+                 color = (255,255,255,128),
+                 bgcolor = None, 
+                 topleft_position:Vector = Vector.diagonal(10) 
+                 ):
+        self.content = ''
+        self._position = topleft_position
+    
+        self.font_name = font_name
+        self.font_size = font_size
+        self.color = color
+        self.bgcolor = bgcolor
+        self.text:arcade.Text = None
+        self.width = CONFIG.screen_size.x
+        
+        self.setup()
+    
+    def setup(self):
+        self.width = CONFIG.screen_size.x
+        position = self._position
+        position.y = CONFIG.screen_size.y - position.y
+        self.text = arcade.Text('', *position, self.color, self.font_size, 
+                                font_name=self.font_name, 
+                                width = self.width, 
+                                anchor_y = 'top', 
+                                multiline=True)
+        print(position)
+    
+    def draw(self):
+        text = ''
+        for k, v in self.items():
+            text += ' : '.join((k, str(v)))
+            text += '\n'
+        self.text.value = text
+        self.text.draw()
+    
+    def _set_topleft_position(self, position:Vector):
+        self._position = position
+        self.setup()
+    
+    def _get_topleft_position(self):
+        return self._position
+    
+    position = property(_get_topleft_position, _set_topleft_position)
+    ''' topleft position of text box '''
+
 
 @dataclass
 class Environment:
@@ -76,6 +136,10 @@ class Environment:
     key_move:Vector = Vector()
     key = arcade.key
     key_inputs = []
+    debug_text:DebugTextLayer = None
+    
+    window_shortside = None
+    window_longside = None
     
     def __init__(self) -> None:
         self.gamepad = self.get_input_device()
@@ -92,7 +156,12 @@ class Environment:
     
     def set_screen(self, window:Window):
         self.window = window
-        self.render_scale = window.get_framebuffer_size()[0] / window.get_size()[0]
+        window_x = window.get_size()[0]
+        window_y = window.get_size()[1]
+        self.window_shortside = min(window_x, window_y)
+        self.window_longside = max(window_x, window_y)
+        
+        self.render_scale = window.get_framebuffer_size()[0] / self.window_longside
     
     def on_key_press(self, key:int, modifiers:int):
         pass
@@ -152,15 +221,20 @@ ENV = Environment()
 
 class Window(arcade.Window):
     
+    ### class variables : are they needed?
     lshift_applied = False
     lctrl_applied = False
     current_camera:arcade.Camera = None
+    debug_text:DebugTextLayer = None
     
     def on_show(self):
+        # print('window_show')
         ENV.set_screen(self)
         # self.direction_input = Vector()
         # self.get_input_device()
         if ENV.gamepad: self.set_mouse_visible(False)
+        ENV.debug_text = DebugTextLayer()
+        ENV.debug_text['fps'] = 0
         
     def on_key_press(self, key: int, modifiers: int):
         print('[window]key input')
@@ -185,6 +259,7 @@ class Window(arcade.Window):
         if key == arcade.key.LCTRL: self.lctrl_applied = False
         
     def on_update(self, delta_time: float):
+        # print('window_update')
         # return super().on_update(delta_time)
 
         # if self.joystick:
@@ -202,9 +277,12 @@ class Window(arcade.Window):
         #     self.direction_input = ENV.mouse_input * ENV.render_scale
         #     pass
         # print(ENV.get_current_window())
+        ENV.debug_text['fps'] = CLOCK.fps_average
         CLOCK.tick()
         
     def on_draw(self):
+        # print('window_draw')
+        ENV.debug_text.draw()
         pass
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
@@ -273,6 +351,7 @@ class Sprite(arcade.Sprite):
         self.owner = None
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
 
+    
     # def on_update(self, delta_time: float = 1 / 60):
     #     print(self.owner)
     #     return super().on_update(delta_time)
@@ -286,6 +365,34 @@ class SpriteCircle(arcade.SpriteCircle):
         super().__init__(radius, color, soft)
 
 
+class Capsule(Sprite):
+    
+    def __init__(self, radius: int):
+        super().__init__()
+        
+        diameter = radius * 2
+        cache_name = arcade.sprite._build_cache_name("circle_texture", diameter, 255, 255, 255, 64, 0)
+        texture = None
+        
+        # texture = make_circle_texture(diameter, color, name=cache_name)
+        
+        img = PIL.Image.new('RGBA', (diameter, diameter), (0,0,0,0))
+        draw = PIL.ImageDraw.Draw(img)
+        draw.ellipse((0, 0, diameter - 1, diameter - 1), fill=(255,255,255,64))
+        texture = arcade.Texture(cache_name, img, 'Detailed', 1.0)
+        
+        arcade.texture.load_texture.texture_cache[cache_name] = texture
+        
+        self.texture = texture
+        self._points = self.texture.hit_box_points
+        self.collision_radius = radius
+        self.collides_with_radius = True
+        
+        print('points : ', self._points)
+
+    def draw_hit_box(self, color: arcade.Color = ..., line_thickness: float = 1):
+        return debug_draw_circle(self.position, self.collision_radius, color, line_thickness)
+    
 class ObjectLayer(arcade.SpriteList):
     pass
 
@@ -359,6 +466,8 @@ class SoundBank:
     def set_volume_master(self, amount:float):
         self.volume_master = amount
 
+
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     SOUND = SoundBank(SFX_PATH)
+    # DEBUG = DebugTextLayer()

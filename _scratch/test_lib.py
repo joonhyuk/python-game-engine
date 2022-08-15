@@ -4,6 +4,22 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from lib.foundation import *
 from config import *
 
-a = Environment()
+class fooo:
+    
+    def __init__(self, ll:list) -> None:
+        ll.append(self)
+    
+    def __del__(self):
+        print('I\'m dying~')
+    
+    @classmethod
+    def init(cls, ll:list):
+        cls(ll)
 
-print(get_curve_value(3.5, {1:2, 2:4, 3:4, 4:2}, map_range_easeinout))
+fl = []
+print('start')
+fooo.init(fl)
+# del(f)
+print('added')
+fl.pop(0)
+print('popped')

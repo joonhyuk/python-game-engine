@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import math, functools
+from shutil import move
 from config.engine import *
 
 from lib.foundation.base import *
@@ -30,7 +33,6 @@ class MObject(object):
         
         if self._lifetime:
             CLOCK.timer_start(self.id)
-            # schedule_once(self.destroy, lifetime)
         
         self._spawned = True
     
@@ -72,25 +74,74 @@ class MObject(object):
 
 class ActorComponent(MObject):
     '''component base class'''
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.owner:Actor2D = None
+        self._spawned = True
     
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
+
+
+class Body(ActorComponent):
+    '''
+    has size, sprite for draw, move(collision), hit(collision)
+    draw(), 
+    '''
+    def __init__(self, 
+                 mesh:Sprite, 
+                 move_collision:Sprite = None,
+                 hit_collision:Sprite = None, 
+                 ) -> None:
+        super().__init__()
+        self.mesh:Sprite = None
+        ''' for draw. should be expanded for attachment and vfx '''
+        self.move_collision:Sprite = None
+        ''' for move check '''
+        self.hit_collision:Sprite = None
+        ''' for hit check '''
+    
+    def remove(self):
+        if self.mesh: self.mesh.remove_from_sprite_lists()
+        if self.move_collision: self.move_collision.remove_from_sprite_lists()
+        if self.hit_collision: self.hit_collision.remove_from_sprite_lists()
+    
+    def draw(self):
+        self.mesh.draw()
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        self.mesh.position
+    
 
 class AIController(ActorComponent):
     
     def __init__(self) -> None:
         super().__init__()
         self.move_path = None
-        self._spawned = True
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         # self.owner.movement.turn_toward(self.move_path[0])
         # self.owner.movement.move_toward(self.move_path[0])
+
+
+
+class InteractionHandler(ActorComponent):
+    '''
+    handling interaction for actor
+    그냥 언리얼처럼 컬리전에서 하는게 낫지 않을지?
+    '''
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.others:list[Actor2D] = []
         
+    def begin_overlap(self, other:Actor2D):
+        self.others.append(other)
+    
+    def end_overlap(self, other:Actor2D):
+        self.others.remove(other)
+      
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -98,10 +149,11 @@ class CameraHandler(ActorComponent):
     
     def __init__(self) -> None:
         super().__init__()
+        self._spawned = False
         self.offset:Vector = Vector(0,0)
         self.camera = Camera(*CONFIG.screen_size)
-        self.camera_interp_speed = 0.1
-        self.boom_length = 100.0
+        self.camera_interp_speed = 0.05
+        self.boom_length = 200.0
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -123,12 +175,20 @@ class CameraHandler(ActorComponent):
     center:Vector = property(_get_center, _set_center)
     
     def _get_boom_vector(self) -> Vector:
-        return self.owner.forward_vector.unit * self.boom_length
+        # distv = ENV.cursor_position - ENV.scren_center
+        distv = self.owner.position - ENV.abs_cursor_position
+        # print(self.owner.rel_position, ENV.cursor_position)
+        # return Vector()
+        in_min = ENV.window_shortside // 5
+        in_max = ENV.window_shortside // 1.2
+        ''' 최적화 필요 '''
+        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True)
 
 
 class CharacterMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
+                 capsule_radius = 16, 
                  max_speed_run = 250, 
                  max_speed_walk = 70, 
                  acceleration = 25, 
@@ -137,6 +197,8 @@ class CharacterMovement(ActorComponent):
                  rotation_interp_speed = 3, 
                  ) -> None:
         super().__init__()
+        self.size = capsule_radius
+        
         self.max_speed_run = max_speed_run
         ''' pixel per sec '''
         self.max_speed_walk = max_speed_walk
@@ -153,8 +215,8 @@ class CharacterMovement(ActorComponent):
         self.move_input:Vector = Vector()
         self.desired_rotation:float = 0.0
         
-        self._spawned = True
-        
+        self._speed_debug_val = avg_generator(0, 60)
+        next(self._speed_debug_val)
         self._debug_speedq = []
         self._debug_braking_time = 0
         
@@ -164,10 +226,14 @@ class CharacterMovement(ActorComponent):
         
         self._set_movement(delta_time)
         self._set_heading(delta_time)
+        
+        ENV.debug_text['player_speed'] = self.speed_avg // delta_time
+        # ENV.debug_text['player_heading'] = self.rotation
     
     def _set_movement(self, delta_time:float):
         ''' set movement of tick by user input '''
         # self._debug_check_speed(delta_time)
+        # print(self.speed_avg)
         if self.move_input is None: return False
         if self.move_input.near_zero():
             ''' stop / braking '''
@@ -194,27 +260,28 @@ class CharacterMovement(ActorComponent):
         max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
         max_speed *= self._get_directional_speed_multiplier()
         ''' apply directional speed limit '''
-        
         self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
-        
         self._last_tick_speed = self.velocity.length
         self._debug_braking_time = 0.0
         
         ### debug start
-        a = max_speed * delta_time
-        b = self.velocity.length
-        if abs(a - b) > 0.001:
-            if b > 150:
-                print('missing something')
+        # a = max_speed * delta_time
+        # b = self.velocity.length
+        # if abs(a - b) > 0.001:
+        #     if b > 150:
+        #         print('missing something')
         ### debug end
         
         return True
         
     def _debug_check_speed(self, delta_time):
-        
         if len(self._debug_speedq) > 10: self._debug_speedq.pop(0)
         self._debug_speedq.append(self.velocity.length / delta_time)
         print(round(self._debug_braking_time, 1), sum(self._debug_speedq) // len(self._debug_speedq))
+    
+    @property
+    def speed_avg(self):
+        return self._speed_debug_val.send(self.velocity.length)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''
@@ -267,8 +334,8 @@ class CharacterMovement(ActorComponent):
     def stop(self):
         self.move()
     
-    def move_forward(self, speed):
-        self.owner.body.forward(speed)
+    # def move_forward(self, speed):
+    #     self.owner.body.forward(speed)
     
     def _get_velocity(self) -> Vector:
         return self.owner.velocity
@@ -303,35 +370,54 @@ class CharacterMovement(ActorComponent):
         else: return self._braking
     
 
+class PhysicsMovement(ActorComponent):
+    ''' movement handler for actor based on pymunk physics engine '''
+    pass
+
+
 class Actor2D(MObject):
-    ''' top-down based actor object which has position, rotation, collision '''
+    ''' top-down based actor object which has body, position, rotation, collision '''
     def __init__(self, 
                  body:Sprite = None, 
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:Sprite = None
+        self.body_movement:Sprite = None
         ''' actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...) '''
         # self.attachments:list[Sprite] = []
+        self.size = get_from_dict(kwargs, 'size', DEFAULT_TILE_SIZE)
+        
         self.set_body(body)
         self.visibility = get_from_dict(kwargs, 'visibility', True)
-        
+        ''' diameter '''
         self.tick_group = []
         ''' tick group '''
     
-    def set_body(self, body:Sprite = None) -> None:
+    def set_body(self, body:Sprite = None, body_movement:Sprite = None) -> None:
         if self.body: self.remove_body()
-        self.body = body or SpriteCircle()
+        self.body = body or SpriteCircle(self.size // 2)
+        self.body_movement = self.get_physics_body()
+        
         self.body.owner = self
     
+    def get_physics_body(self) -> Sprite:
+        '''
+        could be override without super()
+        
+        like, return Capsule(self.size // 2)
+        '''
+        return None
+        
     def spawn(self, 
               position:Vector = Vector(), 
               rotation:float = None, 
-              layer:ObjectLayer = None, 
+              draw_layer:ObjectLayer = None, 
+              movable_layer:ObjectLayer = None,
               lifetime=0) -> None:
         self.position = position
         self.rotation = rotation
         # if sprite_list:
-        self.register_body(layer)
+        self.register_body(draw_layer, movable_layer)
         self.register_components()
         return super().spawn(lifetime)
     
@@ -354,11 +440,17 @@ class Actor2D(MObject):
     
     def _get_position(self) -> Vector:
         if not self.body: return False
+        if self.body_movement:
+            return Vector(self.body_movement.position)
         return Vector(self.body.position)
     
     def _set_position(self, new_position:Vector = Vector(0., 0.)) -> bool:
         if not self.body: return False
-        self.body.position = new_position
+        if self.body_movement:
+            self.body_movement.position = new_position
+            self.body.position = self.body_movement.position
+        else:
+            self.body.position = new_position
         return True
     
     # @classmethod
@@ -372,11 +464,17 @@ class Actor2D(MObject):
     
     @check_body
     def _get_rotation(self) -> float:
+        if self.body_movement:
+            return self.body_movement.angle
         return self.body.angle
     
     @check_body
     def _set_rotation(self, rotation:float = 0.0) -> bool:
-        self.body.angle = rotation
+        if self.body_movement:
+            self.body_movement.angle = rotation
+            self.body.angle = self.body_movement.angle
+        else:
+            self.body.angle = rotation
         return True
     
     @check_body
@@ -390,11 +488,20 @@ class Actor2D(MObject):
         
     # @check_body
     def _get_velocity(self) -> Vector:
+        if self.body_movement:
+            return Vector(self.body_movement.velocity)
         return Vector(self.body.velocity)
     
     # @check_body
     def _set_velocity(self, velocity:Vector = Vector()):
-        self.body.velocity = list(velocity)
+        if self.body_movement:
+            self.body_movement.velocity = list(velocity)
+            # self.body.velocity = list(velocity)
+            # self.body.velocity = self.body_movement.velocity
+            self.body.position = self.body_movement.position    # 좋지 않음. 별도의 바디 컴포넌트를 만들어 붙여야겠음.
+            # print(self.body.velocity)
+        else:
+            self.body.velocity = list(velocity)
         
     def register_components(self):
         for k in self.__dict__:
@@ -407,11 +514,17 @@ class Actor2D(MObject):
                     ''' for components that have tick '''
     
     @check_body
-    def register_body(self, sprite_list:ObjectLayer):
+    def register_body(self, sprite_list:ObjectLayer, movable_list:ObjectLayer):
+        if self.body_movement is None:
+            movable_list.append(self.body)
+        else:
+            movable_list.append(self.body_movement)
         return sprite_list.append(self.body)
     
     @check_body
     def remove_body(self):
+        if self.body_movement:
+            self.body_movement.remove_from_sprite_lists()
         return self.body.remove_from_sprite_lists()
     
     visibility:bool = property(_get_visibility, _set_visibility)
@@ -422,14 +535,37 @@ class Actor2D(MObject):
     @property
     @check_body
     def forward_vector(self):
-        return Vector(1,0).rotate(self.body.angle)
+        return Vector(1,0).rotate(self.rotation)
     
     @property
     def rel_position(self) -> Vector:
+        ''' relative position in viewport '''
         return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+
+
+class Door(Actor2D):
+    def __init__(self, body: Sprite = None, hp:float = 1000, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+        self.hp = hp
+        self._open = False
+        self._locked = False
+        self._sealed = False
     
+    def _set_open(self):
+        if self._open: return False
+        if self._locked or self._sealed: return False
+        
+        self._open = True
+        return self._open
+    
+    def _get_open(self):
+        return self._open
+    
+    open = property(_get_open, _set_open)
+        
 
 class Pawn2D(Actor2D):
+    ''' 그냥 character로 통합하여 개발 중. 나중에 분리 고려 '''
     pass
 
 class Character2D(Actor2D):
@@ -439,12 +575,16 @@ class Character2D(Actor2D):
         self.hp = hp
         self.movement = CharacterMovement()
         self.camera = CameraHandler()
+        self.action = None
         self.controller = None
         
         self.constructor()
     
     def constructor(self):
         pass
+    
+    def get_physics_body(self) -> Sprite:
+        return Capsule(self.size // 2)
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
@@ -454,8 +594,16 @@ class Character2D(Actor2D):
         
     def apply_damage(self, damage:float):
         self.hp -= damage
+    
+    @property
+    def is_alive(self) -> bool:
+        if self.hp <= 0: return False
+        return super().is_alive
 
 class NPC(Character2D):
     
     def constructor(self):
         self.controller = AIController()
+        
+    def get_physics_body(self) -> Sprite:
+        return None

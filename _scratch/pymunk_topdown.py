@@ -252,7 +252,8 @@ class MyWindow(arcade.Window):
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP:
-            self.up_pressed = True
+            # self.up_pressed = True
+            self.player_sprite.velocity[1] += 10
         elif key == arcade.key.DOWN:
             self.down_pressed = True
         elif key == arcade.key.LEFT:
