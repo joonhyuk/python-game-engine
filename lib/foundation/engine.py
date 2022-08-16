@@ -88,8 +88,8 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     
     def setup(self):
         self.width = CONFIG.screen_size.x
-        position = self._position
-        position.y = CONFIG.screen_size.y - position.y
+        position = Vector(self._position.x, CONFIG.screen_size.y - self._position.y)
+        # position.y = CONFIG.screen_size.y - position.y
         self.text = arcade.Text('', *position, self.color, self.font_size, 
                                 font_name=self.font_name, 
                                 width = self.width, 
