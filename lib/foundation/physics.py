@@ -316,7 +316,7 @@ class PhysicsEngine:
         # Set the physics shape to the sprite's hitbox
         if shape is None:
             poly = sprite.get_adjusted_hit_box()
-            shape = pymunk.Poly(body, poly, radius)
+            shape = pymunk.Poly(body, poly, radius=radius)
         
         # Set collision type, used in collision callbacks
         if collision_type:
