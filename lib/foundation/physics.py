@@ -2,8 +2,10 @@
 very simple physics code injection by mash
 
 '''
+from email.policy import default
 import sys
 from typing import Callable, Optional, Union
+from enum import Enum
 
 import arcade
 from arcade import (Point, 
@@ -17,6 +19,7 @@ from arcade import (Point,
 ### for in-house physics engine
 import pymunk, math
 from .vector import Vector
+from config.engine import *
 ### for in-house physics engine
 
 def is_polygon_intersecting_with_circle(poly: PointList, p: Point, radius: float):
@@ -60,10 +63,6 @@ def is_polygon_intersecting_with_circle(poly: PointList, p: Point, radius: float
 def is_sprite_intersecting_with_line(start:tuple, end:tuple, sprite:arcade.Sprite):
     
     pass
-
-def foo(sprite1: Sprite, sprite2: Sprite) -> bool:
-    print('foooo')
-    return False
 
 def _check_for_collision(sprite1: Sprite, sprite2: Sprite) -> bool:
     """
@@ -110,9 +109,7 @@ def _check_for_collision(sprite1: Sprite, sprite2: Sprite) -> bool:
         sprite1.get_adjusted_hit_box(), sprite2.get_adjusted_hit_box()
     )
 
-
 arcade.sprite_list.spatial_hash._check_for_collision = _check_for_collision
-
 
 class PhysicsObject:
     '''
@@ -169,8 +166,14 @@ class PhysicsObject:
     
     rotation = property(_get_rotation, _set_rotation)
     
+    def _get_collision_type(self):
+        ''' movement or hitbox? '''
+        return self.shape.collision_type
     
-
+    def _set_collision_type(self, collision_type:int):
+        self.shape.collision_type = collision_type
+    
+    collision_type = property(_get_collision_type, _set_collision_type)
 
 class PhysicsException(Exception):
     pass
@@ -227,7 +230,7 @@ class PhysicsEngine:
                    max_horizontal_velocity: int = None,
                    max_vertical_velocity: int = None,
                    radius: float = 0,
-                   collision_type: Optional[str] = "default",
+                   collision_type: Optional[int] = collision.default,
                    ):
         
         if sprite in self.objects: return True
@@ -247,12 +250,12 @@ class PhysicsEngine:
         if max_horizontal_velocity is not None:
             sprite.pymunk.max_horizontal_velocity = max_horizontal_velocity
 
-        # Keep track of collision types
-        if collision_type not in self.collision_types:
-            self.collision_types.append(collision_type)
+        ## Keep track of collision types
+        # if collision_type not in self.collision_types:
+        #     self.collision_types.append(collision_type)
         
-        # Get a number associated with the string of collision_type
-        collision_type_id = self.collision_types.index(collision_type)
+        # # Get a number associated with the string of collision_type
+        # collision_type_id = self.collision_types.index(collision_type)
         
         # Default to a box moment_of_inertia
         if moment_of_inertia is None:
@@ -320,7 +323,8 @@ class PhysicsEngine:
         
         # Set collision type, used in collision callbacks
         if collision_type:
-            shape.collision_type = collision_type_id
+            # shape.collision_type = collision_type_id
+            shape.collision_type = collision_type
 
         # How bouncy is the shape?
         if elasticity is not None:
@@ -375,7 +379,7 @@ class PhysicsEngine:
             return True
         return False
     
-    def get_object_for_shape(self, shape: Optional[pymunk.Shape]) -> Optional[Sprite]:
+    def get_object_from_shape(self, shape: Optional[pymunk.Shape]) -> Optional[Sprite]:
         """ Given a shape, what sprite is associated with it? """
         for sprite in self.objects:
             if self.objects[sprite].shape is shape:
@@ -385,8 +389,8 @@ class PhysicsEngine:
     def get_objects_from_arbiter(self, arbiter: pymunk.Arbiter) -> tuple[Optional[Sprite], Optional[Sprite]]:
         """ Given a collision arbiter, return the sprites associated with the collision. """
         shape1, shape2 = arbiter.shapes
-        sprite1 = self.get_object_for_shape(shape1)
-        sprite2 = self.get_object_for_shape(shape2)
+        sprite1 = self.get_object_from_shape(shape1)
+        sprite2 = self.get_object_from_shape(shape2)
         return sprite1, sprite2
     
     def is_on_ground(self, sprite: Sprite) -> bool:
@@ -503,13 +507,13 @@ class PhysicsEngine:
                               post_handler:Callable = None,
                               separate_handler:Callable = None):
         """ Add code to handle collisions between objects. """
-        if first_type not in self.collision_types:
-            self.collision_types.append(first_type)
-        first_type_id = self.collision_types.index(first_type)
-
-        if second_type not in self.collision_types:
-            self.collision_types.append(second_type)
-        second_type_id = self.collision_types.index(second_type)
+        # if first_type not in self.collision_types:
+        #     self.collision_types.append(first_type)
+        # first_type_id = self.collision_types.index(first_type)
+        
+        # if second_type not in self.collision_types:
+        #     self.collision_types.append(second_type)
+        # second_type_id = self.collision_types.index(second_type)
         
         """A collision handler is a set of 4 function callbacks for the different
         collision events that Pymunk recognizes.
@@ -539,13 +543,14 @@ class PhysicsEngine:
 
         def handler_pre(arbiter, space, data):
             sprite_a, sprite_b = self.get_objects_from_arbiter(arbiter)
-            pre_handler(sprite_a, sprite_b, arbiter, space, data)
+            return pre_handler(sprite_a, sprite_b, arbiter, space, data)
 
         def handler_separate(arbiter, space, data):
             sprite_a, sprite_b = self.get_objects_from_arbiter(arbiter)
             separate_handler(sprite_a, sprite_b, arbiter, space, data)
         
-        h = self.space.add_collision_handler(first_type_id, second_type_id)
+        # h = self.space.add_collision_handler(first_type_id, second_type_id)
+        h = self.space.add_collision_handler(first_type, second_type)
         if begin_handler:
             h.begin = handler_begin
         if post_handler:

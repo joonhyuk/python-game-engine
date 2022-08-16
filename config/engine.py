@@ -1,5 +1,5 @@
 import arcade
-from enum import Enum
+from enum import Enum, IntEnum, auto, IntFlag
 from lib.foundation.base import *
 # from lib.foundation.vector import Vector
 
@@ -47,3 +47,13 @@ class default_settings:
 #     downright = (down + right).normalize()
 
 CONFIG = default_settings()
+
+class collision(IntFlag):
+    default = auto()
+    character = auto()
+    enemy = auto()
+    wall = auto()
+    projectile = auto()
+    test = wall | character
+    
+    
