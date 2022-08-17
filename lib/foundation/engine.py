@@ -356,7 +356,10 @@ class Sprite(arcade.Sprite):
     #     print(self.owner)
     #     return super().on_update(delta_time)
     
-        
+class StaticObject(Sprite):
+    pass
+
+
 class SpriteCircle(arcade.SpriteCircle):
     def __init__(self, 
                  radius: int = 16, 

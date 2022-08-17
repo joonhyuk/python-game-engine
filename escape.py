@@ -115,34 +115,43 @@ class EscapeGameView(View):
         body =  self.player.body_movement if self.player.body_movement else self.player.body
         self.physics_simple = arcade.PhysicsEngineSimple(body, [self.wall_list, self.npc_list])
         
-        self.physics_complex = PymunkPhysicsEngine()
-        
+        self.physics_complex = PhysicsEngine()
         self.physics_complex.add_sprite(self.player.body, 
-                                collision_type='player')
+                                       friction=0.6,
+                                       body_type = PhysicsEngine.KINEMATIC, 
+                                       moment_of_inertia=PhysicsEngine.MOMENT_INF,
+                                       damping=0.01,
+                                collision_type=collision.character, 
+                                max_velocity=1000)
                                 
         self.physics_complex.add_sprite_list(self.wall_list,
                                      friction=0.2, 
-                                     collision_type = 'wall', 
-                                     body_type = PymunkPhysicsEngine.STATIC)
+                                     collision_type = collision.wall, 
+                                     body_type = PhysicsEngine.STATIC)
         
         self.physics_complex.add_sprite_list(self.bomb_list, 
                                      friction = 1.0, 
-                                     collision_type = 'movable')
+                                     collision_type = collision.enemy)
+
+        def player_hit_wall(player, wall, arbiter, space, data):
+            print(wall)
+        
+        self.physics_complex.add_collision_handler(collision.character, collision.wall, player_hit_wall)
         
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2
         field_center = field_size * 0.5
         
-        for _ in range(2):
-            layer = ObjectLayer()
-            for x in range(-6400, 6400, 64):
-                for y in range(-6400, 6400, 64):
-                    ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
-                    ground.position = x, y
-                    ground.color = (30, 30, 30)
-                    layer.append(ground)
-            layer.append(self.player.body)
-            self.test_layers.append(layer)
+        # for _ in range(1):
+        #     layer = ObjectLayer()
+        #     for x in range(-6400, 6400, 64):
+        #         for y in range(-6400, 6400, 64):
+        #             ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
+        #             ground.position = x, y
+        #             ground.color = (30, 30, 30)
+        #             layer.append(ground)
+        #     # layer.append(self.player.body)
+        #     self.test_layers.append(layer)
         
         for x in range(0, field_size.x, 64):
             for y in range(0, field_size.y, 64):
@@ -234,7 +243,7 @@ class EscapeGameView(View):
         self.bomb_list.draw()
         self.wall_list.draw()
         self.npc_list.draw()
-        # self.emitter.draw()
+        self.emitter.draw()
         
         self.window.use()
         
@@ -280,19 +289,27 @@ class EscapeGameView(View):
             view = GameOverScreen()
             self.window.show_view(view)
         
-        self.physics_simple.update()
-        # self.physics.step(delta_time)
+        # self.physics_simple.update()
         
         # direction = ENV.direction_input
         # if direction: self.player.movement.turn_toward(ENV.direction_input)
         # self.player.movement.move(ENV.move_input)
         # ENV.debug_text['player_pos'] = self.player.position
         
-        # if self.emitter:
-            # self.emitter.update()
+        if self.emitter:
+            self.emitter.update()
         
         self.player.tick(delta_time)
+        self.physics_complex.set_velocity(self.player.body, self.player.velocity * 100)
+        # self.physics_complex.set_ang
+        # self.physics_complex.apply_force(self.player.body, self.player.velocity * 200)
         # print('game tick update', CLOCK.delta_time)
+        
+        obj = self.physics_complex.get_physics_object(self.player.body)
+        # obj.body._set_angular_velocity(-10)
+        obj.rotation = math.radians(self.player.rotation)
+        
+        self.physics_complex.step(1/60)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
         target = ENV.abs_cursor_position

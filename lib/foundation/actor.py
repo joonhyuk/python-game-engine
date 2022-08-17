@@ -370,7 +370,7 @@ class CharacterMovement(ActorComponent):
         else: return self._braking
     
 
-class PhysicsMovement(ActorComponent):
+class PhysicsMovement(CharacterMovement):
     ''' movement handler for actor based on pymunk physics engine '''
     pass
 
@@ -414,6 +414,9 @@ class Actor2D(MObject):
               draw_layer:ObjectLayer = None, 
               movable_layer:ObjectLayer = None,
               lifetime=0) -> None:
+        '''
+        set position, rotation, register body and component
+        '''
         self.position = position
         self.rotation = rotation
         # if sprite_list:
@@ -440,15 +443,15 @@ class Actor2D(MObject):
     
     def _get_position(self) -> Vector:
         if not self.body: return False
-        if self.body_movement:
-            return Vector(self.body_movement.position)
+        # if self.body_movement:
+        #     return Vector(self.body_movement.position)
         return Vector(self.body.position)
     
     def _set_position(self, new_position:Vector = Vector(0., 0.)) -> bool:
         if not self.body: return False
         if self.body_movement:
             self.body_movement.position = new_position
-            self.body.position = self.body_movement.position
+            self.body.position = new_position
         else:
             self.body.position = new_position
         return True
@@ -573,7 +576,7 @@ class Character2D(Actor2D):
     def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.hp = hp
-        self.movement = CharacterMovement()
+        self.movement = PhysicsMovement()
         self.camera = CameraHandler()
         self.action = None
         self.controller = None
