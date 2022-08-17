@@ -303,6 +303,13 @@ class GameWindow(arcade.Window):
 
         self.physics_engine.add_collision_handler("bullet", "item", post_handler=item_hit_handler)
 
+        def boing_hit_handler(player, boing, _arbiter, _spcae, _data):
+            if self.physics_engine.is_on_ground(player):
+                imp = 1500 if self.up_pressed else 500
+                self.physics_engine.apply_impulse(player, (0, imp))
+            
+        self.physics_engine.add_collision_handler('player', 'wall', post_handler=boing_hit_handler)
+        
         # Add the player.
         # For the player, we set the damping to a lower value, which increases
         # the damping rate. This prevents the character from traveling too far

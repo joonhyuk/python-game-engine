@@ -4,6 +4,7 @@ Example of Pymunk Physics Engine
 Top-down
 """
 import math
+from os import sep
 import random
 import arcade
 from typing import Optional
@@ -205,6 +206,26 @@ class MyWindow(arcade.Window):
                                             damping=1.0,
                                             collision_type="rock")
         
+        def begin_player_hit_wall(player, wall, arbiter, space, data):
+            print('begin_hit')
+            return True
+        def pre_player_hit_wall(player, wall, arbiter, space, data):
+            print('pre_hit')
+            # return True
+        def post_player_hit_wall(player, wall, arbiter, space, data):
+            print('post_hit')
+            self.physics_engine.apply_impulse(player, (100,0))
+            # return False
+        def seperate_player_hit_wall(player, wall, arbiter, space, data):
+            print('seperate_hit')
+            # return False
+        
+        self.physics_engine.add_collision_handler('player', 'wall', 
+                                                  begin_handler=begin_player_hit_wall, 
+                                                  pre_handler=pre_player_hit_wall,
+                                                  separate_handler=seperate_player_hit_wall,
+                                                  post_handler=post_player_hit_wall)
+        
     def on_mouse_press(self, x, y, button, modifiers):
         """ Called whenever the mouse button is clicked. """
 
@@ -252,8 +273,8 @@ class MyWindow(arcade.Window):
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP:
-            # self.up_pressed = True
-            self.player_sprite.velocity[1] += 10
+            self.up_pressed = True
+            # self.player_sprite.velocity[1] += 10
         elif key == arcade.key.DOWN:
             self.down_pressed = True
         elif key == arcade.key.LEFT:
@@ -292,6 +313,9 @@ class MyWindow(arcade.Window):
         self.player_sprite.change_x = 0
         self.player_sprite.change_y = 0
 
+        obj = self.physics_engine.get_physics_object(self.player_sprite)
+        obj.body._set_angular_velocity(-10)
+        
         if self.up_pressed and not self.down_pressed:
             force = (0, PLAYER_MOVE_FORCE)
             self.physics_engine.apply_force(self.player_sprite, force)
