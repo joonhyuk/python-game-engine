@@ -362,8 +362,15 @@ class Sprite(arcade.Sprite):
                  angle: float = 0):
         self.owner = None
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
+        self.collides_with_radius = False
 
+    def _get_position(self) -> Vector:
+        return Vector(self.position)
     
+    def _set_position(self, position):
+        self.position = position
+    
+    position:Vector = property(_get_position, _set_position)
     # def on_update(self, delta_time: float = 1 / 60):
     #     print(self.owner)
     #     return super().on_update(delta_time)

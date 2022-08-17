@@ -289,13 +289,5 @@ if __name__ != "__main__":
     print("include", __name__, ":", __file__)
 else:
     v = Vector()
-    v2 = Vector(0,1)
-    print((v + v2).normalize())
-    
-    v = Vector(10,0)
-    v //= 3
-    print(v)
-    
-    v.y = 100
-    print(v)
+    print(type(v))
     

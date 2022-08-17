@@ -2,7 +2,6 @@
 very simple physics code injection by mash
 
 '''
-from email.policy import default
 import sys
 from typing import Callable, Optional, Union
 from enum import Enum
@@ -195,7 +194,7 @@ class PhysicsEngine:
         self.space = pymunk.Space()
         self.space.gravity = (0, 0)
         self.space.damping = 1.0        # ratio of speed(scalar) which is kept to next tick
-        self.collision_types: list[str] = []
+        # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
         self.objects: dict[Sprite, PhysicsObject] = {}
         self.non_static_objects: list[Sprite] = []
         self.maximum_incline_on_ground = 0.708  # no need for now
