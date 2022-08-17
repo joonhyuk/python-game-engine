@@ -7,6 +7,7 @@ from config.engine import *
 from lib.foundation.base import *
 from lib.foundation.clock import *
 from lib.foundation.engine import *
+from lib.foundation.physics import *
 
 class MObject(object):
     def __init__(self, **kwargs) -> None:
@@ -86,33 +87,80 @@ class ActorComponent(MObject):
 class Body(ActorComponent):
     '''
     has size, sprite for draw, move(collision), hit(collision)
-    draw(), 
+    based on pymunk physics engine
     '''
     def __init__(self, 
-                 mesh:Sprite, 
-                 move_collision:Sprite = None,
-                 hit_collision:Sprite = None, 
+                 sprite:Sprite, 
+                 physics_engine:PhysicsEngine = None,
+                 physics:PhysicsObject = None,
                  ) -> None:
         super().__init__()
-        self.mesh:Sprite = None
+        self.sprite:Sprite = None
         ''' for draw. should be expanded for attachment and vfx '''
-        self.move_collision:Sprite = None
-        ''' for move check '''
-        self.hit_collision:Sprite = None
-        ''' for hit check '''
+        self.physics:PhysicsObject = None
+        ''' for move, hit check '''
+        self.physics_space:pymunk.Space = None
+    
+    def setup(self,
+              sprite:Sprite,
+              physics_engine:PhysicsEngine = None,
+              physics_type:int = pymunk.Body.STATIC,
+              
+              )
     
     def remove(self):
-        if self.mesh: self.mesh.remove_from_sprite_lists()
-        if self.move_collision: self.move_collision.remove_from_sprite_lists()
-        if self.hit_collision: self.hit_collision.remove_from_sprite_lists()
+        if self.sprite: self.sprite.remove_from_sprite_lists()
+        # if self.physics: self.physics
+        # if self.hit_collision: self.hit_collision.remove_from_sprite_lists()
     
     def draw(self):
-        self.mesh.draw()
+        self.sprite.draw()
     
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        self.mesh.position
+    # def tick(self, delta_time: float) -> bool:
+    #     if not super().tick(delta_time): return False
+    #     self.sprite.position
     
+    def apply_force(self, force:Vector = CONFIG.zero_vector):
+        return self.physics.body.apply_force_at_local_point(force)
+    
+    def sync(self):
+        if not self.physics: return False
+        if self.physics.body.is_sleeping: return False
+        
+        pos_diff = self.position - self.sprite.position
+        ang_diff = self.angle - self.sprite.angle
+        
+        self.sprite.position = self.position
+        self.sprite.angle = self.angle
+        
+        self.sprite.pymunk_moved(self.physics, pos_diff, ang_diff)
+        return True
+        
+        
+    def _get_position(self) -> Vector:
+        if self.physics:
+            return Vector(self.physics.body.position)
+        return self.sprite.position
+    
+    def _set_position(self, position) -> None:
+        if self.physics:
+            self.physics.body.position = position
+        else: self.sprite.position = position
+    
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        if self.physics:
+            return math.degrees(self.physics.body.angle)
+        return self.sprite.angle
+    
+    def _set_angle(self, angle:float):
+        if self.physics:
+            self.physics.body.angle = math.radians(angle)
+        else: self.sprite.angle = angle
+    
+    angle:float = property(_get_angle, _set_angle)
+        
 
 class AIController(ActorComponent):
     
@@ -372,8 +420,59 @@ class CharacterMovement(ActorComponent):
 
 class PhysicsMovement(CharacterMovement):
     ''' movement handler for actor based on pymunk physics engine '''
-    pass
+    def _set_movement(self, delta_time:float):
+        ''' set movement of tick by user input '''
+        # self._debug_check_speed(delta_time)
+        # print(self.speed_avg)
+        if self.move_input is None: return False
+        if self.move_input.near_zero():
+            ''' stop / braking '''
+            if self.velocity.is_zero: return False
+            # if not self._braking_start_speed:
+            #     self._braking_start_speed = self.velocity.length
+            
+            
+            
+            # # if not self.velocity.near_zero(0.01):
+            # if not math.isclose(self._last_tick_speed, 0, abs_tol=0.01):
+            #     # self.velocity += -1 * self.velocity.unit * min(self.braking * delta_time, self.speed)
+            #     braking_ratio = clamp((1 - self.braking * delta_time / self._last_tick_speed), 0.0, 1.0)
+            #     # print(round(self._debug_braking_time,1) ,braking_ratio)
+            #     self.velocity *= braking_ratio
+            #     # self.velocity = self.velocity - self.velocity.unit * self.braking * delta_time
+            #     self._debug_braking_time += delta_time
+            #     # print(self.speed, round(self.sec_counter, 1))
+            #     return True
+            else:
+                self.velocity = Vector()
+                return False
+        
+        accel = self.acceleration
+        
+        max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
+        max_speed *= self._get_directional_speed_multiplier()
+        ''' apply directional speed limit '''
+        self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
+        self._last_tick_speed = self.velocity.length
+        self._debug_braking_time = 0.0
+        
+        ### debug start
+        # a = max_speed * delta_time
+        # b = self.velocity.length
+        # if abs(a - b) > 0.001:
+        #     if b > 150:
+        #         print('missing something')
+        ### debug end
+        
+        return True
+    
 
+
+class Unit(MObject):
+    ''' base actor object which has body(sprite, physics) '''
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+    
 
 class Actor2D(MObject):
     ''' top-down based actor object which has body, position, rotation, collision '''
@@ -518,6 +617,7 @@ class Actor2D(MObject):
     
     @check_body
     def register_body(self, sprite_list:ObjectLayer, movable_list:ObjectLayer):
+        self.body.collides_with_radius = True
         if self.body_movement is None:
             movable_list.append(self.body)
         else:
@@ -571,6 +671,7 @@ class Pawn2D(Actor2D):
     ''' 그냥 character로 통합하여 개발 중. 나중에 분리 고려 '''
     pass
 
+
 class Character2D(Actor2D):
     
     def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
@@ -602,6 +703,7 @@ class Character2D(Actor2D):
     def is_alive(self) -> bool:
         if self.hp <= 0: return False
         return super().is_alive
+
 
 class NPC(Character2D):
     

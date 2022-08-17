@@ -306,14 +306,14 @@ class EscapeGameView(View):
         ENV.debug_text.perf_check('update_player')
         
         self.player.tick(delta_time)
-        self.physics_complex.set_velocity(self.player.body, self.player.velocity * 100)
+        # self.physics_complex.set_velocity(self.player.body, self.player.velocity * 100)
         # self.physics_complex.set_ang
         # self.physics_complex.apply_force(self.player.body, self.player.velocity * 200)
         # print('game tick update', CLOCK.delta_time)
         
-        obj = self.physics_complex.get_physics_object(self.player.body)
+        # obj = self.physics_complex.get_physics_object(self.player.body)
         # obj.body._set_angular_velocity(-10)
-        obj.rotation = math.radians(self.player.rotation)
+        # obj.rotation = math.radians(self.player.rotation)
         ENV.debug_text.perf_check('update_player')
         
         ENV.debug_text.perf_check('update_physics')
