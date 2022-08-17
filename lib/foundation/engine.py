@@ -112,6 +112,18 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     def _get_topleft_position(self):
         return self._position
     
+    def perf_start(self, name:str = 'foo'):
+        self[name] = CLOCK.perf
+    
+    def perf_end(self, name:str = 'foo'):
+        self[name] = f'{round((CLOCK.perf - self[name]) * 1000,2)} ms'
+    
+    def perf_check(self, name:str = 'foo'):
+        ''' kinda toggle function '''
+        if name in self:
+            if isinstance(self[name], float): return self.perf_end(name)
+        return self.perf_start(name)
+    
     position = property(_get_topleft_position, _set_topleft_position)
     ''' topleft position of text box '''
 

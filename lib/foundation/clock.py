@@ -185,6 +185,10 @@ class Clock:
         """return elapsed time(sec) after this instance made"""
         return self.__class__.get_time() - self.start_time
 
+    @property
+    def perf(self) -> float:
+        return self.get_perf()
+    
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     CLOCK = Clock()
