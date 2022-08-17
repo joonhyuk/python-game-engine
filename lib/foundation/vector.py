@@ -4,7 +4,6 @@ by joonhyuk@me.com
 
 forked from https://gist.github.com/mcleonard/5351452
 """
-from email.errors import ObsoleteHeaderDefect
 import math
 
 class Vector(tuple):
