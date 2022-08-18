@@ -11,6 +11,7 @@ import PIL.ImageOps
 import PIL.ImageDraw
 
 from dataclasses import dataclass
+from typing import Union
 
 import arcade
 from arcade.experimental import Shadertoy, lights
@@ -140,6 +141,7 @@ class Environment:
         - 월드상의 절대 좌표
     (나중에 Window 클래스에 통합시켜버릴 수도 있음)
     '''
+    physics_engine = None
     window:Window = None
     abs_screen_center:Vector = Vector()
     render_scale:float = 1.0
@@ -364,16 +366,27 @@ class Sprite(arcade.Sprite):
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.collides_with_radius = False
 
-    def pymunk_moved(self, physics, pos_diff:Vector, angle_diff:Vector):
-        pass
+    # def pymunk_moved(self, physics, pos_diff:Vector, angle_diff:float):
+    #     pass
     
-    def _get_position(self) -> Vector:
-        return Vector(self.position)
+    # def _get_position(self) -> Vector:
+    #     return Vector(self.position)
     
-    def _set_position(self, position):
-        self.position = position
+    # def _set_position(self, position):
+    #     self.position = position
     
-    position:Vector = property(_get_position, _set_position)
+    # position:Vector = property(_get_position, _set_position)
+    
+    # def _get_velocity(self) -> Vector:
+    #     return Vector(self.velocity)  ### problem with recursive
+    
+    # def _set_velocity(self, velocity:Union[Vector, tuple, list]):
+    #     # self.velocity[0] = velocity[0]
+    #     # self.velocity[1] = velocity[1]
+    #     self.velocity[:] = velocity[:]
+    # 
+    # velocity:Vector = property(_get_velocity, _set_velocity)
+    
     # def on_update(self, delta_time: float = 1 / 60):
     #     print(self.owner)
     #     return super().on_update(delta_time)

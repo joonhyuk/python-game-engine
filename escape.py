@@ -111,18 +111,16 @@ class EscapeGameView(View):
         
         # self._setup_pathfinding()
         
-        # self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
         body =  self.player.body_movement if self.player.body_movement else self.player.body
         self.physics_simple = arcade.PhysicsEngineSimple(body, [self.wall_list, self.npc_list])
         
         self.physics_complex = PhysicsEngine()
         self.physics_complex.add_sprite(self.player.body, 
-                                       friction=0.6,
-                                       body_type = PhysicsEngine.KINEMATIC, 
-                                       moment_of_inertia=PhysicsEngine.MOMENT_INF,
-                                       damping=0.01,
-                                collision_type=collision.character, 
-                                max_velocity=1000)
+                                        friction=1.0,
+                                        body_type = PhysicsEngine.DYNAMIC, 
+                                        moment_of_inertia=PhysicsEngine.MOMENT_INF,
+                                        collision_type=collision.character, 
+                                        max_velocity=1000)
                                 
         self.physics_complex.add_sprite_list(self.wall_list,
                                      friction=0.2, 
@@ -131,6 +129,7 @@ class EscapeGameView(View):
         
         self.physics_complex.add_sprite_list(self.bomb_list, 
                                      friction = 1.0, 
+                                     body_type = PhysicsEngine.DYNAMIC, 
                                      collision_type = collision.enemy)
 
         def player_hit_wall(player, wall, arbiter, space, data):

@@ -109,6 +109,20 @@ def _check_for_collision(sprite1: Sprite, sprite2: Sprite) -> bool:
     )
 
 arcade.sprite_list.spatial_hash._check_for_collision = _check_for_collision
+arcade.sprite_list.spatial_hash.test_injection = _check_for_collision
+
+@dataclass
+class physics_types:
+    space = pymunk.Space
+    body = pymunk.Body
+    static = pymunk.Body.STATIC
+    dynamic = pymunk.Body.DYNAMIC
+    kinematic = pymunk.Body.KINEMATIC
+    shape = pymunk.Shape
+    box = pymunk.Poly
+    circle = pymunk.Circle
+    poly = pymunk.Poly
+    segment = pymunk.Segment
 
 class PhysicsObject:
     '''
@@ -128,8 +142,9 @@ class PhysicsObject:
         self.hitbox: Optional[pymunk.Shape] = hitbox or shape
         ''' custom hitbox collision if needed '''
         
+    def spawn(self, space:pymunk.Space):
         space.add(self.body, self.shape)
-    
+        
     def __del__(self):
         print(self.__name__, 'deleted just now')
     
@@ -230,6 +245,7 @@ class PhysicsEngine:
                    max_vertical_velocity: int = None,
                    radius: float = 0,
                    collision_type: Optional[int] = collision.default,
+                   spawn:bool = True,
                    ):
         
         if sprite in self.objects: return True
@@ -267,7 +283,6 @@ class PhysicsEngine:
         body.position = pymunk.Vec2d(sprite.center_x, sprite.center_y)
         body.angle = math.radians(sprite.angle)
         
-        ### 콜백이 필요한건가?
         # Callback used if we need custom gravity, damping, velocity, etc.
         def velocity_callback(my_body, my_gravity, my_damping, dt):
             """ Used for custom damping, gravity, and max_velocity. """
@@ -308,7 +323,6 @@ class PhysicsEngine:
                     velocity = max_horizontal_velocity * math.copysign(1, velocity)
                     my_body.velocity = pymunk.Vec2d(my_body.velocity.x, velocity)
 
-        ### 콜백이 필요한건가?
         # Add callback if we need to do anything custom on this body
         # if damping or gravity or max_velocity or max_horizontal_velocity or max_vertical_velocity:
         if body_type == self.DYNAMIC:
@@ -319,6 +333,8 @@ class PhysicsEngine:
         if shape is None:
             poly = sprite.get_adjusted_hit_box()
             shape = pymunk.Poly(body, poly, radius=radius)
+        else:
+            shape.body = body
         
         # Set collision type, used in collision callbacks
         if collision_type:
@@ -338,12 +354,20 @@ class PhysicsEngine:
         if body_type != self.STATIC:
             self.non_static_objects.append(sprite)
         
-        # Add body and shape to pymunk engine
-        # self.space.add(body, shape)
+        if spawn:
+            # Add body and shape to pymunk engine, register physics engine to sprite
+            self.spawn(sprite)
+        
+        return self.objects[sprite]
+    
+    def spawn(self, sprite:Sprite) -> None:
+        physics_object = self.objects[sprite]
+        self.space.add(physics_object.body, physics_object.shape)
         
         # Register physics engine with sprite, so we can remove from physics engine
         # if we tell the sprite to go away.
         sprite.register_physics_engine(self)
+    
     
     def add_sprite_list(self, 
                         sprite_list, 
