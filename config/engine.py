@@ -1,9 +1,8 @@
-import arcade
+# import arcade
+from dataclasses import dataclass
 from enum import Enum, IntEnum, auto, IntFlag
 from lib.foundation.base import *
-# from lib.foundation.vector import Vector
 
-from dataclasses import dataclass
 
 PROJECT_NAME = 'mash python game engine'
 SCREEN_TITLE = PROJECT_NAME + 'dev'
@@ -50,6 +49,7 @@ class default_settings:
 CONFIG = default_settings()
 
 class collision(IntFlag):
+    ''' collision types '''
     default = auto()
     character = auto()
     enemy = auto()
