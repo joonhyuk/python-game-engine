@@ -36,11 +36,11 @@ def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade
     
     return shadertoy
 
-def debug_draw_line(start:Vector = Vector(), end:Vector = Vector(), color = arcade.color.WHITE, thickness = 1):
+def debug_draw_segment(start:Vector = vectors.zero, end:Vector = vectors.right, color = arcade.color.WHITE, thickness = 1):
     if not CONFIG.debug_draw: return False
     return arcade.draw_line(start.x, start.y, end.x, end.y, color, thickness)
 
-def debug_draw_circle(center:Vector = Vector(), 
+def debug_draw_circle(center:Vector = vectors.zero, 
                       radius:float = DEFAULT_TILE_SIZE, 
                       line_color = arcade.color.WHITE, 
                       line_thickness = 1, 
@@ -49,16 +49,32 @@ def debug_draw_circle(center:Vector = Vector(),
     if fill_color is not None: arcade.draw_circle_filled(center.x, center.y, radius - line_thickness, fill_color)
     return arcade.draw_circle_outline(*center, radius, line_color, line_thickness)
 
+def debug_draw_poly(center:Vector = vectors.zero,
+                    points:arcade.PointList = None,
+                    line_color = arcade.color.WHITE, 
+                    line_thickness = 1, 
+                    fill_color = None
+                    ):
+    if not CONFIG.debug_draw: return False
+    if not points: return False
+    
+    new_poly = []
+    for point in points:
+        new_poly.append(point + center)
+    
+    if fill_color is not None: return arcade.draw_polygon_filled(new_poly, fill_color)
+    return arcade.draw_polygon_outline(new_poly, line_color, line_thickness)
+
 def debug_draw_marker(position:Vector = Vector(), 
                       radius:float = DEFAULT_TILE_SIZE, 
                       color = arcade.color.RED):
     if not CONFIG.debug_draw: return False
     debug_draw_circle(position, radius, color)
     corner_point = Vector.diagonal(radius)
-    debug_draw_line(position, position + corner_point, color)
-    debug_draw_line(position, position - corner_point, color)
-    debug_draw_line(position, position + corner_point.rotate(90), color)
-    debug_draw_line(position, position + corner_point.rotate(-90), color)
+    debug_draw_segment(position, position + corner_point, color)
+    debug_draw_segment(position, position - corner_point, color)
+    debug_draw_segment(position, position + corner_point.rotate(90), color)
+    debug_draw_segment(position, position + corner_point.rotate(-90), color)
 
 
 class DebugTextLayer(dict, metaclass=SingletonType):
@@ -434,6 +450,17 @@ class ObjectLayer(arcade.SpriteList):
         self.append(sprite)
         
     pass
+
+
+# class ObjectLayer:
+    
+#     def __init__(self) -> None:
+#         self.sprite_list:SpriteLayer = None
+    
+#     def add(self, element:object):
+#         for k, v in element.__dict__.items():
+#             if isinstance(v, (Sprite)):
+#                 pass
 
 
 class Camera(arcade.Camera):

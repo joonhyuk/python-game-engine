@@ -86,9 +86,12 @@ class EscapeGameView(View):
     
     def setup(self):
         
-        self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'), size = 32)
-        # self.player = Character2D(Capsule(24))
-        self.player.spawn(Vector(-100, -100), 0, self.player_list, self.movable_list)
+        # self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'), size = 32)
+        self.physics_complex = PhysicsEngine()
+        self.player = Player(self.physics_complex)
+        self.player_list.append(self.player.body.sprite)
+        # self.player.spawn(Vector(-100, -100), 0, self.player_list, self.movable_list)
+        self.player.spawn(Vector(-100,-100))
         self.camera = self.player.camera
         
         self.enemy = NPC(Sprite(":resources:images/tiles/boxCrate_double.png", 1))
@@ -103,16 +106,15 @@ class EscapeGameView(View):
         
         # self._setup_pathfinding()
         
-        body =  self.player.body_movement if self.player.body_movement else self.player.body
-        self.physics_simple = arcade.PhysicsEngineSimple(body, [self.wall_list, self.npc_list])
+        # body =  self.player.body_movement if self.player.body_movement else self.player.body
+        # self.physics_simple = arcade.PhysicsEngineSimple(body, [self.wall_list, self.npc_list])
         
-        self.physics_complex = PhysicsEngine()
-        self.physics_complex.add_sprite(self.player.body, 
-                                        friction=1.0,
-                                        body_type = PhysicsEngine.DYNAMIC, 
-                                        moment_of_inertia=PhysicsEngine.MOMENT_INF,
-                                        collision_type=collision.character, 
-                                        max_velocity=1000)
+        # self.physics_complex.add_sprite(self.player.body.sprite, 
+        #                                 friction=1.0,
+        #                                 body_type = PhysicsEngine.DYNAMIC, 
+        #                                 moment_of_inertia=PhysicsEngine.MOMENT_INF,
+        #                                 collision_type=collision.character, 
+        #                                 max_velocity=1000)
                                 
         self.physics_complex.add_sprite_list(self.wall_list,
                                      friction=0.2, 
@@ -124,10 +126,13 @@ class EscapeGameView(View):
                                      body_type = PhysicsEngine.DYNAMIC, 
                                      collision_type = collision.enemy)
 
+        self.physics_complex.add_sprite(self.enemy.body, mass = 10, collision_type=collision.enemy)
+        
         def player_hit_wall(player, wall, arbiter, space, data):
             print(wall)
+            return True
         
-        self.physics_complex.add_collision_handler(collision.character, collision.wall, player_hit_wall)
+        self.physics_complex.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
         
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2
@@ -221,6 +226,8 @@ class EscapeGameView(View):
         # print('view_draw')
         self.camera.use()
         
+        ENV.debug_text.perf_check('draw_layer')
+        
         self.channels[0].use()
         self.channels[0].clear()
         self.wall_list.draw()
@@ -239,14 +246,15 @@ class EscapeGameView(View):
         self.window.use()
         
         self.clear()
+        ENV.debug_text.perf_check('draw_layer')
         
         
         ENV.debug_text.perf_check('draw_shader')
         self.shader.program['activated'] = CONFIG.fog_of_war
-        self.shader.program['lightPosition'] = self.player.rel_position * ENV.render_scale
+        self.shader.program['lightPosition'] = self.player.screen_position * ENV.render_scale
         self.shader.program['lightSize'] = 500 * ENV.render_scale
         self.shader.program['lightAngle'] = 75.0
-        self.shader.program['lightDirectionV'] = self.player.forward_vector
+        self.shader.program['lightDirectionV'] = self.player.body.forward_vector
         
         # with self.light_layer:
         self.shader.render()
@@ -265,7 +273,7 @@ class EscapeGameView(View):
             debug_draw_circle(ENV.abs_cursor_position, line_thickness=1, line_color = (0, 255, 0, 128), fill_color= (255, 0, 0, 128))
         # ''' put debug marker to absolute position of mouse cursor '''
         # debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
-            debug_draw_line(self.player.position, (self.player.position + self.player.forward_vector * 500), (512, 0, 0, 128))
+            debug_draw_segment(self.player.position, (self.player.position + self.player.body.forward_vector * 500), (512, 0, 0, 128))
         # debug_draw_marker(self.player.position)
         # path = arcade.astar_calculate_path(self.enemy.position, self.player.position, self.barrier_list)
         # if path:
@@ -310,17 +318,18 @@ class EscapeGameView(View):
         ENV.debug_text.perf_check('update_physics')
         self.physics_complex.step(1/60)
         ENV.debug_text.perf_check('update_physics')
+        # print(self.player.position, self.enemy.position, self.physics_complex.objects[self.enemy.body].position)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
         target = ENV.abs_cursor_position
         # bullet = arcade.SpriteSolidColor(500, 2, arcade.color.ORANGE)
-        bullet:arcade.PointList = [Vector(-2,0).rotate(self.player.rotation), 
-                                    Vector(2,0).rotate(self.player.rotation), 
-                                    Vector(2, 500).rotate(self.player.rotation), 
-                                    Vector(-2,500).rotate(self.player.rotation)]
+        # bullet:arcade.PointList = [Vector(-2,0).rotate(self.player.rotation), 
+        #                             Vector(2,0).rotate(self.player.rotation), 
+        #                             Vector(2, 500).rotate(self.player.rotation), 
+        #                             Vector(-2,500).rotate(self.player.rotation)]
         
-        # print(arcade.has_line_of_sight(start, target.unit * 1000, self.wall_list))
-        print(arcade.get_sprites_at_point(target, self.wall_list))
+        # # print(arcade.has_line_of_sight(start, target.unit * 1000, self.wall_list))
+        # print(arcade.get_sprites_at_point(target, self.wall_list))
     
     
 class GameOverScreen(TitleScreen):

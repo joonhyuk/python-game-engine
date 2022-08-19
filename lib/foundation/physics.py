@@ -6,6 +6,14 @@ import sys
 from typing import Callable, Optional, Union
 from enum import Enum
 
+### for in-house physics engine
+import pymunk, math
+from .vector import Vector
+from config.engine import *
+from .engine import debug_draw_poly
+### for in-house physics engine
+
+### for code injection of simple physics engine
 import arcade
 from arcade import (Point, 
                     PointList, 
@@ -14,14 +22,9 @@ from arcade import (Point,
                     Sprite, 
                     are_polygons_intersecting
                     )
+### for code injection of simple physics engine
 
-### for in-house physics engine
-import pymunk, math
-from .vector import Vector
-from config.engine import *
-### for in-house physics engine
-
-def is_polygon_intersecting_with_circle(poly: PointList, p: Point, radius: float):
+def is_polygon_intersecting_with_circle(poly: PointList, p: Point, radius: float):  ### function added to arcade simple physics engine
     ''' for legacy simple physics engine '''
     if is_point_in_polygon(*p, poly): return True   # 중심이 안에 있으면 충돌
     
@@ -108,8 +111,9 @@ def _check_for_collision(sprite1: Sprite, sprite2: Sprite) -> bool:
         sprite1.get_adjusted_hit_box(), sprite2.get_adjusted_hit_box()
     )
 
+### code injection
 arcade.sprite_list.spatial_hash._check_for_collision = _check_for_collision
-arcade.sprite_list.spatial_hash.test_injection = _check_for_collision
+
 
 @dataclass
 class physics_types:
@@ -123,6 +127,7 @@ class physics_types:
     circle = pymunk.Circle
     poly = pymunk.Poly
     segment = pymunk.Segment
+
 
 class PhysicsObject:
     '''
@@ -141,10 +146,19 @@ class PhysicsObject:
         ''' main collision '''
         self.hitbox: Optional[pymunk.Shape] = hitbox or shape
         ''' custom hitbox collision if needed '''
+        self.sprite: Sprite = None
         
     def spawn(self, space:pymunk.Space):
         space.add(self.body, self.shape)
-        
+    
+    def draw(self):
+        if isinstance(self.shape, physics_types.circle):
+            arcade.draw_circle_outline(*self.body.position, self.shape.radius, (255,128,0,255))
+        else:
+            # arcade.draw_polygon_outline(self.shape.get_vertices(), (255,128,0,255))
+            polygon: physics_types.poly = self.shape
+            debug_draw_poly(self.body.position, polygon.get_vertices())
+    
     def __del__(self):
         print(self.__name__, 'deleted just now')
     
@@ -189,6 +203,7 @@ class PhysicsObject:
     
     collision_type = property(_get_collision_type, _set_collision_type)
 
+
 class PhysicsException(Exception):
     pass
 
@@ -208,7 +223,7 @@ class PhysicsEngine:
     def __init__(self) -> None:
         self.space = pymunk.Space()
         self.space.gravity = (0, 0)
-        self.space.damping = 1.0        # ratio of speed(scalar) which is kept to next tick
+        self.space.damping = 0.1        # ratio of speed(scalar) which is kept to next tick
         # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
         self.objects: dict[Sprite, PhysicsObject] = {}
         self.non_static_objects: list[Sprite] = []
@@ -229,6 +244,13 @@ class PhysicsEngine:
         return self.space.damping
     
     damping = property(_get_damping, _set_damping)
+    """ The default damping for every object controls the percent of velocity the object will keep each SECOND.
+    
+    1.0 is no speed loss, 0.1 is 90% loss.
+    
+    For top-down, this is basically the friction for moving objects.
+    
+    For platformers with gravity, it's probably recommended to be 1.0"""
     
     def add_sprite(self, 
                    sprite:Sprite, 
@@ -331,8 +353,11 @@ class PhysicsEngine:
         ### shape 세팅. 모든 물리 액션은 shape로 판단한다.
         # Set the physics shape to the sprite's hitbox
         if shape is None:
-            poly = sprite.get_adjusted_hit_box()
-            shape = pymunk.Poly(body, poly, radius=radius)
+            # poly = sprite.get_adjusted_hit_box()
+            poly = sprite.get_hit_box()
+            scaled_poly = [[x * sprite.scale for x in z] for z in poly]
+            
+            shape = pymunk.Poly(body, scaled_poly, radius=radius)
         else:
             shape.body = body
         
@@ -347,6 +372,7 @@ class PhysicsEngine:
 
         # Set shapes friction
         shape.friction = friction
+        """ Friction only applied to collision """
         
         # Create physics object and add to list
         physics_object = PhysicsObject(self.space, body, shape)
@@ -356,18 +382,17 @@ class PhysicsEngine:
         
         if spawn:
             # Add body and shape to pymunk engine, register physics engine to sprite
-            self.spawn(sprite)
+            self.add(sprite)
         
-        return self.objects[sprite]
+        return physics_object
     
-    def spawn(self, sprite:Sprite) -> None:
+    def add(self, sprite:Sprite) -> None:
         physics_object = self.objects[sprite]
         self.space.add(physics_object.body, physics_object.shape)
         
         # Register physics engine with sprite, so we can remove from physics engine
         # if we tell the sprite to go away.
         sprite.register_physics_engine(self)
-    
     
     def add_sprite_list(self, 
                         sprite_list, 
@@ -470,12 +495,12 @@ class PhysicsEngine:
             raise PhysicsException("Tried to apply an impulse, but this physics object has no 'body' set.")
         physics_object.body.apply_impulse_at_local_point(impulse)
     
-    def apply_impulse_world(self, sprite: Sprite, impulse: Vector):
+    def apply_impulse_world(self, sprite: Sprite, impulse: Vector, point: Vector):
         """ Apply an impulse force on a sprite from a world point """
         physics_object = self.get_physics_object(sprite)
         if physics_object is None:
             raise PhysicsException("Tried to apply an impulse, but this physics object has no 'body' set.")
-        physics_object.body.apply_impulse_at_world_point(impulse)
+        physics_object.body.apply_impulse_at_world_point(impulse, point)
     
     def apply_force(self, sprite: Sprite, force: Vector):
         """ Apply an impulse force on a sprite """
@@ -484,18 +509,18 @@ class PhysicsEngine:
             raise PhysicsException("Tried to apply a force, but this physics object has no 'body' set.")
         physics_object.body.apply_force_at_local_point(force)
     
-    def apply_force_world(self, sprite: Sprite, force: Vector):
+    def apply_force_world(self, sprite: Sprite, force: Vector, point: Vector):
         """ Apply an impulse force on a sprite from a world point """
         physics_object = self.get_physics_object(sprite)
         if physics_object is None:
             raise PhysicsException("Tried to apply a force, but this physics object has no 'body' set.")
-        physics_object.body.apply_force_at_world_point(force)
+        physics_object.body.apply_force_at_world_point(force, point)
     
     def get_physics_object(self, sprite: Sprite) -> PhysicsObject:
         """ Get the shape/body for a sprite. """
         return self.objects[sprite]
     
-    def set_position(self, sprite:Sprite, position: Vector):
+    def set_position(self, sprite: Sprite, position: Vector):
         ''' might be deprecated '''
         physics_object = self.get_physics_object(sprite)
         if physics_object.body is None:

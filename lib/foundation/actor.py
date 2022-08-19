@@ -77,7 +77,7 @@ class ActorComponent(MObject):
     '''component base class'''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.owner:Actor2D = None
+        self.owner:Actor = None
         self._spawned = True
     
     def tick(self, delta_time:float) -> bool:
@@ -100,7 +100,7 @@ class Body(ActorComponent):
                  collision_type:int = None,
                  elasticity:float = None,
                  friction:float = None,
-                 shape_edge_radius:float = None,
+                 shape_edge_radius:float = 0.0,
                  physics_shape = None,
                  ) -> None:
         super().__init__()
@@ -121,13 +121,24 @@ class Body(ActorComponent):
         self.elasticity_add:float = 0.0
         
         if physics_shape is physics_types.circle:
-            rad = max(size.x, size.y)
-            shape = physics_types.circle(radius = rad)
-            moment = pymunk.moment_for_circle(mass, 0, rad)
+            rad = max(size.x, size.y) / 2
+            shape = physics_types.circle(body = None, radius = rad)
+            # moment = pymunk.moment_for_circle(mass, 0, rad)
+            moment = PhysicsEngine.MOMENT_INF
         else:
             shape = None
             moment = None
-        self.setup(sprite, physics_engine, mass, moment, body_type, shape, collision_type, elasticity, friction, shape_edge_radius)
+        self.setup(sprite = sprite, 
+                   physics_engine = physics_engine, 
+                   mass = mass, 
+                   moment = moment, 
+                   body_type = body_type, 
+                   shape = shape, 
+                   collision_type = collision_type, 
+                   elasticity = elasticity, 
+                   friction = friction, 
+                   shape_edge_radius = shape_edge_radius
+                   )
     
     def setup(self,
               sprite:Sprite,
@@ -138,19 +149,19 @@ class Body(ActorComponent):
               shape:physics_types.shape = None,
               collision_type:int = collision.default,
               elasticity:float = None,
-              friction:float = None,
-              shape_edge_radius:float = None,
+              friction:float = 0.2,
+              shape_edge_radius:float = 0.0,
               ):
         self.sprite = sprite
         self._physics_engine = physics_engine
         if self._physics_engine:
-            self.physics = self._physics_engine.add_sprite(self.sprite,
-                                                           mass,
-                                                           friction,
-                                                           moment,
-                                                           body_type,
-                                                           shape,
+            self.physics = self._physics_engine.add_sprite(sprite = self.sprite,
+                                                           mass = mass,
+                                                           moment_of_inertia = moment,
+                                                           body_type = body_type,
+                                                           shape = shape,
                                                            elasticity = elasticity,
+                                                           friction = friction,
                                                            radius = shape_edge_radius,
                                                            collision_type = collision_type,
                                                            spawn = False,
@@ -161,9 +172,11 @@ class Body(ActorComponent):
         if self._physics_engine: return True
         return False
     
-    def spawn(self):
+    def spawn(self, object_layer:ObjectLayer = None):
         if self.has_physics:
-            self._physics_engine.spawn(self.sprite)
+            self._physics_engine.add(self.sprite)
+        if object_layer:
+            object_layer.add(self.sprite)
     
     def remove(self):
         if self.has_physics: self._physics_engine.remove_sprite(self.sprite)
@@ -173,25 +186,26 @@ class Body(ActorComponent):
     
     def draw(self):
         self.sprite.draw()
+        if CONFIG.debug_draw: self.physics.draw()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         # self.sync()       ## no. use PhysicsEngine.step() first.
         ''' code implementation for body manipulation will be here '''
     
-    def apply_force(self, force:Vector = CONFIG.zero_vector):
+    def apply_force(self, force:Vector = vectors.zero):
         if not self.has_physics: self.velocity += force / self.physics.body.mass
         else: return self.physics.body.apply_force_at_local_point(force)
     
-    def apply_impulse(self, impulse:Vector = CONFIG.zero_vector):
+    def apply_impulse(self, impulse:Vector = vectors.zero):
         if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
         return self.physics.body.apply_impulse_at_local_point(impulse)
     
-    def apply_force_world(self, force:Vector = CONFIG.zero_vector):
+    def apply_force_world(self, force:Vector = vectors.zero):
         if not self.has_physics: self.velocity += force / self.physics.body.mass    ### should revisit later
         return self.physics.body.apply_force_at_world_point(force)
     
-    def apply_impulse_world(self, impulse:Vector = CONFIG.zero_vector):
+    def apply_impulse_world(self, impulse:Vector = vectors.zero):
         if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
         return self.physics.body.apply_impulse_at_world_point(impulse)
     
@@ -260,7 +274,11 @@ class Body(ActorComponent):
         self.physics.body.mass = mass
     
     mass:float = property(_get_mass, _set_mass)
-        
+    
+    @property
+    def forward_vector(self) -> Vector:
+        return vectors.right.rotate(self.angle)
+
 
 class Actor(MObject):
     def __init__(self, 
@@ -271,8 +289,8 @@ class Actor(MObject):
                  body_type:int = None,
                  collision_type:int = None,
                  elasticity:float = None,
-                 friction:float = None,
-                 shape_edge_radius:float = None,
+                 friction:float = 0.2,
+                 shape_edge_radius:float = 0.0,
                  physics_shape = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
@@ -280,7 +298,7 @@ class Actor(MObject):
         self.tick_group:list[ActorComponent] = []
     
     def spawn(self, 
-              position:Vector = CONFIG.zero_vector, 
+              position:Vector = vectors.zero, 
               angle:float = 0.0, 
               velocity:Vector = None,
               visibility:bool = True,
@@ -296,6 +314,14 @@ class Actor(MObject):
         if velocity: self.velocity = velocity
         if not visibility: self.visibility = False
     
+    def tick(self, delta_time:float = None) -> bool:
+        if delta_time is None: delta_time = CLOCK.delta_time
+        if not super().tick(delta_time): return False
+        if self.tick_group:
+            for ticker in self.tick_group:
+                ticker.tick(delta_time)
+                # print('character_tick', delta_time)
+        return True
     
     def register_components(self):
         for k, v in self.__dict__.items():
@@ -305,6 +331,9 @@ class Actor(MObject):
             if hasattr(v, 'tick'):
                 self.tick_group.append(v)
                 ''' for components that have tick '''
+    
+    def draw(self):
+        self.body.draw()
     
     def _get_visibility(self) -> bool:
         return self.body.visibility
@@ -338,6 +367,15 @@ class Actor(MObject):
     
     velocity:Vector = property(_get_velocity, _set_velocity)
     
+    @property
+    def screen_position(self) -> Vector:
+        ''' relative position in viewport '''
+        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+    
+    @property
+    def forward_vector(self) -> Vector:
+        return self.body.forward_vector
+
 
 class AIController(ActorComponent):
     
@@ -571,12 +609,13 @@ class CharacterMovement(ActorComponent):
     velocity:Vector = property(_get_velocity, _set_velocity)
     
     def _get_rotation(self):
-        return get_positive_angle(self.owner.rotation)
+        return get_positive_angle(self.owner.angle)
     
     def _set_rotation(self, rotation:float):
-        self.owner.rotation = get_positive_angle(rotation)
+        self.owner.angle = get_positive_angle(rotation)
     
     rotation:float = property(_get_rotation, _set_rotation)
+    angle:float = property(_get_rotation, _set_rotation)
     
     @property
     def speed(self) -> float:
@@ -595,62 +634,52 @@ class CharacterMovement(ActorComponent):
         else: return self._braking
     
 
-class PhysicsMovement(CharacterMovement):
+class PhysicsMovement(ActorComponent):
     ''' movement handler for actor based on pymunk physics engine '''
-    def _set_movement(self, delta_time:float):
-        ''' set movement of tick by user input '''
-        # self._debug_check_speed(delta_time)
-        # print(self.speed_avg)
-        if self.move_input is None: return False
-        if self.move_input.near_zero():
-            ''' stop / braking '''
-            if self.velocity.is_zero: return False
-            # if not self._braking_start_speed:
-            #     self._braking_start_speed = self.velocity.length
-            
-            
-            
-            # # if not self.velocity.near_zero(0.01):
-            # if not math.isclose(self._last_tick_speed, 0, abs_tol=0.01):
-            #     # self.velocity += -1 * self.velocity.unit * min(self.braking * delta_time, self.speed)
-            #     braking_ratio = clamp((1 - self.braking * delta_time / self._last_tick_speed), 0.0, 1.0)
-            #     # print(round(self._debug_braking_time,1) ,braking_ratio)
-            #     self.velocity *= braking_ratio
-            #     # self.velocity = self.velocity - self.velocity.unit * self.braking * delta_time
-            #     self._debug_braking_time += delta_time
-            #     # print(self.speed, round(self.sec_counter, 1))
-            #     return True
-            else:
-                self.velocity = Vector()
-                return False
-        
-        accel = self.acceleration
-        
-        max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
-        max_speed *= self._get_directional_speed_multiplier()
-        ''' apply directional speed limit '''
-        self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
-        self._last_tick_speed = self.velocity.length
-        self._debug_braking_time = 0.0
-        
-        ### debug start
-        # a = max_speed * delta_time
-        # b = self.velocity.length
-        # if abs(a - b) > 0.001:
-        #     if b > 150:
-        #         print('missing something')
-        ### debug end
-        
-        return True
-    
-    def _set_velocity(self, velocity: Vector = Vector()):
-        self.owner.body
-
-
-class Unit(MObject):
-    ''' base actor object which has body(sprite, physics) '''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.move_direction:Vector = None
+        self.desired_angle:float = 0.0
+        self.rotation_interp_speed = 3.0
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        self._set_movement(delta_time)
+        self._set_heading(delta_time)
+    
+    def _set_movement(self, delta_time:float):
+        if not self.move_direction: return False
+        if self.move_direction.near_zero():
+            ''' stop '''
+            if self.owner.velocity.is_zero: return False
+            if self.owner.velocity.near_zero(): self.owner.velocity = vectors.zero
+        else:
+            # self.owner.velocity = self.move_direction * 250
+            self.owner.body.physics.body.apply_force_at_world_point(self.move_direction * 1000, self.owner.position)
+    
+    def _set_heading(self, delta_time:float):
+        ''' set player rotation per tick '''
+        if self.owner.angle == self.desired_angle: return False
+        if math.isclose(self.owner.angle, self.desired_angle):
+            self.owner.angle = self.desired_angle
+            return False
+
+        rot = rinterp_to(self.owner.angle, self.desired_angle, delta_time, self.rotation_interp_speed)
+        # rot = self.desired_rotation
+        self.owner.angle = get_positive_angle(rot)
+        return True
+    
+    def move(self, direction:Vector = vectors.zero):
+        self.move_direction = direction
+    
+    def turn(self, angle:float = 0.0):
+        self.desired_angle = angle
+    
+    def turn_toward(self, abs_position:Vector = Vector()):
+        ''' turn character to an absolute position '''
+        # print(f'player position {self.owner.position}, mouse position {abs_position}')
+        angle = (abs_position - self.owner.position).argument()
+        self.turn(angle)
     
 
 class Actor2D(MObject):
@@ -688,7 +717,7 @@ class Actor2D(MObject):
         
     def spawn(self, 
               position:Vector = Vector(), 
-              rotation:float = None, 
+              angle:float = None, 
               draw_layer:ObjectLayer = None, 
               movable_layer:ObjectLayer = None,
               lifetime=0) -> None:
@@ -696,7 +725,7 @@ class Actor2D(MObject):
         set position, rotation, register body and component
         '''
         self.position = position
-        self.rotation = rotation
+        self.angle = angle
         # if sprite_list:
         self.register_body(draw_layer, movable_layer)
         self.register_components()
@@ -811,13 +840,13 @@ class Actor2D(MObject):
     
     visibility:bool = property(_get_visibility, _set_visibility)
     position:Vector = property(_get_position, _set_position)
-    rotation:float = property(_get_rotation, _set_rotation)
+    angle:float = property(_get_rotation, _set_rotation)
     velocity:Vector = property(_get_velocity, _set_velocity)
     
     @property
     @check_body
     def forward_vector(self):
-        return Vector(1,0).rotate(self.rotation)
+        return Vector(1,0).rotate(self.angle)
     
     @property
     def rel_position(self) -> Vector:
@@ -846,17 +875,12 @@ class Door(Actor2D):
     open = property(_get_open, _set_open)
         
 
-class Pawn2D(Actor2D):
-    ''' 그냥 character로 통합하여 개발 중. 나중에 분리 고려 '''
-    pass
-
-
 class Character2D(Actor2D):
     
     def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.hp = hp
-        self.movement = PhysicsMovement()
+        self.movement = CharacterMovement()
         self.camera = CameraHandler()
         self.action = None
         self.controller = None
@@ -872,7 +896,7 @@ class Character2D(Actor2D):
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
         direction = ENV.direction_input
-        if direction: self.movement.turn_toward(ENV.direction_input)
+        if direction: self.movement.turn_toward(direction)
         self.movement.move(ENV.move_input)
         
     def apply_damage(self, damage:float):
@@ -892,8 +916,32 @@ class NPC(Character2D):
     def get_physics_body(self) -> Sprite:
         return None
 
+
 class Player(Actor):
     
-    def __init__(self, sprite: Sprite, size: Vector = None, physics_engine: PhysicsEngine = None, mass: float = 1, body_type: int = None, collision_type: int = None, elasticity: float = None, friction: float = None, shape_edge_radius: float = None, physics_shape=None, **kwargs) -> None:
-        super().__init__(sprite, size, physics_engine, mass, body_type, collision_type, elasticity, friction, shape_edge_radius, physics_shape, **kwargs)
+    def __init__(self, physics_engine: PhysicsEngine = None, **kwargs) -> None:
+        super().__init__(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'), 
+                         size = Vector(32, 32), 
+                         physics_engine = physics_engine, 
+                         mass = 1, 
+                         body_type = physics_types.dynamic, 
+                         collision_type = collision.character, 
+                         physics_shape = None, 
+                         **kwargs)
+        self.hp = 100
+        self.camera = CameraHandler()
+        self.movement = PhysicsMovement()
+
+    def tick(self, delta_time: float = None) -> bool:
+        if not super().tick(delta_time): return False
+        direction = ENV.direction_input
+        if direction: self.movement.turn_toward(direction)
+        self.movement.move(ENV.move_input)
         
+    def apply_damage(self, damage:float):
+        self.hp -= damage
+    
+    @property
+    def is_alive(self) -> bool:
+        if self.hp <= 0: return False
+        return super().is_alive

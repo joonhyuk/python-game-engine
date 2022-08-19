@@ -33,8 +33,16 @@ class default_settings:
     debug_draw = True
     directional_speed = {0:1.0, 30:1.0, 90:0.75, 120:0.75, 180:0.5}
     ''' directional speed multiplier '''
-    zero_vector = Vector()
-    
+
+@dataclass
+class vectors:
+    zero = Vector()
+    right = Vector(1,0)
+    left = Vector(-1,0)
+    up = Vector(0,1)
+    down = Vector(0,-1)
+    upright = (up + right).unit
+
 # class direction(EnumVector):
 #     zero = Vector()
 #     up = Vector(0, 1)
