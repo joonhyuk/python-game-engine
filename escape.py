@@ -1,4 +1,3 @@
-from arcade import PymunkPhysicsEngine
 from lib.foundation import *
 from config import *
 import random, math, time
@@ -71,19 +70,12 @@ class EscapeGameView(View):
         self.camera_gui = Camera(*CONFIG.screen_size)
         self.camera:CameraHandler = None
         
-        self.mousex = 64
-        self.mousey = 64
-        self.fps = 0
-        self.render_ratio = self.window.render_ratio
-        self.character_heading = None
-        
         self.channel_static = None
         self.channel_dynamic = None
         self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
         self.shader = None
         self.light_layer = None
         
-        self.debug_timer:float = time.perf_counter()
         self.emitter = None
     
     def on_show_view(self):

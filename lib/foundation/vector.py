@@ -89,19 +89,19 @@ class Vector(tuple):
         
         return self.__class__(*product)
     
-    def inner(self, vector):
+    def inner(self, other):
         """ Returns the dot product (inner product) of self and another vector
         """
-        if not isinstance(vector, Vector):
+        if not isinstance(other, (tuple, list)):
             raise ValueError('The dot product requires another vector')
-        return sum(a * b for a, b in zip(self, vector))
+        return sum(a * b for a, b in zip(self, other))
     
     def __mul__(self, other):
         """ Returns the dot product of self and other if multiplied
             by another Vector.  If multiplied by an int or float,
             multiplies each component by other.
         """
-        if isinstance(other, Vector):
+        if isinstance(other, (tuple, list)):
             return self.inner(other)
         elif isinstance(other, (int, float)):
             product = tuple( a * other for a in self )
@@ -120,7 +120,7 @@ class Vector(tuple):
         return self.__mul__(-1)
     
     def __truediv__(self, other):
-        if isinstance(other, Vector):
+        if isinstance(other, (tuple, list)):
             # divided = tuple(self[i] / other[i] for i in range(len(self)))
             divided = tuple( a / b for a, b in zip(self, other))
         elif isinstance(other, (int, float)):
@@ -134,7 +134,7 @@ class Vector(tuple):
         return self.__truediv__(other)
 
     def __floordiv__(self, other):
-        if isinstance(other, Vector):
+        if isinstance(other, (tuple, list)):
             # divided = tuple(self[i] / other[i] for i in range(len(self)))
             divided = tuple( a // b for a, b in zip(self, other))
         elif isinstance(other, (int, float)):
@@ -149,7 +149,7 @@ class Vector(tuple):
 
     def __add__(self, other):
         """ Returns the vector addition of self and other """
-        if isinstance(other, (Vector, tuple, list)):
+        if isinstance(other, (tuple, list)):
             added = tuple( a + b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
             added = tuple( a + other for a in self )
@@ -167,7 +167,7 @@ class Vector(tuple):
     def __sub__(self, other):
         """ Returns the vector difference of self and other """
         if other is None: return self
-        if isinstance(other, (Vector, tuple, list)):
+        if isinstance(other, (tuple, list)):
             subbed = tuple( a - b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
             subbed = tuple( a - other for a in self )
@@ -184,7 +184,7 @@ class Vector(tuple):
         return self.__sub__(other)
 
     def __eq__(self, other):
-        if isinstance(other, Vector):
+        if isinstance(other, (tuple, list)):
             return all(a == b for a, b in zip(self, other))
         else:
             return False
@@ -230,7 +230,7 @@ class Vector(tuple):
     def is_close(self, other, precision = 0.001):
         ''' check if nearly equality '''
         if self == other: return True
-        if not isinstance(other, Vector): 
+        if not isinstance(other, (tuple, list)): 
             raise ValueError('nearly_equal requires another vector')
         ''' 차원 수 비교체크는 성능상 생략 '''
         result = all(math.isclose(a, b, abs_tol = precision) for a, b in zip(self, other))

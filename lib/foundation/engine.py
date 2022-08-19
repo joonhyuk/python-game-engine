@@ -239,7 +239,6 @@ class Window(arcade.Window):
     lshift_applied = False
     lctrl_applied = False
     current_camera:arcade.Camera = None
-    debug_text:DebugTextLayer = None
     
     def on_show(self):
         # print('window_show')
@@ -251,8 +250,6 @@ class Window(arcade.Window):
         ENV.debug_text['fps'] = 0
         
     def on_key_press(self, key: int, modifiers: int):
-        print('[window]key input')
-        # self.lstick_vector = Vector()
         # ENV.key_inputs.append(key)
         if key in (arcade.key.W, arcade.key.UP): ENV.key_move += (0,1)
         if key in (arcade.key.S, arcade.key.DOWN): ENV.key_move += (0,-1)
@@ -432,6 +429,10 @@ class Capsule(Sprite):
         return debug_draw_circle(self.position, self.collision_radius, color, line_thickness)
     
 class ObjectLayer(arcade.SpriteList):
+    
+    def add(self, sprite):
+        self.append(sprite)
+        
     pass
 
 
