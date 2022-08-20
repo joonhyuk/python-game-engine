@@ -36,15 +36,22 @@ class PhysicsTestView(View):
                                             collision_type=collision.wall, 
                                             body_type=physics_types.static)
         
+        self._setup_debris(self.debris_layer)
+        self.physics_engine.add_sprite_list(self.debris_layer,
+                                            mass = 1,
+                                            damping=0.5,
+                                            collision_type=collision.debris)
+        
         box = arcade.Sprite(":resources:images/tiles/grassCenter.png", 1.5)
         box.center_x = CONFIG.screen_size.x // 2
         box.center_y = CONFIG.screen_size.y // 2
+        self.debris_layer.add(box)
         self.physics_engine.add_sprite(box, 
                                        mass=10, 
                                        friction = 1.0,
                                        collision_type=collision.debris,
                                        body_type=physics_types.dynamic)
-        self.debris_layer.add(box)
+        
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):
             print('begin_hit')
@@ -62,7 +69,18 @@ class PhysicsTestView(View):
                                                   pre_handler=pre_player_hit_wall,
                                                   separate_handler=seperate_player_hit_wall,
                                                   post_handler=post_player_hit_wall)
-        
+    
+    def _setup_debris(self, layer:ObjectLayer):
+        for _ in range(50):
+            debri = Sprite(":resources:images/tiles/bomb.png", 0.2)
+            debri.pymunk.max_velocity = 2000
+            placed = False
+            while not placed:
+                debri.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
+                if not arcade.check_for_collision_with_lists(debri, [self.wall_layer, layer]):
+                    placed = True
+            layer.append(debri)
+    
     def _setup_walls(self):
         # Set up the walls
         for x in range(0, CONFIG.screen_size.x + 1, 32):
@@ -102,28 +120,32 @@ class PhysicsTestView(View):
         return super().on_key_release(key, modifiers)
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        self.line_of_fire_check(self.player.position, ENV.abs_cursor_position, 1)
+        # self.player.body.apply_impulse_world(self.player.forward_vector * -10)
+        self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
         
         
-    def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1):
+    def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 0):
+        ''' 초고속 발사체(광학병기, 레일건) 체크용. 화학병기 발사체는 발사체를 직접 날려서 충돌체크.
+        '''
         self.player.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
         sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
         query = self.physics_engine.space.segment_query(origin, end, thickness / 2, sf)
         query_first = self.physics_engine.space.segment_query_first(origin, end, thickness / 2, sf)
-        if query:
-            for sq in query:
-                shape = sq.shape
-                location = sq.point
-                normal = sq.normal
-                c1 = SpriteCircle(5, color=(255, 96, 0, 192))
-                c1.position = location
-                print(location)
-                self.debris_layer.add(c1)
-                schedule_once(c1.remove_from_sprite_lists, 3)
+        # if query:
+        #     for sq in query:
+        #         shape = sq.shape
+        #         location = sq.point
+        #         normal = sq.normal
+        #         c1 = SpriteCircle(5, color=(255, 96, 0, 192))
+        #         c1.position = location
+        #         self.debris_layer.add(c1)
+        #         schedule_once(c1.remove_from_sprite_lists, 3)
+        
         if query_first:
             qb:pymunk.Body = query_first.shape.body
-            iv = (end - origin).unit * 1000
+            iv = (end - origin).unit * 50
             qb.apply_impulse_at_world_point(iv, query_first.point)
+            add_sprite_timeout(SpriteCircle(5, (255, 64, 0, 128)), query_first.point, self.debris_layer, 3)
     
     def on_draw(self):
         ENV.debug_text.perf_check('on_draw')
