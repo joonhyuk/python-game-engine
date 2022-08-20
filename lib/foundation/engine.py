@@ -391,7 +391,6 @@ class Sprite(arcade.Sprite):
         self.collides_with_radius = False
 
     def remove_from_sprite_lists(self, dt):
-        print('REMOVING!', test)
         return super().remove_from_sprite_lists()
     # def pymunk_moved(self, physics, pos_diff:Vector, angle_diff:float):
     #     pass

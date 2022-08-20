@@ -36,7 +36,7 @@ class PhysicsTestView(View):
                                             collision_type=collision.wall, 
                                             body_type=physics_types.static)
         
-        box = arcade.Sprite(":resources:images/tiles/grassCenter.png", 2)
+        box = arcade.Sprite(":resources:images/tiles/grassCenter.png", 1.5)
         box.center_x = CONFIG.screen_size.x // 2
         box.center_y = CONFIG.screen_size.y // 2
         self.physics_engine.add_sprite(box, 
@@ -62,11 +62,6 @@ class PhysicsTestView(View):
                                                   pre_handler=pre_player_hit_wall,
                                                   separate_handler=seperate_player_hit_wall,
                                                   post_handler=post_player_hit_wall)
-        
-        def laser_hit_check(laser, hit, arbiter, space, data):
-            print(hit)
-            return True
-        
         
     def _setup_walls(self):
         # Set up the walls
@@ -99,7 +94,6 @@ class PhysicsTestView(View):
 
     def on_key_press(self, key: int, modifiers: int):
         
-        # if key == arcade.key.SPACE
         return super().on_key_press(key, modifiers)
     
     def on_key_release(self, key: int, modifiers: int):
@@ -108,19 +102,28 @@ class PhysicsTestView(View):
         return super().on_key_release(key, modifiers)
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        # print(x, y)
-        # print(self.player.screen_position)
-        # bullet = 
-        pass
+        self.line_of_fire_check(self.player.position, ENV.abs_cursor_position, 1)
+        
         
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1):
-        line_body = pymunk.Body(body_type = physics_types.static)
-        line = pymunk.Segment(line_body, origin, end, thickness)
-        line.sensor = True
-        line.collision_type = collision.projectile
-        pymunk.SegmentQueryInfo()
-        
-        
+        self.player.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
+        query = self.physics_engine.space.segment_query(origin, end, thickness / 2, sf)
+        query_first = self.physics_engine.space.segment_query_first(origin, end, thickness / 2, sf)
+        if query:
+            for sq in query:
+                shape = sq.shape
+                location = sq.point
+                normal = sq.normal
+                c1 = SpriteCircle(5, color=(255, 96, 0, 192))
+                c1.position = location
+                print(location)
+                self.debris_layer.add(c1)
+                schedule_once(c1.remove_from_sprite_lists, 3)
+        if query_first:
+            qb:pymunk.Body = query_first.shape.body
+            iv = (end - origin).unit * 1000
+            qb.apply_impulse_at_world_point(iv, query_first.point)
     
     def on_draw(self):
         ENV.debug_text.perf_check('on_draw')
