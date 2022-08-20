@@ -62,6 +62,7 @@ class collision(IntFlag):
     character = auto()
     enemy = auto()
     wall = auto()
+    debris = auto()
     projectile = auto()
     test = wall | character
     

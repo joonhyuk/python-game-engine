@@ -152,12 +152,17 @@ class PhysicsObject:
         space.add(self.body, self.shape)
     
     def draw(self):
+        if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
             arcade.draw_circle_outline(*self.body.position, self.shape.radius, (255,128,0,255))
         else:
-            # arcade.draw_polygon_outline(self.shape.get_vertices(), (255,128,0,255))
-            polygon: physics_types.poly = self.shape
-            debug_draw_poly(self.body.position, polygon.get_vertices())
+            if isinstance(self.shape, physics_types.poly):
+                shape = []
+                angle = self.body.angle
+                points = self.shape.get_vertices()
+                for point in points:
+                    shape.append(point.rotated(angle))
+                debug_draw_poly(self.body.position, shape, (255,0,0,255))
     
     def __del__(self):
         print(self.__name__, 'deleted just now')
@@ -267,6 +272,8 @@ class PhysicsEngine:
                    max_vertical_velocity: int = None,
                    radius: float = 0,
                    collision_type: Optional[int] = collision.default,
+                   offset_body: Vector = None,
+                   offset_shape: Vector = None,
                    spawn:bool = True,
                    ):
         

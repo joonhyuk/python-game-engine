@@ -292,6 +292,7 @@ class Actor(MObject):
                  friction:float = 0.2,
                  shape_edge_radius:float = 0.0,
                  physics_shape = None,
+                 name:Optional[str] = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:Body = Body(sprite, size, physics_engine, mass, body_type, collision_type, elasticity, friction, shape_edge_radius, physics_shape)
@@ -376,6 +377,13 @@ class Actor(MObject):
     def forward_vector(self) -> Vector:
         return self.body.forward_vector
 
+
+class Projectile(Actor):
+    
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+    
+    
 
 class AIController(ActorComponent):
     
@@ -926,7 +934,7 @@ class Player(Actor):
                          mass = 1, 
                          body_type = physics_types.dynamic, 
                          collision_type = collision.character, 
-                         physics_shape = None, 
+                         physics_shape = physics_types.circle, 
                          **kwargs)
         self.hp = 100
         self.camera = CameraHandler()

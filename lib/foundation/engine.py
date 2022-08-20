@@ -161,12 +161,15 @@ class Environment:
     window:Window = None
     abs_screen_center:Vector = Vector()
     render_scale:float = 1.0
-    mouse_input:Vector = Vector()
+    mouse_screen_position:Vector = Vector()
     gamepad:arcade.joysticks.Joystick = None
     key_move:Vector = Vector()
     key = arcade.key
     key_inputs = []
     debug_text:DebugTextLayer = None
+    
+    last_abs_pos_mouse_lb_pressed:Vector = vectors.zero
+    last_abs_pos_mouse_lb_released:Vector = vectors.zero
     
     window_shortside = None
     window_longside = None
@@ -233,13 +236,13 @@ class Environment:
     
     def _get_cursor_position(self) -> Vector:
         # if not self.mouse_input: return Vector()
-        return self.mouse_input * self.render_scale
+        return self.mouse_screen_position * self.render_scale
     
     cursor_position:Vector = property(_get_cursor_position)
     ''' returns relative mouse cursor point '''
     
     def _get_abs_cursor_position(self) -> Vector:
-        return self.mouse_input + self.abs_screen_center - CONFIG.screen_size / 2
+        return self.mouse_screen_position + self.abs_screen_center - CONFIG.screen_size / 2
         # return self.mouse_input + self.window.current_camera.position
     
     abs_cursor_position:Vector = property(_get_abs_cursor_position)
@@ -313,7 +316,15 @@ class Window(arcade.Window):
         pass
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        ENV.mouse_input = Vector(x, y)
+        ENV.mouse_screen_position = Vector(x, y)
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            ENV.last_abs_pos_mouse_lb_pressed = ENV.abs_cursor_position
+    
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            ENV.last_abs_pos_mouse_lb_released = ENV.abs_cursor_position
     
     # def get_input_device(self):
     #     joysticks = arcade.get_joysticks()
@@ -330,7 +341,7 @@ class Window(arcade.Window):
     
     @property
     def cursor_position(self) -> Vector:
-        return ENV.mouse_input * ENV.render_scale
+        return ENV.mouse_screen_position * ENV.render_scale
 
 
 class View(arcade.View):
