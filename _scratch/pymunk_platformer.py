@@ -66,13 +66,13 @@ LEFT_FACING = 1
 DISTANCE_TO_CHANGE_TEXTURE = 20
 
 # How much force to put on the bullet
-BULLET_MOVE_FORCE = 4500
+BULLET_MOVE_FORCE = 250000
 
 # Mass of the bullet
-BULLET_MASS = 0.1
+BULLET_MASS = 1
 
 # Make bullet less affected by gravity
-BULLET_GRAVITY = 300
+BULLET_GRAVITY = 0
 
 
 class PlayerSprite(arcade.Sprite):
@@ -205,6 +205,10 @@ class PlayerSprite(arcade.Sprite):
 
 class BulletSprite(arcade.SpriteSolidColor):
     """ Bullet Sprite """
+    def __init__(self, width: int, height: int, color):
+        super().__init__(width, height, color)
+        self.pymunk.max_velocity = 3000
+    
     def pymunk_moved(self, physics_engine, dx, dy, d_angle):
         """ Handle when the sprite is moved by the physics engine. """
         # If the bullet falls below the screen, remove it
@@ -262,6 +266,10 @@ class GameWindow(arcade.Window):
         self.ladder_list = tile_map.sprite_lists["Ladders"]
         self.moving_sprites_list = tile_map.sprite_lists['Moving Platforms']
 
+        wall_test = arcade.Sprite(':resources:images/tiles/grassCenter.png', repeat_count_y=10)
+        wall_test.position = (30, 300)
+        self.wall_list.append(wall_test)
+        
         # Create player sprite
         self.player_sprite = PlayerSprite(self.ladder_list, hit_box_algorithm="Detailed")
 
@@ -303,12 +311,12 @@ class GameWindow(arcade.Window):
 
         self.physics_engine.add_collision_handler("bullet", "item", post_handler=item_hit_handler)
 
-        def boing_hit_handler(player, boing, _arbiter, _spcae, _data):
-            if self.physics_engine.is_on_ground(player):
-                imp = 1500 if self.up_pressed else 500
-                self.physics_engine.apply_impulse(player, (0, imp))
+        # def boing_hit_handler(player, boing, _arbiter, _spcae, _data):
+        #     if self.physics_engine.is_on_ground(player):
+        #         imp = 1500 if self.up_pressed else 500
+        #         self.physics_engine.apply_impulse(player, (0, imp))
             
-        self.physics_engine.add_collision_handler('player', 'wall', post_handler=boing_hit_handler)
+        # self.physics_engine.add_collision_handler('player', 'wall', post_handler=boing_hit_handler)
         
         # Add the player.
         # For the player, we set the damping to a lower value, which increases
@@ -347,6 +355,7 @@ class GameWindow(arcade.Window):
 
         # Add kinematic sprites
         self.physics_engine.add_sprite_list(self.moving_sprites_list,
+                                            collision_type="wall",
                                             body_type=arcade.PymunkPhysicsEngine.KINEMATIC)
 
     def on_key_press(self, key, modifiers):
