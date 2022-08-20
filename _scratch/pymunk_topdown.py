@@ -313,8 +313,8 @@ class MyWindow(arcade.Window):
         self.player_sprite.change_x = 0
         self.player_sprite.change_y = 0
 
-        obj = self.physics_engine.get_physics_object(self.player_sprite)
-        obj.body._set_angular_velocity(-10)
+        # obj = self.physics_engine.get_physics_object(self.player_sprite)
+        # obj.body._set_angular_velocity(-10)
         
         if self.up_pressed and not self.down_pressed:
             force = (0, PLAYER_MOVE_FORCE)
@@ -323,7 +323,7 @@ class MyWindow(arcade.Window):
             force = (0, -PLAYER_MOVE_FORCE)
             self.physics_engine.apply_force(self.player_sprite, force)
         if self.left_pressed and not self.right_pressed:
-            self.player_sprite.change_x = -MOVEMENT_SPEED
+            # self.player_sprite.change_x = -MOVEMENT_SPEED
             force = (-PLAYER_MOVE_FORCE, 0)
             self.physics_engine.apply_force(self.player_sprite, force)
         elif self.right_pressed and not self.left_pressed:
