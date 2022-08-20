@@ -1,6 +1,8 @@
 '''
+physics engine based on pymunk, 
 very simple physics code injection by mash
 
+may be coupled with pymunk
 '''
 import sys
 from typing import Callable, Optional, Union
@@ -10,10 +12,12 @@ from enum import Enum
 import pymunk, math
 from .vector import Vector
 from config.engine import *
-from .engine import debug_draw_poly
+
+from .utils import debug_draw_poly
 ### for in-house physics engine
 
 ### for code injection of simple physics engine
+# will be deprecated after moved to pymunk
 import arcade
 from arcade import (Point, 
                     PointList, 

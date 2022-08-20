@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math, functools
-from shutil import move
 from config.engine import *
 
 from lib.foundation.base import *
@@ -186,7 +185,8 @@ class Body(ActorComponent):
     
     def draw(self):
         self.sprite.draw()
-        if CONFIG.debug_draw: self.physics.draw()
+        if CONFIG.debug_draw: 
+            self.physics.draw()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -205,11 +205,11 @@ class Body(ActorComponent):
     
     def apply_force_world(self, force:Vector = vectors.zero):
         if not self.has_physics: self.velocity += force / self.physics.body.mass    ### should revisit later
-        return self.physics.body.apply_force_at_world_point(force)
+        return self.physics.body.apply_force_at_world_point(force, self.position)
     
     def apply_impulse_world(self, impulse:Vector = vectors.zero):
         if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
-        return self.physics.body.apply_impulse_at_world_point(impulse)
+        return self.physics.body.apply_impulse_at_world_point(impulse, self.position)
     
     def sync(self):
         ''' mostly not used manually '''
@@ -699,7 +699,7 @@ class PhysicsMovement(ActorComponent):
             # self.owner.velocity = self.move_direction * 250
             angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.argument()))
             speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
-            self.owner.body.physics.body.apply_force_at_world_point(self.move_direction * speed, self.owner.position)
+            self.owner.body.apply_force_world(self.move_direction * speed)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''
