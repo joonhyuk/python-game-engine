@@ -663,7 +663,9 @@ class PhysicsMovement(ActorComponent):
             if self.owner.velocity.near_zero(): self.owner.velocity = vectors.zero
         else:
             # self.owner.velocity = self.move_direction * 250
-            self.owner.body.physics.body.apply_force_at_world_point(self.move_direction * 1000, self.owner.position)
+            angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.argument()))
+            speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
+            self.owner.body.physics.body.apply_force_at_world_point(self.move_direction * speed, self.owner.position)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''
