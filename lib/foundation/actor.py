@@ -192,6 +192,8 @@ class Body(ActorComponent):
         if not super().tick(delta_time): return False
         # self.sync()       ## no. use PhysicsEngine.step() first.
         ''' code implementation for body manipulation will be here '''
+        ENV.debug_text['player_speed'] = round(self.speed, 1)
+        # ENV.debug_text['player_velocity'] = self.velocity
     
     def apply_force(self, force:Vector = vectors.zero):
         if not self.has_physics: self.velocity += force / self.physics.body.mass
@@ -275,9 +277,34 @@ class Body(ActorComponent):
     
     mass:float = property(_get_mass, _set_mass)
     
+    def _get_damping(self):
+        return self.sprite.pymunk.damping
+    
+    def _set_damping(self, damping:float):
+        self.sprite.pymunk.damping = damping
+    
+    damping:float = property(_get_damping, _set_damping)
+    
+    def _get_max_speed(self):
+        return self.sprite.pymunk.max_velocity
+    
+    def _set_max_speed(self, max_speed:int):
+        self.sprite.pymunk.max_velocity = max_speed
+    
+    max_speed:int = property(_get_max_speed, _set_max_speed)
+    
     @property
     def forward_vector(self) -> Vector:
         return vectors.right.rotate(self.angle)
+    
+    @property
+    def speed(self):
+        ''' different from physics or sprite 
+        
+        :physics = per sec
+        :sprite = per tick
+        '''
+        return self.velocity.length
 
 
 class Actor(MObject):
@@ -295,7 +322,15 @@ class Actor(MObject):
                  name:Optional[str] = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
-        self.body:Body = Body(sprite, size, physics_engine, mass, body_type, collision_type, elasticity, friction, shape_edge_radius, physics_shape)
+        self.body:Body = Body(sprite, 
+                              size, 
+                              physics_engine, 
+                              mass, body_type, 
+                              collision_type, 
+                              elasticity, 
+                              friction, 
+                              shape_edge_radius, 
+                              physics_shape)
         self.tick_group:list[ActorComponent] = []
     
     def spawn(self, 
@@ -384,7 +419,6 @@ class Projectile(Actor):
         super().__init__(**kwargs)
     
     
-
 class AIController(ActorComponent):
     
     def __init__(self) -> None:

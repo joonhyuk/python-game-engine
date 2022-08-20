@@ -135,7 +135,6 @@ class PhysicsObject:
     think usecase only!
     '''
     def __init__(self,
-                 space: pymunk.Space, 
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
                  hitbox: pymunk.Shape = None):
@@ -146,10 +145,9 @@ class PhysicsObject:
         ''' main collision '''
         self.hitbox: Optional[pymunk.Shape] = hitbox or shape
         ''' custom hitbox collision if needed '''
-        self.sprite: Sprite = None
         
-    def spawn(self, space:pymunk.Space):
-        space.add(self.body, self.shape)
+    # def spawn(self, space:pymunk.Space):
+    #     space.add(self.body, self.shape)
     
     def draw(self):
         if not CONFIG.debug_draw: return False
@@ -173,31 +171,31 @@ class PhysicsObject:
     def _set_friction(self, friction:float):
         self.shape.friction = friction
     
-    friction = property(_get_friction, _set_friction)
+    friction:float = property(_get_friction, _set_friction)
 
     def _get_position(self):
-        return self.body.position
+        return Vector(self.body.position)
     
     def _set_position(self, position:tuple[float, float]):
         self.body.position = position
     
-    position = property(_get_position, _set_position)
+    position:Vector = property(_get_position, _set_position)
     
     def _get_velocity(self):
-        return self.body.velocity
+        return Vector(self.body.velocity)
     
     def _set_velocity(self, velocity:tuple[float, float]):
         self.body.velocity = velocity
     
-    velocity = property(_get_position, _set_position)
+    velocity:Vector = property(_get_position, _set_position)
     
-    def _get_rotation(self):
+    def _get_angle(self):
         return self.body.angle # in radian
     
-    def _set_rotation(self, rotation:float):
+    def _set_angle(self, rotation:float):
         self.body.angle = rotation
     
-    rotation = property(_get_rotation, _set_rotation)
+    angle:float = property(_get_angle, _set_angle)
     
     def _get_collision_type(self):
         ''' movement or hitbox? '''
@@ -207,6 +205,10 @@ class PhysicsObject:
         self.shape.collision_type = collision_type
     
     collision_type = property(_get_collision_type, _set_collision_type)
+    
+    @property
+    def speed(self):
+        return self.velocity.length
 
 
 class PhysicsException(Exception):
@@ -315,7 +317,6 @@ class PhysicsEngine:
         # Callback used if we need custom gravity, damping, velocity, etc.
         def velocity_callback(my_body, my_gravity, my_damping, dt):
             """ Used for custom damping, gravity, and max_velocity. """
-
             # Custom damping
             if sprite.pymunk.damping is not None:
                 adj_damping = ((sprite.pymunk.damping * 100.0) / 100.0) ** dt
@@ -382,7 +383,7 @@ class PhysicsEngine:
         """ Friction only applied to collision """
         
         # Create physics object and add to list
-        physics_object = PhysicsObject(self.space, body, shape)
+        physics_object = PhysicsObject(body, shape)
         self.objects[sprite] = physics_object
         if body_type != self.STATIC:
             self.non_static_objects.append(sprite)

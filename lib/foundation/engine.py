@@ -390,6 +390,9 @@ class Sprite(arcade.Sprite):
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.collides_with_radius = False
 
+    def remove_from_sprite_lists(self, dt):
+        print('REMOVING!', test)
+        return super().remove_from_sprite_lists()
     # def pymunk_moved(self, physics, pos_diff:Vector, angle_diff:float):
     #     pass
     
@@ -426,6 +429,9 @@ class SpriteCircle(arcade.SpriteCircle):
                  soft: bool = False):
         super().__init__(radius, color, soft)
 
+    def remove_from_sprite_lists(self, dt):
+        # print('REMOVING!')
+        return super().remove_from_sprite_lists()
 
 class Capsule(Sprite):
     
@@ -459,7 +465,7 @@ class ObjectLayer(arcade.SpriteList):
     
     def add(self, sprite):
         self.append(sprite)
-        
+    
     pass
 
 
