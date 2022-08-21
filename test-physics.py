@@ -1,4 +1,5 @@
-from lib.foundation import *
+# from lib.foundation import *
+from lib.escape import *
 from config import *
 
 VERSION = Version()

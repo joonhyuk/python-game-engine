@@ -700,6 +700,9 @@ class Window(arcade.Window):
     #         print('Gamepad attached')
     #     else: self.joystick = None
     
+    def run(self):
+        arcade.run()
+    
     @property
     def render_ratio(self):
         return self.get_framebuffer_size()[0] / self.get_size()[0]
