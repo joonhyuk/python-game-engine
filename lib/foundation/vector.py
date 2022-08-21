@@ -216,10 +216,15 @@ class Vector(tuple):
         return self.__class__(*rounded)
     
     def clamp_max(self, other):
-        """return claped vector"""
         clamped = tuple(map(min, self, other))
         return clamped
-        # return self.__class__(min(other[0], self.x), min(other[1], self.y))
+    
+    def clamp_min(self, other):
+        clamped = tuple(map(max, self, other))
+        return clamped
+    
+    def clamp(self, min, max):
+        return self.clamp_min(self.clamp_max(max), min)
     
     def clamp_length(self, max_length:float = 1.0):
         norm = self.norm()

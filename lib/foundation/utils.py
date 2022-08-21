@@ -3,7 +3,7 @@ utils coupled with arcade, pymunk, pyglet, etc
 
 '''
 import arcade
-from arcade.experimental import Shadertoy
+from arcade.experimental import Shadertoy, lights
 from lib.foundation.base import *
 from config.engine import *
 from pyglet.clock import schedule, schedule_once, schedule_interval, schedule_interval_soft, unschedule
