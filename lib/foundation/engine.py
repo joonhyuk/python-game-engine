@@ -122,6 +122,10 @@ class Environment:
     window_longside = None
     
     def __init__(self) -> None:
+        self.set_gamepad()
+    
+    def set_gamepad(self):
+        ''' 게임패드 접속/해제 대응 필요 '''
         self.gamepad = self.get_input_device()
     
     def get_input_device(self, id:int = 0):
@@ -130,11 +134,12 @@ class Environment:
             gamepad = joysticks[id]
             gamepad.open()
             gamepad.push_handlers(self)
-            print('Gamepad attached')
+            print(f'Gamepad[{id}] attached')
             return gamepad
         return None
     
     def set_screen(self, window:Window):
+        ''' should be called after resizing, fullscreen, etc. '''
         self.window = window
         window_x = window.get_size()[0]
         window_y = window.get_size()[1]
@@ -144,7 +149,12 @@ class Environment:
         self.render_scale = window.get_framebuffer_size()[0] / self.window_longside
     
     def on_key_press(self, key:int, modifiers:int):
-        pass
+        self.key_inputs.append(key)
+        self.key_inputs.append(modifiers)
+    
+    def on_key_release(self, key:int, modifiers:int):
+        self.key_inputs.remove(key)
+        self.key_inputs.remove(modifiers)
     
     @property
     def lstick(self) -> Vector:
@@ -226,6 +236,8 @@ class Window(arcade.Window):
         
         if key == arcade.key.F2: CONFIG.debug_draw = not CONFIG.debug_draw
         
+        ENV.on_key_press(key, modifiers)
+        
     def on_key_release(self, key: int, modifiers: int):
         # ENV.key_inputs.remove(key)
         if key in (arcade.key.W, arcade.key.UP): ENV.key_move -= (0,1)
@@ -234,6 +246,8 @@ class Window(arcade.Window):
         if key in (arcade.key.D, arcade.key.RIGHT): ENV.key_move -= (1,0)
         if key == arcade.key.LSHIFT: self.lshift_applied = False
         if key == arcade.key.LCTRL: self.lctrl_applied = False
+
+        ENV.on_key_release(key, modifiers)
         
     def on_update(self, delta_time: float):
         # print('window_update')
@@ -339,33 +353,6 @@ class Sprite(arcade.Sprite):
 
     def remove_from_sprite_lists(self, dt):
         return super().remove_from_sprite_lists()
-    # def pymunk_moved(self, physics, pos_diff:Vector, angle_diff:float):
-    #     pass
-    
-    # def _get_position(self) -> Vector:
-    #     return Vector(self.position)
-    
-    # def _set_position(self, position):
-    #     self.position = position
-    
-    # position:Vector = property(_get_position, _set_position)
-    
-    # def _get_velocity(self) -> Vector:
-    #     return Vector(self.velocity)  ### problem with recursive
-    
-    # def _set_velocity(self, velocity:Union[Vector, tuple, list]):
-    #     # self.velocity[0] = velocity[0]
-    #     # self.velocity[1] = velocity[1]
-    #     self.velocity[:] = velocity[:]
-    # 
-    # velocity:Vector = property(_get_velocity, _set_velocity)
-    
-    # def on_update(self, delta_time: float = 1 / 60):
-    #     print(self.owner)
-    #     return super().on_update(delta_time)
-    
-class StaticObject(Sprite):
-    pass
 
 
 class SpriteCircle(arcade.SpriteCircle):
@@ -378,6 +365,7 @@ class SpriteCircle(arcade.SpriteCircle):
     def remove_from_sprite_lists(self, dt):
         # print('REMOVING!')
         return super().remove_from_sprite_lists()
+
 
 class Capsule(Sprite):
     
