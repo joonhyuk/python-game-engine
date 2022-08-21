@@ -104,6 +104,8 @@ class Environment:
         - 월드상의 절대 좌표
     (나중에 Window 클래스에 통합시켜버릴 수도 있음)
     '''
+    
+    delta_time:float = 0.0
     physics_engine = None
     window:Window = None
     abs_screen_center:Vector = Vector()
@@ -250,26 +252,9 @@ class Window(arcade.Window):
         ENV.on_key_release(key, modifiers)
         
     def on_update(self, delta_time: float):
-        # print('window_update')
-        # return super().on_update(delta_time)
-
-        # if self.joystick:
-        #     x = map_range_abs(self.joystick.x, 0.1, 1, 0, 1, True)
-        #     y = map_range_abs(self.joystick.y, 0.1, 1, 0, 1, True) * -1
-        #     self.move_input = Vector(x, y).clamp_length()
-        #     if abs(self.joystick.rx) > 0.25 or abs(self.joystick.ry) > 0.25:
-        #         rx = map_range_abs(self.joystick.rx, 0.25, 1, 0, 300, True)
-        #         ry = map_range_abs(self.joystick.ry, 0.25, 1, 0, 300, True) * -1
-        #         ar = Vector(-1 * self.joystick.rx, -1 * self.joystick.ry).argument()
-        #         rv = Vector(0, 300).rotate(ar)
-        #         self.direction_input = (rv + Vector(self.size) / 2) * ENV.render_scale
-        # else:
-        #     self.move_input = self.lstick_vector.clamp_length(1) * (0.5 if self.lctrl_applied else 1)
-        #     self.direction_input = ENV.mouse_input * ENV.render_scale
-        #     pass
-        # print(ENV.get_current_window())
+        ENV.delta_time = delta_time
         ENV.debug_text['fps'] = CLOCK.fps_average
-        CLOCK.tick()
+        # CLOCK.tick()
         
     def on_draw(self):
         # print('window_draw')
@@ -286,15 +271,6 @@ class Window(arcade.Window):
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
             ENV.last_abs_pos_mouse_lb_released = ENV.abs_cursor_position
-    
-    # def get_input_device(self):
-    #     joysticks = arcade.get_joysticks()
-    #     if joysticks:
-    #         self.joystick = joysticks[0]
-    #         self.joystick.open()
-    #         self.joystick.push_handlers(self)
-    #         print('Gamepad attached')
-    #     else: self.joystick = None
     
     @property
     def render_ratio(self):
@@ -334,7 +310,9 @@ class View(arcade.View):
         
     def go_after_fade_out(self, next_screen:arcade.View):
         pass
-
+    
+    def on_update(self, delta_time: float):
+        ENV.delta_time = delta_time
 
 class Sprite(arcade.Sprite):
     def __init__(self, 
