@@ -150,7 +150,8 @@ class PhysicsTestView(View):
     
     def on_draw(self):
         ENV.debug_text.perf_check('on_draw')
-        self.clear()
+        super().on_draw()
+        # self.clear()
         
         self.camera.use()
         self.wall_layer.draw()
@@ -161,9 +162,10 @@ class PhysicsTestView(View):
         
         self.camera_gui.use()
         ENV.debug_text.perf_check('on_draw')
-        
+    
     def on_update(self, delta_time: float):
         ENV.debug_text.perf_check('on_update')
+        super().on_update(delta_time)
         
         self.player.tick(delta_time)
         self.physics_engine.step()

@@ -258,7 +258,7 @@ class CharacterMovement(ActorComponent):
     @property
     def speed(self) -> float:
         ''' speed per sec '''
-        return self.speed_tick / CLOCK.delta_time   # need to be removed
+        return self.speed_tick / ENV.delta_time   # need to be removed
     
     @property
     def speed_tick(self) -> float:
@@ -372,7 +372,7 @@ class Actor2D(MObject):
         return super().spawn(lifetime)
     
     def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = CLOCK.delta_time
+        if delta_time is None: delta_time = ENV.delta_time
         if not super().tick(delta_time): return False
         if self.tick_group:
             for ticker in self.tick_group:
