@@ -25,7 +25,7 @@ class default_settings:
     '''  '''
     fog_of_war = True
     ''' draw shadow switch '''
-    terminal_speed_per_tick = 4000 // DEFAULT_FPS
+    terminal_speed = 60000 // DEFAULT_FPS
     ''' maximum speed possible '''
     gamepad_deadzone_lstick = 0.1
     gamepad_deadzone_rstick = 0.1

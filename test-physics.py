@@ -4,7 +4,7 @@ from config import *
 
 VERSION = Version()
 
-SPRITE_SCALING_PLAYER = 0.25
+SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
 
 class PhysicsTestView(View):
@@ -29,6 +29,9 @@ class PhysicsTestView(View):
         
         self.player = Player(self.physics_engine)
         self.player.spawn(Vector(100, 100))
+        self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
+        # self.player.body.sprite.pymunk.gravity = (0,0)
+        # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
         
         self._setup_walls()
@@ -38,12 +41,20 @@ class PhysicsTestView(View):
                                             body_type=physics_types.static)
         
         self._setup_debris(self.debris_layer)
-        self.physics_engine.add_sprite_list(self.debris_layer,
-                                            mass = 1,
-                                            damping=0.5,
-                                            collision_type=collision.debris)
+        for debri in self.debris_layer:
+            self.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.5, elasticity = 0.5,
+                                           collision_type = collision.debris,
+                                           shape = pymunk.Circle(body = None, radius=7),
+                                           spawn = False)
+            self.physics_engine.add(debri)
+            
+        # self.physics_engine.add_sprite_list(self.debris_layer,
+        #                                     mass = 0.5,
+        #                                     damping=0.5,
+        #                                     collision_type=collision.debris)
         
         box = arcade.Sprite(":resources:images/tiles/grassCenter.png", 1.5)
+        box.pymunk.max_velocity = CONFIG.terminal_speed
         box.center_x = CONFIG.screen_size.x // 2
         box.center_y = CONFIG.screen_size.y // 2
         self.debris_layer.add(box)
@@ -65,16 +76,16 @@ class PhysicsTestView(View):
         def seperate_player_hit_wall(player, wall, arbiter, space, data):
             print('seperate_hit')
         
-        self.physics_engine.add_collision_handler(collision.character, collision.wall, 
-                                                  begin_handler=begin_player_hit_wall, 
-                                                  pre_handler=pre_player_hit_wall,
-                                                  separate_handler=seperate_player_hit_wall,
-                                                  post_handler=post_player_hit_wall)
+        # self.physics_engine.add_collision_handler(collision.character, collision.wall, 
+        #                                           begin_handler=begin_player_hit_wall, 
+        #                                           pre_handler=pre_player_hit_wall,
+        #                                           separate_handler=seperate_player_hit_wall,
+        #                                           post_handler=post_player_hit_wall)
     
     def _setup_debris(self, layer:ObjectLayer):
-        for _ in range(50):
+        for _ in range(300):
             debri = Sprite(":resources:images/tiles/bomb.png", 0.2)
-            debri.pymunk.max_velocity = 2000
+            debri.pymunk.max_velocity = CONFIG.terminal_speed
             placed = False
             while not placed:
                 debri.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
@@ -112,6 +123,17 @@ class PhysicsTestView(View):
             self.wall_layer.add(wall)
 
     def on_key_press(self, key: int, modifiers: int):
+        if key == keys.G: 
+            self.change_gravity(vectors.zero)
+        
+        if key == keys.UP and modifiers == keys.MOD_CTRL:
+            self.change_gravity(vectors.up)
+        if key == keys.DOWN and modifiers == keys.MOD_CTRL:
+            self.change_gravity(vectors.down)
+        if key == keys.LEFT and modifiers == keys.MOD_CTRL:
+            self.change_gravity(vectors.left)
+        if key == keys.RIGHT and modifiers == keys.MOD_CTRL:
+            self.change_gravity(vectors.right)
         
         return super().on_key_press(key, modifiers)
     
@@ -123,6 +145,17 @@ class PhysicsTestView(View):
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         # self.player.body.apply_impulse_world(self.player.forward_vector * -10)
         self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
+    
+    def change_gravity(self, direction:Vector) -> None:
+        
+        if direction == vectors.zero:
+            self.physics_engine.damping = 0.01
+            self.physics_engine.gravity = vectors.zero
+            return
+        
+        self.physics_engine.gravity = direction * GRAVITY
+        self.physics_engine.damping = 1.0
+        return
         
         
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 0):
@@ -161,6 +194,7 @@ class PhysicsTestView(View):
         # debug_draw_segment(end = CONFIG.screen_size)
         
         self.camera_gui.use()
+        
         ENV.debug_text.perf_check('on_draw')
     
     def on_update(self, delta_time: float):
