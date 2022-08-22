@@ -36,11 +36,13 @@ class default_settings:
 
 @dataclass
 class vectors:
+    ''' prepare basic vectors '''
     zero = Vector()
     right = Vector(1,0)
     left = Vector(-1,0)
     up = Vector(0,1)
     down = Vector(0,-1)
+    
     upright = (up + right).unit
 
 # class direction(EnumVector):

@@ -9,7 +9,7 @@ PLAYER_MOVE_FORCE = 4000
 
 class PhysicsTestView(View):
     
-    def __init__(self, window: Window = None):
+    def __init__(self, window: App = None):
         super().__init__(window)
         
         self.wall_layer = ObjectLayer()
@@ -176,7 +176,7 @@ class PhysicsTestView(View):
         
 def main():
     CLOCK.use_engine_tick = True
-    game = Window(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
+    game = App(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
     view = PhysicsTestView()
     view.setup()
     game.show_view(view)

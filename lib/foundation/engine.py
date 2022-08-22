@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from typing import Union
 
 import arcade
+import arcade.key as keys
+import arcade.color as colors
 
 from lib.foundation.base import *
 from lib.foundation.clock import *
@@ -92,7 +94,7 @@ class DebugTextLayer(dict, metaclass=SingletonType):
 
 
 @dataclass
-class Environment:
+class Environment(metaclass = SingletonType):
     ''' I/O for game
     
     - 디스플레이 정보
@@ -109,7 +111,7 @@ class Environment:
     
     delta_time:float = 0.0
     physics_engine = None
-    window:Window = None
+    window:App = None
     abs_screen_center:Vector = Vector()
     render_scale:float = 1.0
     mouse_screen_position:Vector = Vector()
@@ -142,7 +144,7 @@ class Environment:
             return gamepad
         return None
     
-    def set_screen(self, window:Window):
+    def set_screen(self, window:App):
         ''' should be called after resizing, fullscreen, etc. '''
         self.window = window
         window_x = window.get_size()[0]
@@ -154,11 +156,11 @@ class Environment:
     
     def on_key_press(self, key:int, modifiers:int):
         self.key_inputs.append(key)
-        self.key_inputs.append(modifiers)
+        # self.key_inputs.append(modifiers)
     
     def on_key_release(self, key:int, modifiers:int):
         self.key_inputs.remove(key)
-        self.key_inputs.remove(modifiers)
+        # self.key_inputs.remove(modifiers)
     
     @property
     def lstick(self) -> Vector:
@@ -329,7 +331,7 @@ class Actor(MObject):
         if not visibility: self.visibility = False
     
     def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = CLOCK.delta_time
+        if delta_time is None: delta_time = ENV.delta_time
         if not super().tick(delta_time): return False
         if self.tick_group:
             for ticker in self.tick_group:
@@ -615,7 +617,7 @@ class Body(ActorComponent):
         return self.velocity.length
 
 
-class Window(arcade.Window):
+class App(arcade.Window):
     
     ### class variables : are they needed?
     lshift_applied = False
@@ -633,30 +635,31 @@ class Window(arcade.Window):
         
     def on_key_press(self, key: int, modifiers: int):
         # ENV.key_inputs.append(key)
-        if key in (arcade.key.W, arcade.key.UP): ENV.key_move += (0,1)
-        if key in (arcade.key.S, arcade.key.DOWN): ENV.key_move += (0,-1)
-        if key in (arcade.key.A, arcade.key.LEFT): ENV.key_move += (-1,0)
-        if key in (arcade.key.D, arcade.key.RIGHT): ENV.key_move += (1,0)
-        if key == arcade.key.LSHIFT: self.lshift_applied = True
-        if key == arcade.key.LCTRL: self.lctrl_applied = True
+        if key in (keys.W, keys.UP): ENV.key_move += vectors.up
+        if key in (keys.S, keys.DOWN): ENV.key_move += vectors.down
+        if key in (keys.A, keys.LEFT): ENV.key_move += vectors.left
+        if key in (keys.D, keys.RIGHT): ENV.key_move += vectors.right
+        if key == keys.LSHIFT: self.lshift_applied = True
+        if key == keys.LCTRL: self.lctrl_applied = True
         
-        if key == arcade.key.F2: CONFIG.debug_draw = not CONFIG.debug_draw
+        if key == keys.F2: CONFIG.debug_draw = not CONFIG.debug_draw
         
         ENV.on_key_press(key, modifiers)
         
     def on_key_release(self, key: int, modifiers: int):
         # ENV.key_inputs.remove(key)
-        if key in (arcade.key.W, arcade.key.UP): ENV.key_move -= (0,1)
-        if key in (arcade.key.S, arcade.key.DOWN): ENV.key_move -= (0,-1)
-        if key in (arcade.key.A, arcade.key.LEFT): ENV.key_move -= (-1,0)
-        if key in (arcade.key.D, arcade.key.RIGHT): ENV.key_move -= (1,0)
-        if key == arcade.key.LSHIFT: self.lshift_applied = False
-        if key == arcade.key.LCTRL: self.lctrl_applied = False
+        if key in (keys.W, keys.UP): ENV.key_move -= vectors.up
+        if key in (keys.S, keys.DOWN): ENV.key_move -= vectors.down
+        if key in (keys.A, keys.LEFT): ENV.key_move -= vectors.left
+        if key in (keys.D, keys.RIGHT): ENV.key_move -= vectors.right
+        if key == keys.LSHIFT: self.lshift_applied = False
+        if key == keys.LCTRL: self.lctrl_applied = False
 
         ENV.on_key_release(key, modifiers)
         
     def on_update(self, delta_time: float):
         ENV.delta_time = delta_time
+        CLOCK.fps_current = 1 / delta_time
         ENV.debug_text['fps'] = CLOCK.fps_average
         # CLOCK.tick()
         
@@ -690,7 +693,7 @@ class Window(arcade.Window):
 
 class View(arcade.View):
     
-    def __init__(self, window: Window = None):
+    def __init__(self, window: App = None):
         super().__init__(window)
         self.fade_out = 0.0
         self.fade_in = 0.0
@@ -721,6 +724,7 @@ class View(arcade.View):
     def on_update(self, delta_time: float):
         ENV.delta_time = delta_time
 
+
 class Sprite(arcade.Sprite):
     def __init__(self, 
                  filename: str = None, 
@@ -743,7 +747,7 @@ class Sprite(arcade.Sprite):
 class SpriteCircle(arcade.SpriteCircle):
     def __init__(self, 
                  radius: int = 16, 
-                 color: arcade.Color = arcade.color.ALLOY_ORANGE, 
+                 color: colors = colors.ALLOY_ORANGE, 
                  soft: bool = False):
         super().__init__(radius, color, soft)
 
@@ -777,7 +781,7 @@ class Capsule(Sprite):
         
         print('points : ', self._points)
 
-    def draw_hit_box(self, color: arcade.Color = ..., line_thickness: float = 1):
+    def draw_hit_box(self, color: colors = ..., line_thickness: float = 1):
         return debug_draw_circle(self.position, self.collision_radius, color, line_thickness)
 
 
@@ -795,7 +799,7 @@ class ActorLayer:
         self.sprite_list:ObjectLayer = None
         self.actors:list = None
         
-        
+
 # class ObjectLayer:
     
 #     def __init__(self) -> None:
