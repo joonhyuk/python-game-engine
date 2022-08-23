@@ -232,7 +232,8 @@ class PhysicsEngine:
     MOMENT_INF = float('inf')
     
     def __init__(self) -> None:
-        self.space = pymunk.Space()
+        self.space = pymunk.Space(threaded=True)
+        self.space.threads = os.cpu_count() // 2
         self.space.gravity = (0, 0)
         self.space.damping = 0.1        # ratio of speed(scalar) which is kept to next tick
         # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
