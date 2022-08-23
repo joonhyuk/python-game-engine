@@ -18,37 +18,35 @@ class PhysicsTestView(View):
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
         
-        self.physics_engine:PhysicsEngine = None
         
     def on_show(self):
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
         
     def setup(self):
-        self.physics_engine = PhysicsEngine()
-        self.physics_engine.damping = 0.01
+        ENV.physics_engine.damping = 0.01
         
-        self.player = Player(self.physics_engine)
+        self.player = Player(ENV.physics_engine)
         self.player.spawn(Vector(100, 100))
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
-        # self.player.body.sprite.pymunk.gravity = (0,0)
+        # self.player.body.sprite.pymunk.gravity = (0,980)
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
         
         self._setup_walls()
-        self.physics_engine.add_sprite_list(self.wall_layer, 
+        ENV.physics_engine.add_sprite_list(self.wall_layer, 
                                             friction = 0.0, 
                                             collision_type=collision.wall, 
                                             body_type=physics_types.static)
         
         self._setup_debris(self.debris_layer)
         for debri in self.debris_layer:
-            self.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.5, elasticity = 0.5,
-                                           collision_type = collision.debris,
-                                           shape = pymunk.Circle(body = None, radius=7),
-                                           spawn = False)
-            self.physics_engine.add(debri)
+            ENV.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.5, elasticity = 0.5,
+                                          collision_type = collision.debris,
+                                          shape = pymunk.Circle(body = None, radius=7),
+                                          spawn = False)
+            ENV.physics_engine.add(debri)
             
-        # self.physics_engine.add_sprite_list(self.debris_layer,
+        # ENV.physics_engine.add_sprite_list(self.debris_layer,
         #                                     mass = 0.5,
         #                                     damping=0.5,
         #                                     collision_type=collision.debris)
@@ -58,7 +56,7 @@ class PhysicsTestView(View):
         box.center_x = CONFIG.screen_size.x // 2
         box.center_y = CONFIG.screen_size.y // 2
         self.debris_layer.add(box)
-        self.physics_engine.add_sprite(box, 
+        ENV.physics_engine.add_sprite(box, 
                                        mass=10, 
                                        friction = 1.0,
                                        collision_type=collision.debris,
@@ -76,7 +74,7 @@ class PhysicsTestView(View):
         def seperate_player_hit_wall(player, wall, arbiter, space, data):
             print('seperate_hit')
         
-        # self.physics_engine.add_collision_handler(collision.character, collision.wall, 
+        # ENV.physics_engine.add_collision_handler(collision.character, collision.wall, 
         #                                           begin_handler=begin_player_hit_wall, 
         #                                           pre_handler=pre_player_hit_wall,
         #                                           separate_handler=seperate_player_hit_wall,
@@ -149,12 +147,12 @@ class PhysicsTestView(View):
     def change_gravity(self, direction:Vector) -> None:
         
         if direction == vectors.zero:
-            self.physics_engine.damping = 0.01
-            self.physics_engine.gravity = vectors.zero
+            ENV.physics_engine.damping = 0.01
+            ENV.physics_engine.gravity = vectors.zero
             return
         
-        self.physics_engine.gravity = direction * GRAVITY
-        self.physics_engine.damping = 1.0
+        ENV.physics_engine.gravity = direction * GRAVITY
+        ENV.physics_engine.damping = 1.0
         return
         
         
@@ -163,8 +161,8 @@ class PhysicsTestView(View):
         '''
         self.player.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
         sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
-        query = self.physics_engine.space.segment_query(origin, end, thickness / 2, sf)
-        query_first = self.physics_engine.space.segment_query_first(origin, end, thickness / 2, sf)
+        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, sf)
+        query_first = ENV.physics_engine.space.segment_query_first(origin, end, thickness / 2, sf)
         # if query:
         #     for sq in query:
         #         shape = sq.shape
@@ -198,14 +196,13 @@ class PhysicsTestView(View):
         ENV.debug_text.perf_check('on_draw')
     
     def on_update(self, delta_time: float):
-        ENV.debug_text.perf_check('on_update')
+        ENV.debug_text.perf_check('update_game')
         super().on_update(delta_time)
         
         self.player.tick(delta_time)
-        self.physics_engine.step()
         # print(self.player.body.physics.shape.segment_query((0,0), CONFIG.screen_size))
         
-        ENV.debug_text.perf_check('on_update')
+        ENV.debug_text.perf_check('update_game')
         
         
 def main():

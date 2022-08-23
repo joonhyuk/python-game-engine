@@ -110,13 +110,14 @@ class Environment(metaclass = SingletonType):
     '''
     
     delta_time:float = 0.0
-    physics_engine = None
+    physics_engine:PhysicsEngine = None
     window:App = None
+    
     abs_screen_center:Vector = Vector()
     render_scale:float = 1.0
     mouse_screen_position:Vector = Vector()
     gamepad:arcade.joysticks.Joystick = None
-    key_move:Vector = Vector()
+    input_move:Vector = Vector()
     key = arcade.key
     key_inputs = []
     debug_text:DebugTextLayer = None
@@ -182,7 +183,7 @@ class Environment(metaclass = SingletonType):
         if self.gamepad:
             return self.lstick
         else:
-            return self.key_move.clamp_length(1) * (0.5 if self.window.lctrl_applied else 1)
+            return self.input_move.clamp_length(1) * (0.5 if self.window.lctrl_applied else 1)
 
     move_input:Vector = property(_get_move_input)
     ''' returns movement direction vector (-1, -1) ~ (1, 1) '''
@@ -432,8 +433,8 @@ class Body(ActorComponent):
         if physics_shape is physics_types.circle:
             rad = max(size.x, size.y) / 2
             shape = physics_types.circle(body = None, radius = rad)
-            # moment = pymunk.moment_for_circle(mass, 0, rad)
-            moment = PhysicsEngine.MOMENT_INF
+            moment = pymunk.moment_for_circle(mass, 0, rad)
+            # moment = PhysicsEngine.MOMENT_INF
         else:
             shape = None
             moment = None
@@ -624,6 +625,11 @@ class App(arcade.Window):
     lctrl_applied = False
     current_camera:arcade.Camera = None
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        ENV.physics_engine = PhysicsEngine()
+        
+    
     def on_show(self):
         # print('window_show')
         ENV.set_screen(self)
@@ -635,10 +641,10 @@ class App(arcade.Window):
         
     def on_key_press(self, key: int, modifiers: int):
         # ENV.key_inputs.append(key)
-        if key in (keys.W, keys.UP): ENV.key_move += vectors.up
-        if key in (keys.S, keys.DOWN): ENV.key_move += vectors.down
-        if key in (keys.A, keys.LEFT): ENV.key_move += vectors.left
-        if key in (keys.D, keys.RIGHT): ENV.key_move += vectors.right
+        if key in (keys.W, keys.UP): ENV.input_move += vectors.up
+        if key in (keys.S, keys.DOWN): ENV.input_move += vectors.down
+        if key in (keys.A, keys.LEFT): ENV.input_move += vectors.left
+        if key in (keys.D, keys.RIGHT): ENV.input_move += vectors.right
         if key == keys.LSHIFT: self.lshift_applied = True
         if key == keys.LCTRL: self.lctrl_applied = True
         
@@ -648,10 +654,10 @@ class App(arcade.Window):
         
     def on_key_release(self, key: int, modifiers: int):
         # ENV.key_inputs.remove(key)
-        if key in (keys.W, keys.UP): ENV.key_move -= vectors.up
-        if key in (keys.S, keys.DOWN): ENV.key_move -= vectors.down
-        if key in (keys.A, keys.LEFT): ENV.key_move -= vectors.left
-        if key in (keys.D, keys.RIGHT): ENV.key_move -= vectors.right
+        if key in (keys.W, keys.UP): ENV.input_move -= vectors.up
+        if key in (keys.S, keys.DOWN): ENV.input_move -= vectors.down
+        if key in (keys.A, keys.LEFT): ENV.input_move -= vectors.left
+        if key in (keys.D, keys.RIGHT): ENV.input_move -= vectors.right
         if key == keys.LSHIFT: self.lshift_applied = False
         if key == keys.LCTRL: self.lctrl_applied = False
 
@@ -659,9 +665,13 @@ class App(arcade.Window):
         
     def on_update(self, delta_time: float):
         ENV.delta_time = delta_time
+        
         CLOCK.fps_current = 1 / delta_time
         ENV.debug_text['fps'] = CLOCK.fps_average
-        # CLOCK.tick()
+
+        ENV.debug_text.perf_check('update_physics')
+        ENV.physics_engine.step()
+        ENV.debug_text.perf_check('update_physics')
         
     def on_draw(self):
         # print('window_draw')
