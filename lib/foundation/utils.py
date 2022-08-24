@@ -67,4 +67,5 @@ def debug_draw_marker(position:Vector = Vector(),
 def add_sprite_timeout(sprite:arcade.Sprite, location:Vector, layer:arcade.SpriteList, timeout:float = 0.0):
     sprite.position = location
     layer.append(sprite)
-    schedule_once(sprite.remove_from_sprite_lists, timeout)
+    
+    schedule_once(sprite.scheduled_remove_from_sprite_lists, timeout)

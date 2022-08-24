@@ -280,11 +280,12 @@ class ActorComponent(MObject):
     '''component base class'''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.owner:Actor = None
+        self.owner:BaseActor = None
         self._spawned = True
     
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
+
 
 class BaseActor(MObject):
     ''' can have actor components '''
@@ -310,7 +311,6 @@ class BaseActor(MObject):
         return True
     
     
-
 class Actor(BaseActor):
     """ Actor that have world presence like body, position """
     def __init__(self, 
@@ -408,6 +408,358 @@ class Actor(BaseActor):
         return self.body.speed
 
 
+class SpriteBody(ActorComponent):
+    
+    def __init__(self, 
+                 sprite:Sprite,
+                 position:Vector = None,
+                 angle:float = None,
+                 spawn_to:ObjectLayer = None,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        
+        self.sprite:Sprite = sprite
+        if position: self.position = position
+        if angle: self.angle = angle
+        
+        if spawn_to is not None:
+            self.spawn(spawn_to, position, angle)
+    
+    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        
+        if position is not None: 
+            self.sprite.position = position
+        if angle is not None:
+            self.sprite.angle = angle
+        
+        spawn_to.add(self)
+        return self
+    
+    def _get_position(self):
+        return Vector(self.sprite.position)
+    
+    def _set_position(self, position):
+        self.sprite.position = position
+    
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self):
+        return self.sprite.angle
+    
+    def _set_angle(self, angle:float):
+        self.sprite.angle = angle
+    
+    angle:float = property(_get_angle, _set_angle)
+
+
+class StaticBody(ActorComponent):
+    ''' for static physics objects
+    
+    collision_type, friction, elasticity, physics_shape
+    '''
+    def __init__(self, 
+                 sprite:Sprite,
+                 position:Vector = None,
+                 angle:float = None,
+                 spawn_to:ObjectLayer = None,
+                 mass = 0,
+                 moment = None,
+                 body_type = physics_types.static,
+                 collision_type = collision.wall,
+                 elasticity:float = None,
+                 friction:float = 1.0,
+                 shape_edge_radius:float = 0.0,
+                 physics_shape:Union[physics_types.shape, type] = physics_types.poly,
+                 offset_circle:Vector = vectors.zero,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        
+        self.sprite:Sprite = sprite
+        if position is not None: self.sprite.position = position
+        if angle is not None: self.sprite.angle = angle
+        
+        self._collision_type = collision_type
+        
+        self.physics:PhysicsObject = self._setup_physics(sprite=sprite,
+                                                         mass=mass,
+                                                         moment=moment,
+                                                         friction=friction,
+                                                         elasticity=elasticity,
+                                                         body_type=body_type,
+                                                         physics_shape=physics_shape,
+                                                         shape_edge_radius=shape_edge_radius,
+                                                         offset_circle=offset_circle
+                                                         )
+        
+        if spawn_to is not None:
+            ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
+            self.spawn(spawn_to)
+    
+    def _setup_physics(self,
+                       sprite:Sprite, 
+                       mass:float = 0,
+                       moment = None,
+                       friction:float = 1.0,
+                       elasticity:float = None,
+                       body_type:int = physics_types.static,
+                       physics_shape = physics_types.poly,
+                       shape_edge_radius:float = 0.0,
+                       offset_circle:Vector = vectors.zero,
+                       ):
+        
+        size = Vector(sprite.width, sprite.height)
+        
+        if body_type == physics_types.static:
+            _moment = PhysicsEngine.MOMENT_INF
+        else:
+            if physics_shape == physics_types.circle or isinstance(physics_shape, physics_types.circle):
+                _moment = pymunk.moment_for_circle(mass, 0, 
+                                                  min(size.x, size.y) / 2 + shape_edge_radius, 
+                                                  offset_circle)
+            elif physics_shape == physics_types.box or isinstance(physics_shape, physics_types.box):
+                _moment = pymunk.moment_for_box(mass, size)
+            else:
+                scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
+                _moment = pymunk.moment_for_poly(mass, scaled_poly, offset_circle, radius=shape_edge_radius)
+        
+        if moment is None: moment = _moment
+        
+        body = physics_types.body(mass, moment, body_type)
+        body.position = self.sprite.position
+        body.angle = math.radians(self.sprite.angle)
+        
+        if isinstance(physics_shape, physics_types.shape):
+            shape = physics_shape
+            shape.body = body
+        else:
+            if physics_shape == physics_types.circle:
+                shape = physics_types.circle(body, 
+                                             min(size.x, size.y) / 2 + shape_edge_radius, 
+                                             offset_circle)
+            else:
+                scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
+                shape = physics_types.poly(body, scaled_poly, radius=shape_edge_radius)
+        
+        shape.collision_type = self._collision_type
+        if elasticity is not None:
+            shape.elasticity = elasticity
+
+        shape.friction = friction
+        
+        return PhysicsObject(body, shape)
+    
+    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        
+        if position is not None: 
+            self.sprite.position = position
+            self.physics.position = position
+        if angle is not None:
+            self.sprite.angle = angle
+            self.physics.angle = angle
+        
+        spawn_to.add(self)
+        return self
+        
+    def draw(self):
+        ''' mostly not used because batch draw '''
+        self.sprite.draw()
+        if CONFIG.debug_draw: 
+            self.physics.draw()
+    
+    def _get_size(self):
+        return Vector(self.sprite.width, self.sprite.height)
+    
+    size:Vector = property(_get_size)
+
+    def _get_position(self) -> Vector:
+        if self.physics:
+            return Vector(self.physics.body.position)
+        return Vector(self.sprite.position)
+    
+    def _set_position(self, position) -> None:
+        raise PhysicsException('Can\'t move static object')
+        
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        if self.physics:
+            return math.degrees(self.physics.body.angle)
+        return self.sprite.angle
+    
+    def _set_angle(self, angle:float = 0.0):
+        raise PhysicsException('Can\'t move unmovable static object')
+        
+    angle:float = property(_get_angle, _set_angle)
+
+
+class DynamicBody(StaticBody):
+    
+    def __init__(self, 
+                 sprite: Sprite, 
+                 position: Vector = None, 
+                 angle: float = None,
+                 spawn_to: ObjectLayer = None,
+                 mass:float = 1.0,
+                 moment = None,
+                 body_type:int = physics_types.dynamic,
+                 collision_type:int = None,
+                 elasticity: float = None,
+                 friction: float = 1,
+                 shape_edge_radius: float = 0,
+                 physics_shape: Union[physics_types.shape, type] = physics_types.circle,
+                 offset_circle: Vector = vectors.zero,
+                 **kwargs) -> None:
+        super().__init__(sprite=sprite,
+                         position=position,
+                         angle=angle,
+                         spawn_to=spawn_to,
+                         mass=mass,
+                         moment=moment,
+                         body_type=body_type,
+                         collision_type=collision_type,
+                         elasticity=elasticity,
+                         friction=friction,
+                         shape_edge_radius=shape_edge_radius,
+                         physics_shape=physics_shape,
+                         offset_circle=offset_circle,
+                         **kwargs)
+        self.mass_mul:float = 1.0
+        self.mass_add:float = 0.0
+        self.friction_mul:float = 1.0
+        self.friction_add:float = 0.0
+        self.elasticity_mul:float = 1.0
+        self.elasticity_add:float = 0.0
+    
+    def apply_force_local(self, force:Vector = vectors.zero):
+        return self.physics.body.apply_force_at_local_point(force)
+    
+    def apply_impulse_local(self, impulse:Vector = vectors.zero):
+        return self.physics.body.apply_impulse_at_local_point(impulse)
+    
+    def apply_force_world(self, force:Vector = vectors.zero):
+        return self.physics.body.apply_force_at_world_point(force, self.position)
+    
+    def apply_impulse_world(self, impulse:Vector = vectors.zero):
+        return self.physics.body.apply_impulse_at_world_point(impulse, self.position)
+    
+    def apply_acceleration_world(self, acceleration:Vector):
+        self.apply_force_world(acceleration * self.mass)
+    
+    def _get_velocity(self) -> Vector:
+        if self.physics:
+            return Vector(self.physics.body.velocity)
+        return Vector(self.sprite.velocity)
+    
+    def _set_velocity(self, velocity):
+        if self.physics:
+            self.physics.body.velocity = velocity   ### physics.body.velocity is tuple
+        else: self.sprite.velocity[:] = velocity[:] ### trivial optimization for list
+    
+    velocity:Vector = property(_get_velocity, _set_velocity)
+    
+    def _get_mass(self):
+        return self.physics.body.mass * self.mass_mul + self.mass_add
+    
+    def _set_mass(self, mass:float):
+        self.physics.body.mass = mass
+    
+    mass:float = property(_get_mass, _set_mass)
+    
+    def _get_damping(self):
+        return self.sprite.pymunk.damping
+    
+    def _set_damping(self, damping:float):
+        self.sprite.pymunk.damping = damping
+    
+    damping:float = property(_get_damping, _set_damping)
+    
+    def _get_max_speed(self):
+        return self.sprite.pymunk.max_velocity
+    
+    def _set_max_speed(self, max_speed:int):
+        self.sprite.pymunk.max_velocity = max_speed
+    
+    max_speed:int = property(_get_max_speed, _set_max_speed)
+    
+    def _get_friction(self):
+        return self.physics.shape.friction
+    
+    def _set_friction(self, friction:float):
+        self.physics.shape.friction = friction
+    
+    friction:float = property(_get_friction, _set_friction)
+    """
+    쿨롱 마찰력
+    
+        Some real world example values from Wikipedia (Remember that
+        it is what looks good that is important, not the exact value).
+
+        ==============  ======  ========
+        Material        Other   Friction
+        ==============  ======  ========
+        Aluminium       Steel   0.61
+        Copper          Steel   0.53
+        Brass           Steel   0.51
+        Cast iron       Copper  1.05
+        Cast iron       Zinc    0.85
+        Concrete (wet)  Rubber  0.30
+        Concrete (dry)  Rubber  1.0
+        Concrete        Wood    0.62
+        Copper          Glass   0.68
+        Glass           Glass   0.94
+        Metal           Wood    0.5
+        Polyethene      Steel   0.2
+        Steel           Steel   0.80
+        Steel           Teflon  0.04
+        Teflon (PTFE)   Teflon  0.04
+        Wood            Wood    0.4
+        ==============  ======  ========
+
+    """
+    
+    @property
+    def forward_vector(self) -> Vector:
+        return vectors.right.rotate(self.angle)
+    
+    @property
+    def speed(self):
+        ''' different from physics or sprite 
+        
+        :physics = per sec
+        :sprite = per tick
+        '''
+        return self.velocity.length
+
+
+class StaticObject:
+    ''' Actor with simple sprite '''
+    def __init__(self, body:StaticBody) -> None:
+        self.body:StaticBody = body
+    
+    def spawn(self, spawn_to:ObjectLayer, potision:Vector = None, angle:float = None):
+        self.body.spawn(spawn_to, potision, angle)
+    
+    def _get_position(self) -> Vector:
+        return self.body.position
+    
+    def _set_position(self, position) -> None:
+        self.body.sprite.position = position
+        self.body.physics.position = position
+        self.body.physics.space.reindex_static()
+        
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        return self.body.angle
+    
+    def _set_angle(self, angle:float = 0.0):
+        self.body.sprite.angle = angle
+        self.body.physics.angle = angle
+        self.body.physics.space.reindex_static()
+    
+    angle:float = property(_get_angle, _set_angle)
+
+
 class Body(ActorComponent):
     '''
     has size, sprite for draw, move(collision), hit(collision)
@@ -496,11 +848,14 @@ class Body(ActorComponent):
         if self._physics_engine: return True
         return False
     
-    def spawn(self, object_layer:ObjectLayer = None):
+    def spawn(self, object_layer:ObjectLayer = None, physics_instance:PhysicsEngine = None):
         if self.has_physics:
-            self._physics_engine.add(self.sprite)
+            self._physics_engine.add_to_space(self.sprite)
         if object_layer:
             object_layer.add(self.sprite)
+    
+    def despawn(self):
+        self.remove()
     
     def remove(self):
         if self.has_physics: self._physics_engine.remove_sprite(self.sprite)
@@ -528,6 +883,9 @@ class Body(ActorComponent):
     def apply_impulse_world(self, impulse:Vector = vectors.zero):
         if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
         return self.physics.body.apply_impulse_at_world_point(impulse, self.position)
+    
+    def apply_acceleration_world(self, acceleration:Vector):
+        self.apply_force_world(acceleration * self.mass)
     
     def sync(self):
         ''' mostly not used manually '''
@@ -659,6 +1017,8 @@ class Body(ActorComponent):
         :sprite = per tick
         '''
         return self.velocity.length
+
+
 
 
 class App(arcade.Window):
@@ -793,7 +1153,8 @@ class Sprite(arcade.Sprite):
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.collides_with_radius = False
 
-    def remove_from_sprite_lists(self, dt):
+    def scheduled_remove_from_sprite_lists(self, dt):
+        # print('REMOVING!')
         return super().remove_from_sprite_lists()
 
 
@@ -804,7 +1165,7 @@ class SpriteCircle(arcade.SpriteCircle):
                  soft: bool = False):
         super().__init__(radius, color, soft)
 
-    def remove_from_sprite_lists(self, dt):
+    def scheduled_remove_from_sprite_lists(self, dt):
         # print('REMOVING!')
         return super().remove_from_sprite_lists()
 
@@ -838,63 +1199,117 @@ class Capsule(Sprite):
 
 class ObjectLayer(arcade.SpriteList):
     """ extended spritelist with actor, body """
-    def add(self, obj:Union[Actor, Body, Sprite]):
+    def __init__(self, 
+                 physics_instance:PhysicsEngine = None,
+                 use_spatial_hash=None, spatial_hash_cell_size=128, is_static=False, atlas: arcade.TextureAtlas = None, capacity: int = 100, lazy: bool = False, visible: bool = True):
+        super().__init__(use_spatial_hash, spatial_hash_cell_size, is_static, atlas, capacity, lazy, visible)
+        self.physics_instance = physics_instance
+        # self.sprites = []
+        
+    def add(self, obj:Union[Actor, StaticBody, Sprite, SpriteCircle]):
         sprite:Sprite = None
+        body:StaticBody = None
         if isinstance(obj, Actor):
             sprite = obj.body.sprite
-        elif isinstance(obj, Body):
+            body = obj.body
+        elif isinstance(obj, StaticBody):
             sprite = obj.sprite
-        elif isinstance(obj, Sprite):
+            body = obj
+        elif isinstance(obj, (Sprite, SpriteCircle)):
             sprite = obj
-        else: Exception()
+        else: raise Exception('ObjectLayer only accept Sprite, Body, Actor')
         
-        self.append(sprite)
-    
-class TheObjectLayer:
-    """ for draw """
-    def __init__(self, physics_space:physics_types.space, is_static:bool = False, lazy:bool = False) -> None:
-        self.sprites = arcade.SpriteList(is_static=is_static, lazy=lazy)
-        self.space = physics_space
+        if sprite:
+            self.append(sprite)
+            # self.sprites.append(sprite)
         
-    def add(self, obj:Union[Actor, Body, Sprite]):
+        if self.physics_instance:
+            if body:
+                if body.physics:
+                    self.physics_instance.add_object(sprite, body.physics.body, body.physics.shape)
+                    self.physics_instance.add_to_space(sprite)
+                    
+    def remove(self, obj:Union[Actor, StaticBody, Sprite, SpriteCircle]):
         sprite:Sprite = None
+        # body:SimpleBody = None
         if isinstance(obj, Actor):
             sprite = obj.body.sprite
-        elif isinstance(obj, Body):
+            # body = obj.body
+        elif isinstance(obj, StaticBody):
             sprite = obj.sprite
+            # body = obj
+        elif isinstance(obj, (Sprite, SpriteCircle)):
+            sprite = obj
+        else: raise Exception('ObjectLayer only accept Sprite, Body, Actor')
+        
+        # if body:
+        #    if body.physics:
+        #        self.physics_instance.remove_sprite(sprite)
+        ''' 
+        Because arcade spritelist remove method automatically remove body from physics,
+        we don't need it
+        '''
+        return super().remove(sprite)
+
+class _ObjectLayer:
+    """ deprecated """
+    def __init__(self, 
+                 physics_instance:PhysicsEngine, 
+                 is_static:bool = False, 
+                 lazy:bool = False,
+                 visible: bool = True
+                 ) -> None:
+        self.sprites = arcade.SpriteList(is_static=is_static, lazy=lazy, visible=visible)
+        self.physics_instance = physics_instance
+    
+    def add(self, obj:Union[Actor, StaticBody, Sprite]):
+        sprite:Sprite = None
+        body:StaticBody = None
+        if isinstance(obj, Actor):
+            sprite = obj.body.sprite
+            body = obj.body
+        elif isinstance(obj, StaticBody):
+            sprite = obj.sprite
+            body = obj
         elif isinstance(obj, Sprite):
             sprite = obj
         else: Exception()
         
         if sprite:
-            self.sprite_list.append(sprite)
+            self.append(sprite)
+        
+        if self.physics_instance:
+            if body:
+                if body.physics:
+                    self.physics_instance.add_object(sprite, body.physics.body, body.physics.shape)
+                    self.physics_instance.add_to_space(sprite)
+    
+    def remove(self, obj:Union[Actor, StaticBody, Sprite]):
+        sprite:Sprite = None
+        body:StaticBody = None
+        if isinstance(obj, Actor):
+            sprite = obj.body.sprite
+            body = obj.body
+        elif isinstance(obj, StaticBody):
+            sprite = obj.sprite
+            body = obj
+        elif isinstance(obj, Sprite):
+            sprite = obj
+        else: Exception()
+        
+        if sprite:
+            sprite.remove_from_sprite_lists()
+        
+        if body:
+           if body.physics:
+               self.physics_instance.remove_sprite(sprite) 
+    
+    def append(self, sprite:Sprite):
+        self.sprites.append(sprite)
     
     def draw(self, *args, **kwargs):
-        self.sprite_list.draw(*args, **kwargs)
+        self.sprites.draw(*args, **kwargs)
     
-    def tick(self, delta_time:float):
-        pass 
-    
-    pass
-
-
-class ActorLayer:
-    
-    def __init__(self) -> None:
-        self.sprite_list:ObjectLayer = None
-        self.actors:list = None
-        
-
-# class ObjectLayer:
-    
-#     def __init__(self) -> None:
-#         self.sprite_list:SpriteLayer = None
-    
-#     def add(self, element:object):
-#         for k, v in element.__dict__.items():
-#             if isinstance(v, (Sprite)):
-#                 pass
-
 
 class Camera(arcade.Camera):
     pass

@@ -156,7 +156,7 @@ class PhysicsObject:
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
-            arcade.draw_circle_outline(*self.body.position, self.shape.radius, (255,128,0,255))
+            arcade.draw_circle_outline(*self.body.position, self.shape.radius, (255,255,255,255))
         else:
             if isinstance(self.shape, physics_types.poly):
                 shape = []
@@ -164,10 +164,11 @@ class PhysicsObject:
                 points = self.shape.get_vertices()
                 for point in points:
                     shape.append(point.rotated(angle))
-                debug_draw_poly(self.body.position, shape, (255,0,0,255))
+                debug_draw_poly(self.body.position, shape, (255,255,255,255))
     
     def __del__(self):
-        print(self.__name__, 'deleted just now')
+        # print(self.__name__, 'deleted just now')
+        pass
     
     def _get_friction(self):
         return self.shape.friction
@@ -196,8 +197,8 @@ class PhysicsObject:
     def _get_angle(self):
         return self.body.angle # in radian
     
-    def _set_angle(self, rotation:float):
-        self.body.angle = rotation
+    def _set_angle(self, angle:float):
+        self.body.angle = math.radians(angle)
     
     angle:float = property(_get_angle, _set_angle)
     
@@ -213,6 +214,10 @@ class PhysicsObject:
     @property
     def speed(self):
         return self.velocity.length
+    
+    @property
+    def space(self):
+        return self.body.space
 
 
 class PhysicsException(Exception):
@@ -276,7 +281,7 @@ class PhysicsEngine:
                    elasticity: Optional[float] = None,
                    moment_of_inertia: Optional[float] = None, 
                    body_type: int = DYNAMIC,
-                   shape: pymunk.Shape = None, 
+                   shape: Union[pymunk.Shape, type] = None, 
                    damping: Optional[float] = None,
                    gravity: Union[Vector, tuple[float, float]] = None,
                    max_velocity: int = None,
@@ -440,6 +445,7 @@ class PhysicsEngine:
                             collision_type=collision_type)
     
     def remove_sprite(self, sprite:Sprite):
+        ''' name coupled with aracde framework. so do not change it'''
         physics_object = self.objects[sprite]
         self.space.remove(physics_object.body)  # type: ignore
         self.space.remove(physics_object.shape)  # type: ignore
