@@ -21,6 +21,7 @@ class Player(Actor):
         direction = ENV.direction_input
         if direction: self.movement.turn_toward(direction)
         self.movement.move(ENV.move_input)
+        ENV.debug_text['player_speed'] = round(self.speed, 1)
         
     def apply_damage(self, damage:float):
         self.hp -= damage

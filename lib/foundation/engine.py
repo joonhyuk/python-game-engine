@@ -393,6 +393,10 @@ class Actor(MObject):
     def forward_vector(self) -> Vector:
         return self.body.forward_vector
 
+    @property
+    def speed(self) -> float:
+        return self.body.speed
+
 
 class Body(ActorComponent):
     '''
