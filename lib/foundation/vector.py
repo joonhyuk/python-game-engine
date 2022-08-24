@@ -249,6 +249,11 @@ class Vector(tuple):
         va = [value] * dimension
         return cls(va)
     
+    @classmethod
+    def directional(cls, angle = 0):
+        theta = math.radians(angle)
+        return cls(math.cos(theta), math.sin(theta))
+    
     @property
     def unit(self):
         ''' return unit vector'''

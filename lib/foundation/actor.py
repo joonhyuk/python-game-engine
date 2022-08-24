@@ -486,7 +486,7 @@ class Actor2D(MObject):
     @property
     @check_body
     def forward_vector(self):
-        return Vector(1,0).rotate(self.angle)
+        return Vector.directional(self.angle)
     
     @property
     def rel_position(self) -> Vector:
