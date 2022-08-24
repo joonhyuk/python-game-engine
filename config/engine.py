@@ -60,6 +60,7 @@ CONFIG = default_settings()
 
 class collision(IntFlag):
     ''' collision types '''
+    none = 0
     default = auto()
     character = auto()
     enemy = auto()

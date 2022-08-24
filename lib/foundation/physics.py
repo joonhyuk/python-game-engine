@@ -393,18 +393,22 @@ class PhysicsEngine:
         """ Friction only applied to collision """
         
         # Create physics object and add to list
-        physics_object = PhysicsObject(body, shape)
-        self.objects[sprite] = physics_object
-        if body_type != self.STATIC:
-            self.non_static_objects.append(sprite)
+        physics_object = self.add_object(sprite, body, shape)
         
         if spawn:
             # Add body and shape to pymunk engine, register physics engine to sprite
-            self.add(sprite)
+            self.add_to_space(sprite)
         
         return physics_object
     
-    def add(self, sprite:Sprite) -> None:
+    def add_object(self, sprite:Sprite, body:pymunk.Body, shape:pymunk.Shape):
+        physics_object = PhysicsObject(body, shape)
+        self.objects[sprite] = physics_object
+        if body.body_type != self.STATIC:
+            self.non_static_objects.append(sprite)
+        return physics_object
+    
+    def add_to_space(self, sprite:Sprite) -> None:
         physics_object = self.objects[sprite]
         self.space.add(physics_object.body, physics_object.shape)
         
