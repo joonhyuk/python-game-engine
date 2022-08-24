@@ -14,21 +14,26 @@ class PhysicsTestView(View):
     def __init__(self, window: App = None):
         super().__init__(window)
         
-        self.wall_layer = ObjectLayer()
-        self.debris_layer = ObjectLayer()
+        self.field_layer = ObjectLayer()
+        self.wall_layer = ObjectLayer(ENV.physics_engine)
+        self.debris_layer = ObjectLayer(ENV.physics_engine)
+        
+        self.test_layer = ObjectLayer(ENV.physics_engine)
+        
         self.player:Player = None
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
-        
         
     def on_show(self):
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
         
     def setup(self):
+        start_loading_time = CLOCK.get_perf()
+        
         ENV.physics_engine.damping = 0.01
         
         self.player = Player(ENV.physics_engine)
-        self.player.spawn(Vector(-100, 0))
+        self.player.spawn(Vector(100, 100))
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
         # self.player.body.physics.shape.friction = 1.0
         self.player.body.mass = 1
@@ -36,12 +41,15 @@ class PhysicsTestView(View):
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
         
-        self._setup_walls()
-        ENV.physics_engine.add_sprite_list(self.wall_layer, 
-                                           friction = 0.5, 
-                                           elasticity = 0.0,
-                                           collision_type=collision.wall, 
-                                           body_type=physics_types.static)
+        self._setup_field(self.field_layer)
+        
+        # self._setup_walls(self.wall_layer)
+        # ENV.physics_engine.add_sprite_list(self.wall_layer, 
+        #                                    friction = 0.5, 
+        #                                    elasticity = 0.0,
+        #                                    collision_type=collision.wall, 
+        #                                    body_type=physics_types.static)
+        self._setup_walls_onecue(self.wall_layer)
         
         self._setup_debris(self.debris_layer)
         for debri in self.debris_layer:
@@ -49,12 +57,18 @@ class PhysicsTestView(View):
                                           collision_type = collision.debris,
                                           shape = pymunk.Circle(body = None, radius=PHYSICS_TEST_DEBRIS_RADIUS),
                                           spawn = False)
-            ENV.physics_engine.add(debri)
-            
-        # ENV.physics_engine.add_sprite_list(self.debris_layer,
-        #                                     mass = 0.5,
-        #                                     damping=0.5,
-        #                                     collision_type=collision.debris)
+            ENV.physics_engine.add_to_space(debri)
+        
+        ### test new method!
+        test_simplebody = StaticBody(SpriteCircle(32), 
+                                     physics_shape = physics_types.circle,
+                                     spawn_to=self.test_layer,
+                                     position=Vector(300,300),
+                                     )
+        # test_simplebody.position = vectors.zero
+        # test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
+        # test_simpleactor.spawn(self.test_layer, Vector(300,300))
+        # test_simpleactor.body.sprite.remove_from_sprite_lists()
         
         box = Sprite(":resources:images/tiles/grassCenter.png", 1.5)
         box.pymunk.max_velocity = CONFIG.terminal_speed
@@ -84,7 +98,9 @@ class PhysicsTestView(View):
         #                                           pre_handler=pre_player_hit_wall,
         #                                           separate_handler=seperate_player_hit_wall,
         #                                           post_handler=post_player_hit_wall)
-    
+
+        print(f'INITIAL LOADING TIME : {round(CLOCK.get_perf() - start_loading_time, 2)} sec')
+        
     def _setup_debris(self, layer:ObjectLayer):
         for _ in range(PHYSICS_TEST_DEBRIS_NUM):
             # debri = Sprite(":resources:images/tiles/bomb.png", 0.2)
@@ -97,20 +113,44 @@ class PhysicsTestView(View):
                     placed = True
             layer.append(debri)
     
-    def _setup_walls(self):
+    def _setup_walls_onecue(self, layer:ObjectLayer):
+        
+        for x in range(0, CONFIG.screen_size.x + 1, 32):
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+                              Vector(x, 0), spawn_to = layer)
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+                              Vector(x, CONFIG.screen_size.y), spawn_to = layer)
+        
+        for y in range(32, CONFIG.screen_size.y, 32):
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+                              Vector(0, y), spawn_to = layer)
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+                              Vector(CONFIG.screen_size.x, y), spawn_to = layer)
+        # wall.spawn(layer)
+        
+    def _setup_field(self, layer:ObjectLayer):
+        field_size = 6400
+        for x in range(-field_size, field_size, 64):
+            for y in range(-field_size, field_size, 64):
+                ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
+                ground.position = x, y
+                ground.color = (30, 30, 30)
+                layer.append(ground)
+    
+    def _setup_walls(self, layer:ObjectLayer):
         # Set up the walls
         for x in range(0, CONFIG.screen_size.x + 1, 32):
             wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = x
             wall.center_y = 0
-            self.wall_layer.add(wall)
+            layer.add(wall)
 
             wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = x
             wall.center_y = CONFIG.screen_size.y
-            self.wall_layer.add(wall)
+            layer.add(wall)
 
         # Set up the walls
         for y in range(32, CONFIG.screen_size.y, 32):
@@ -118,13 +158,13 @@ class PhysicsTestView(View):
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = 0
             wall.center_y = y
-            self.wall_layer.add(wall)
+            layer.add(wall)
 
             wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = CONFIG.screen_size.x
             wall.center_y = y
-            self.wall_layer.add(wall)
+            layer.add(wall)
 
     def on_key_press(self, key: int, modifiers: int):
         if key == keys.G: 
@@ -161,7 +201,6 @@ class PhysicsTestView(View):
         ENV.physics_engine.damping = 1.0
         return
         
-        
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
         ''' 초고속 발사체(광학병기, 레일건) 체크용. 화학병기 발사체는 발사체를 직접 날려서 충돌체크.
         '''
@@ -192,10 +231,15 @@ class PhysicsTestView(View):
         # self.clear()
         
         self.camera.use()
+        self.field_layer.draw()
         self.wall_layer.draw()
         self.debris_layer.draw()
-        self.player.draw()
         
+        self.test_layer.draw()
+        
+        self.player.draw()
+        # self.test_layer.__getitem__(0).draw()
+        # 
         # debug_draw_segment(end = CONFIG.screen_size)
         
         self.camera_gui.use()
