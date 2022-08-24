@@ -64,11 +64,10 @@ class PhysicsTestView(View):
         ### test new method!
         test_simplebody = StaticBody(SpriteCircle(32), 
                                      physics_shape = physics_types.circle,
-                                     spawn_to=self.test_layer,
-                                     position=Vector(300,300),
+                                     position=Vector(300,300)
                                      )
         # test_simplebody.position = vectors.zero
-        # test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
+        test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
         
@@ -83,13 +82,15 @@ class PhysicsTestView(View):
         #                                collision_type=collision.debris,
         #                                body_type=physics_types.dynamic)
         
+        ### DynamicObject.spawn test
         box_body = DynamicBody(Sprite(":resources:images/tiles/grassCenter.png", 1.5),
                                mass = 10, friction=1.0,
                                collision_type=collision.debris,
-                               physics_shape=physics_types.box)
+                               physics_shape=physics_types.box,
+                               )
         box = DynamicObject(box_body)
         box.spawn(self.debris_layer, CONFIG.screen_size / 2)
-        
+        ### DynamicObject.spawn test
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):
             print('begin_hit')
@@ -123,6 +124,7 @@ class PhysicsTestView(View):
             layer.append(debri)
             
     def _setup_debris_onecue(self, layer:ObjectLayer):
+        ### DynamicBody only test
         for _ in range(PHYSICS_TEST_DEBRIS_NUM):
             debri = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96)),
                                              mass = 0.5, elasticity = 0.2, friction=1.0,
@@ -135,7 +137,7 @@ class PhysicsTestView(View):
                     placed = True
     
     def _setup_walls_onecue(self, layer:ObjectLayer):
-        
+        ### StaticBody only test
         for x in range(0, CONFIG.screen_size.x + 1, 32):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
                               Vector(x, 0), spawn_to = layer)
@@ -147,7 +149,6 @@ class PhysicsTestView(View):
                               Vector(0, y), spawn_to = layer)
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
                               Vector(CONFIG.screen_size.x, y), spawn_to = layer)
-        # wall.spawn(layer)
         
     def _setup_field(self, layer:ObjectLayer):
         field_size = 6400
