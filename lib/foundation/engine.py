@@ -60,7 +60,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
                                 width = self.width, 
                                 anchor_y = 'top', 
                                 multiline=True)
-        print(position)
     
     def draw(self):
         text = ''
@@ -833,8 +832,6 @@ class Capsule(Sprite):
         self.collision_radius = radius
         self.collides_with_radius = True
         
-        print('points : ', self._points)
-
     def draw_hit_box(self, color: colors = ..., line_thickness: float = 1):
         return debug_draw_circle(self.position, self.collision_radius, color, line_thickness)
 
