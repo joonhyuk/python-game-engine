@@ -884,7 +884,6 @@ class DynamicObject(BaseActor):
         return self.body.speed
         
 
-
 class Body(ActorComponent):
     '''
     has size, sprite for draw, move(collision), hit(collision)
@@ -1144,8 +1143,6 @@ class Body(ActorComponent):
         return self.velocity.length
 
 
-
-
 class App(arcade.Window):
     
     ### class variables : are they needed?
@@ -1375,6 +1372,7 @@ class ObjectLayer(arcade.SpriteList):
         we don't need it
         '''
         return super().remove(sprite)
+
 
 class _ObjectLayer:
     """ deprecated """
