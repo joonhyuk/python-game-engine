@@ -51,13 +51,15 @@ class PhysicsTestView(View):
         #                                    body_type=physics_types.static)
         self._setup_walls_onecue(self.wall_layer)
         
-        self._setup_debris(self.debris_layer)
-        for debri in self.debris_layer:
-            ENV.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.25, elasticity = 0.2, friction=1.0,
-                                          collision_type = collision.debris,
-                                          shape = pymunk.Circle(body = None, radius=PHYSICS_TEST_DEBRIS_RADIUS),
-                                          spawn = False)
-            ENV.physics_engine.add_to_space(debri)
+        # self._setup_debris(self.debris_layer)
+        # for debri in self.debris_layer:
+        #     ENV.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.25, elasticity = 0.2, friction=1.0,
+        #                                   collision_type = collision.debris,
+        #                                   shape = pymunk.Circle(body = None, radius=PHYSICS_TEST_DEBRIS_RADIUS),
+        #                                   spawn = False)
+        #     ENV.physics_engine.add_to_space(debri)
+
+        self._setup_debris_onecue(self.debris_layer)
         
         ### test new method!
         test_simplebody = StaticBody(SpriteCircle(32), 
@@ -70,16 +72,23 @@ class PhysicsTestView(View):
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
         
-        box = Sprite(":resources:images/tiles/grassCenter.png", 1.5)
-        box.pymunk.max_velocity = CONFIG.terminal_speed
-        box.center_x = CONFIG.screen_size.x // 2
-        box.center_y = CONFIG.screen_size.y // 2
-        self.debris_layer.add(box)
-        ENV.physics_engine.add_sprite(box, 
-                                       mass=10, 
-                                       friction = 1.0,
-                                       collision_type=collision.debris,
-                                       body_type=physics_types.dynamic)
+        # box = Sprite(":resources:images/tiles/grassCenter.png", 1.5)
+        # box.pymunk.max_velocity = CONFIG.terminal_speed
+        # box.center_x = CONFIG.screen_size.x // 2
+        # box.center_y = CONFIG.screen_size.y // 2
+        # self.debris_layer.add(box)
+        # ENV.physics_engine.add_sprite(box, 
+        #                                mass=10, 
+        #                                friction = 1.0,
+        #                                collision_type=collision.debris,
+        #                                body_type=physics_types.dynamic)
+        
+        box_body = DynamicBody(Sprite(":resources:images/tiles/grassCenter.png", 1.5),
+                               mass = 10, friction=1.0,
+                               collision_type=collision.debris,
+                               physics_shape=physics_types.box)
+        box = DynamicObject(box_body)
+        box.spawn(self.debris_layer, CONFIG.screen_size / 2)
         
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):
@@ -112,6 +121,18 @@ class PhysicsTestView(View):
                 if not arcade.check_for_collision_with_lists(debri, [self.wall_layer, layer]):
                     placed = True
             layer.append(debri)
+            
+    def _setup_debris_onecue(self, layer:ObjectLayer):
+        for _ in range(PHYSICS_TEST_DEBRIS_NUM):
+            debri = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96)),
+                                             mass = 0.5, elasticity = 0.2, friction=1.0,
+                                             collision_type = collision.debris)
+            placed = False
+            while not placed:
+                debri.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
+                if not arcade.check_for_collision_with_lists(debri.sprite, [self.wall_layer, layer]):
+                    debri.spawn(layer)
+                    placed = True
     
     def _setup_walls_onecue(self, layer:ObjectLayer):
         
@@ -167,7 +188,7 @@ class PhysicsTestView(View):
             layer.add(wall)
 
     def on_key_press(self, key: int, modifiers: int):
-        print(modifiers, keys.MOD_OPTION)
+        # print(modifiers, keys.MOD_OPTION)
         if key == keys.G: 
             self.change_gravity(vectors.zero)
         

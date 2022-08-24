@@ -285,6 +285,9 @@ class ActorComponent(MObject):
     
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
+    
+    def on_spawn(self):
+        pass
 
 
 class BaseActor(MObject):
@@ -293,14 +296,19 @@ class BaseActor(MObject):
         super().__init__(**kwargs)
         self.tick_group:list[ActorComponent] = []
     
+    def spawn(self, lifetime: float = None) -> None:
+        super().spawn(lifetime)
+        self.register_components()
+    
     def register_components(self):
         for k, v in self.__dict__.items():
             if isinstance(v, (ActorComponent, )):
                 v.owner = self
                 ''' set owner '''
-            if hasattr(v, 'tick'):
-                self.tick_group.append(v)
-                ''' for components that have tick '''
+                if hasattr(v, 'tick'):
+                    self.tick_group.append(v)
+                    ''' for components that have tick '''
+                v.on_spawn()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -434,6 +442,14 @@ class SpriteBody(ActorComponent):
         
         spawn_to.add(self)
         return self
+    
+    def _get_visibility(self) -> bool:
+        return self.sprite.visible
+    
+    def _set_visibility(self, switch:bool):
+        self.sprite.visible = switch
+    
+    visibility:bool = property(_get_visibility, _set_visibility)
     
     def _get_position(self):
         return Vector(self.sprite.position)
@@ -571,6 +587,14 @@ class StaticBody(ActorComponent):
     
     size:Vector = property(_get_size)
 
+    def _get_visibility(self) -> bool:
+        return self.sprite.visible
+    
+    def _set_visibility(self, switch:bool):
+        self.sprite.visible = switch
+    
+    visibility:bool = property(_get_visibility, _set_visibility)
+    
     def _get_position(self) -> Vector:
         if self.physics:
             return Vector(self.physics.body.position)
@@ -644,6 +668,30 @@ class DynamicBody(StaticBody):
     
     def apply_acceleration_world(self, acceleration:Vector):
         self.apply_force_world(acceleration * self.mass)
+    
+    def _get_position(self) -> Vector:
+        if self.physics:
+            return Vector(self.physics.body.position)
+        return Vector(self.sprite.position)
+    
+    def _set_position(self, position) -> None:
+        if self.physics:
+            self.physics.body.position = position
+        self.sprite.position = position
+    
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        if self.physics:
+            return math.degrees(self.physics.body.angle)
+        return self.sprite.angle
+    
+    def _set_angle(self, angle:float = 0.0):
+        if self.physics:
+            self.physics.body.angle = math.radians(angle)
+        self.sprite.angle = angle
+    
+    angle:float = property(_get_angle, _set_angle)
     
     def _get_velocity(self) -> Vector:
         if self.physics:
@@ -736,8 +784,11 @@ class StaticObject:
     def __init__(self, body:StaticBody) -> None:
         self.body:StaticBody = body
     
-    def spawn(self, spawn_to:ObjectLayer, potision:Vector = None, angle:float = None):
-        self.body.spawn(spawn_to, potision, angle)
+    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        self.body.spawn(spawn_to, position, angle)
+    
+    def draw(self):
+        self.body.draw()
     
     def _get_position(self) -> Vector:
         return self.body.position
@@ -758,6 +809,80 @@ class StaticObject:
         self.body.physics.space.reindex_static()
     
     angle:float = property(_get_angle, _set_angle)
+
+
+class DynamicObject(BaseActor):
+    
+    def __init__(self, 
+                 body:DynamicBody,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:DynamicBody = body
+    
+    def spawn(self, 
+              spawn_to:ObjectLayer, 
+              position:Vector,
+              angle:float = None,
+              initial_impulse:Vector = None,
+              lifetime: float = None) -> None:
+        super().spawn(lifetime)
+        self.body.spawn(spawn_to, position, angle)
+        if initial_impulse:
+            self.body.apply_impulse_world(initial_impulse)
+    
+    def tick(self, delta_time:float = None) -> bool:
+        if delta_time is None: delta_time = ENV.delta_time
+        if not super().tick(delta_time): return False
+        return True
+    
+    def draw(self):
+        self.body.draw()
+    
+    def _get_visibility(self) -> bool:
+        return self.body.visibility
+    
+    def _set_visibility(self, switch:bool):
+        self.body.visibility = switch
+    
+    visibility:bool = property(_get_visibility, _set_visibility)
+    
+    def _get_position(self) -> Vector:
+        return self.body.position
+    
+    def _set_position(self, position) -> None:
+        self.body.position = position
+    
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        return self.body.angle
+    
+    def _set_angle(self, angle:float):
+        self.body.angle = angle
+    
+    angle:float = property(_get_angle, _set_angle)
+    
+    def _get_velocity(self) -> Vector:
+        return self.body.velocity
+    
+    def _set_velocity(self, velocity):
+        self.body.velocity = velocity
+    
+    velocity:Vector = property(_get_velocity, _set_velocity)
+    
+    @property
+    def screen_position(self) -> Vector:
+        ''' relative position in viewport '''
+        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+    
+    @property
+    def forward_vector(self) -> Vector:
+        return self.body.forward_vector
+
+    @property
+    def speed(self) -> float:
+        return self.body.speed
+        
 
 
 class Body(ActorComponent):
