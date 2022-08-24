@@ -167,16 +167,17 @@ class PhysicsTestView(View):
             layer.add(wall)
 
     def on_key_press(self, key: int, modifiers: int):
+        print(modifiers, keys.MOD_OPTION)
         if key == keys.G: 
             self.change_gravity(vectors.zero)
         
-        if key == keys.UP and modifiers == keys.MOD_CTRL:
+        if key == keys.UP and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.up)
-        if key == keys.DOWN and modifiers == keys.MOD_CTRL:
+        if key == keys.DOWN and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.down)
-        if key == keys.LEFT and modifiers == keys.MOD_CTRL:
+        if key == keys.LEFT and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.left)
-        if key == keys.RIGHT and modifiers == keys.MOD_CTRL:
+        if key == keys.RIGHT and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
         
         return super().on_key_press(key, modifiers)
