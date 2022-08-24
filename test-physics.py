@@ -6,6 +6,8 @@ VERSION = Version()
 
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
+PHYSICS_TEST_DEBRIS_NUM = 300
+PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 class PhysicsTestView(View):
     
@@ -26,23 +28,26 @@ class PhysicsTestView(View):
         ENV.physics_engine.damping = 0.01
         
         self.player = Player(ENV.physics_engine)
-        self.player.spawn(Vector(100, 100))
+        self.player.spawn(Vector(-100, 0))
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
+        # self.player.body.physics.shape.friction = 1.0
+        self.player.body.mass = 1
         # self.player.body.sprite.pymunk.gravity = (0,980)
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
         
         self._setup_walls()
         ENV.physics_engine.add_sprite_list(self.wall_layer, 
-                                            friction = 0.0, 
-                                            collision_type=collision.wall, 
-                                            body_type=physics_types.static)
+                                           friction = 0.5, 
+                                           elasticity = 0.0,
+                                           collision_type=collision.wall, 
+                                           body_type=physics_types.static)
         
         self._setup_debris(self.debris_layer)
         for debri in self.debris_layer:
-            ENV.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.5, elasticity = 0.5,
+            ENV.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.25, elasticity = 0.2, friction=1.0,
                                           collision_type = collision.debris,
-                                          shape = pymunk.Circle(body = None, radius=7),
+                                          shape = pymunk.Circle(body = None, radius=PHYSICS_TEST_DEBRIS_RADIUS),
                                           spawn = False)
             ENV.physics_engine.add(debri)
             
@@ -51,7 +56,7 @@ class PhysicsTestView(View):
         #                                     damping=0.5,
         #                                     collision_type=collision.debris)
         
-        box = arcade.Sprite(":resources:images/tiles/grassCenter.png", 1.5)
+        box = Sprite(":resources:images/tiles/grassCenter.png", 1.5)
         box.pymunk.max_velocity = CONFIG.terminal_speed
         box.center_x = CONFIG.screen_size.x // 2
         box.center_y = CONFIG.screen_size.y // 2
@@ -81,8 +86,9 @@ class PhysicsTestView(View):
         #                                           post_handler=post_player_hit_wall)
     
     def _setup_debris(self, layer:ObjectLayer):
-        for _ in range(300):
-            debri = Sprite(":resources:images/tiles/bomb.png", 0.2)
+        for _ in range(PHYSICS_TEST_DEBRIS_NUM):
+            # debri = Sprite(":resources:images/tiles/bomb.png", 0.2)
+            debri = SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96))
             debri.pymunk.max_velocity = CONFIG.terminal_speed
             placed = False
             while not placed:
@@ -94,13 +100,13 @@ class PhysicsTestView(View):
     def _setup_walls(self):
         # Set up the walls
         for x in range(0, CONFIG.screen_size.x + 1, 32):
-            wall = arcade.Sprite(":resources:images/tiles/grassCenter.png",
+            wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = x
             wall.center_y = 0
             self.wall_layer.add(wall)
 
-            wall = arcade.Sprite(":resources:images/tiles/grassCenter.png",
+            wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = x
             wall.center_y = CONFIG.screen_size.y
@@ -108,13 +114,13 @@ class PhysicsTestView(View):
 
         # Set up the walls
         for y in range(32, CONFIG.screen_size.y, 32):
-            wall = arcade.Sprite(":resources:images/tiles/grassCenter.png",
+            wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = 0
             wall.center_y = y
             self.wall_layer.add(wall)
 
-            wall = arcade.Sprite(":resources:images/tiles/grassCenter.png",
+            wall = Sprite(":resources:images/tiles/grassCenter.png",
                                  SPRITE_SCALING_PLAYER)
             wall.center_x = CONFIG.screen_size.x
             wall.center_y = y
@@ -156,7 +162,7 @@ class PhysicsTestView(View):
         return
         
         
-    def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 0):
+    def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
         ''' 초고속 발사체(광학병기, 레일건) 체크용. 화학병기 발사체는 발사체를 직접 날려서 충돌체크.
         '''
         self.player.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
@@ -175,7 +181,8 @@ class PhysicsTestView(View):
         
         if query_first:
             qb:pymunk.Body = query_first.shape.body
-            iv = (end - origin).unit * 50
+            iv = (end - origin).unit * muzzle_speed / 2
+            iv -= query_first.normal * muzzle_speed / 2
             qb.apply_impulse_at_world_point(iv, query_first.point)
             add_sprite_timeout(SpriteCircle(5, (255, 64, 0, 128)), query_first.point, self.debris_layer, 3)
     
@@ -201,6 +208,13 @@ class PhysicsTestView(View):
         
         self.player.tick(delta_time)
         # print(self.player.body.physics.shape.segment_query((0,0), CONFIG.screen_size))
+        
+        ENV.debug_text['distance'] = round(self.player.position.length, 1)
+        
+        if ENV.physics_engine.non_static_objects:
+            total = len(ENV.physics_engine.non_static_objects)
+            sleeps = list(map(lambda a:a.is_sleeping, ENV.physics_engine.space.bodies)).count(True)
+            ENV.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
         ENV.debug_text.perf_check('update_game')
         

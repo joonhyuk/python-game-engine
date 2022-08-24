@@ -287,8 +287,33 @@ class ActorComponent(MObject):
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
 
+class BaseActor(MObject):
+    ''' can have actor components '''
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.tick_group:list[ActorComponent] = []
+    
+    def register_components(self):
+        for k, v in self.__dict__.items():
+            if isinstance(v, (ActorComponent, )):
+                v.owner = self
+                ''' set owner '''
+            if hasattr(v, 'tick'):
+                self.tick_group.append(v)
+                ''' for components that have tick '''
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        if self.tick_group:
+            for ticker in self.tick_group:
+                ticker.tick(delta_time)
+                # print('character_tick', delta_time)
+        return True
+    
+    
 
-class Actor(MObject):
+class Actor(BaseActor):
+    """ Actor that have world presence like body, position """
     def __init__(self, 
                  sprite:Sprite,
                  size:Vector = None,
@@ -312,7 +337,6 @@ class Actor(MObject):
                               friction, 
                               shape_edge_radius, 
                               physics_shape)
-        self.tick_group:list[ActorComponent] = []
     
     def spawn(self, 
               position:Vector = vectors.zero, 
@@ -334,20 +358,7 @@ class Actor(MObject):
     def tick(self, delta_time:float = None) -> bool:
         if delta_time is None: delta_time = ENV.delta_time
         if not super().tick(delta_time): return False
-        if self.tick_group:
-            for ticker in self.tick_group:
-                ticker.tick(delta_time)
-                # print('character_tick', delta_time)
         return True
-    
-    def register_components(self):
-        for k, v in self.__dict__.items():
-            if isinstance(v, (ActorComponent, )):
-                v.owner = self
-                ''' set owner '''
-            if hasattr(v, 'tick'):
-                self.tick_group.append(v)
-                ''' for components that have tick '''
     
     def draw(self):
         self.body.draw()
@@ -503,18 +514,11 @@ class Body(ActorComponent):
         if CONFIG.debug_draw: 
             self.physics.draw()
     
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        # self.sync()       ## no. use PhysicsEngine.step() first.
-        ''' code implementation for body manipulation will be here '''
-        ENV.debug_text['player_speed'] = round(self.speed, 1)
-        # ENV.debug_text['player_velocity'] = self.velocity
-    
-    def apply_force(self, force:Vector = vectors.zero):
+    def apply_force_local(self, force:Vector = vectors.zero):
         if not self.has_physics: self.velocity += force / self.physics.body.mass
         else: return self.physics.body.apply_force_at_local_point(force)
     
-    def apply_impulse(self, impulse:Vector = vectors.zero):
+    def apply_impulse_local(self, impulse:Vector = vectors.zero):
         if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
         return self.physics.body.apply_impulse_at_local_point(impulse)
     
@@ -607,6 +611,42 @@ class Body(ActorComponent):
         self.sprite.pymunk.max_velocity = max_speed
     
     max_speed:int = property(_get_max_speed, _set_max_speed)
+    
+    def _get_friction(self):
+        return self.physics.shape.friction
+    
+    def _set_friction(self, friction:float):
+        self.physics.shape.friction = friction
+    
+    friction:float = property(_get_friction, _set_friction)
+    """
+    쿨롱 마찰력
+    
+        Some real world example values from Wikipedia (Remember that
+        it is what looks good that is important, not the exact value).
+
+        ==============  ======  ========
+        Material        Other   Friction
+        ==============  ======  ========
+        Aluminium       Steel   0.61
+        Copper          Steel   0.53
+        Brass           Steel   0.51
+        Cast iron       Copper  1.05
+        Cast iron       Zinc    0.85
+        Concrete (wet)  Rubber  0.30
+        Concrete (dry)  Rubber  1.0
+        Concrete        Wood    0.62
+        Copper          Glass   0.68
+        Glass           Glass   0.94
+        Metal           Wood    0.5
+        Polyethene      Steel   0.2
+        Steel           Steel   0.80
+        Steel           Teflon  0.04
+        Teflon (PTFE)   Teflon  0.04
+        Wood            Wood    0.4
+        ==============  ======  ========
+
+    """
     
     @property
     def forward_vector(self) -> Vector:
@@ -800,9 +840,43 @@ class Capsule(Sprite):
 
 
 class ObjectLayer(arcade.SpriteList):
-    
-    def add(self, sprite):
+    """ extended spritelist with actor, body """
+    def add(self, obj:Union[Actor, Body, Sprite]):
+        sprite:Sprite = None
+        if isinstance(obj, Actor):
+            sprite = obj.body.sprite
+        elif isinstance(obj, Body):
+            sprite = obj.sprite
+        elif isinstance(obj, Sprite):
+            sprite = obj
+        else: Exception()
+        
         self.append(sprite)
+    
+class TheObjectLayer:
+    """ for draw """
+    def __init__(self, physics_space:physics_types.space, is_static:bool = False, lazy:bool = False) -> None:
+        self.sprites = arcade.SpriteList(is_static=is_static, lazy=lazy)
+        self.space = physics_space
+        
+    def add(self, obj:Union[Actor, Body, Sprite]):
+        sprite:Sprite = None
+        if isinstance(obj, Actor):
+            sprite = obj.body.sprite
+        elif isinstance(obj, Body):
+            sprite = obj.sprite
+        elif isinstance(obj, Sprite):
+            sprite = obj
+        else: Exception()
+        
+        if sprite:
+            self.sprite_list.append(sprite)
+    
+    def draw(self, *args, **kwargs):
+        self.sprite_list.draw(*args, **kwargs)
+    
+    def tick(self, delta_time:float):
+        pass 
     
     pass
 

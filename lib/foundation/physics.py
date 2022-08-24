@@ -236,6 +236,11 @@ class PhysicsEngine:
         self.space.threads = os.cpu_count() // 2
         self.space.gravity = (0, 0)
         self.space.damping = 0.1        # ratio of speed(scalar) which is kept to next tick
+        
+        self.space.sleep_time_threshold = 3.0
+        self.space.idle_speed_threshold = 300
+        # self.space.collision_slop = 0.0
+        
         # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
         self.objects: dict[Sprite, PhysicsObject] = {}
         self.non_static_objects: list[Sprite] = []
