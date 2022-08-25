@@ -26,6 +26,23 @@ class Player(Actor):
     def apply_damage(self, damage:float):
         self.hp -= damage
     
+    def test_directional_attack(self, 
+                                target_direction:Vector = None, 
+                                thickness = 1.0,
+                                distance = 300,
+                                muzzle_speed:float = 1000,
+                                ):
+        origin = self.position
+        if not target_direction: target_direction = Vector.directional(self.angle)
+        end = target_direction * distance + origin
+        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
+        
+        query = ENV.physics_engine.space.segment_query_first(origin, end, thickness / 2, shape_filter)
+        
+        if query:
+            pass
+    
     @property
     def is_alive(self) -> bool:
         if self.hp <= 0: return False
