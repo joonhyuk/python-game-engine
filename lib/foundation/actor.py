@@ -279,6 +279,7 @@ class PhysicsMovement(ActorComponent):
         self.move_direction:Vector = None
         self.desired_angle:float = 0.0
         self.rotation_interp_speed = 3.0
+        self.stopped = True
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -290,12 +291,32 @@ class PhysicsMovement(ActorComponent):
         if self.move_direction.near_zero():
             ''' stop '''
             if self.owner.velocity.is_zero: return False
-            if self.owner.velocity.near_zero(): self.owner.velocity = vectors.zero
+            if self.owner.velocity.near_zero():
+                self.stopped = True
+                self.owner.velocity = vectors.zero
         else:
             # self.owner.velocity = self.move_direction * 250
             angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.argument()))
-            speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
-            self.owner.body.apply_force_world(self.move_direction * speed)
+            # speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
+            speed = 60 ### damping 0, force 10000 => max_spd 166.6 (1/60)
+            '''
+            위의 속도는 초당 픽셀. 프레임당 픽셀은 speed / fps
+            1초간 감소하는 속도의 양은 1 - damping
+            물리 계산하기 귀찮은데 선형 회귀를 써야하나;;;
+            speed / (1 - damping)
+            '''
+            # desired_force = speed / (1- ENV.physics_engine.damping)
+            # print(desired_force)
+            
+            if self.stopped:
+                ''' 정지 상태에서 가속 '''
+                schedule_once(self._foo_print, 1)
+            
+            self.owner.body.apply_force_world(self.move_direction * 1000)
+            self.stopped = False
+    
+    def _foo_print(self, t):
+        print(self.owner.speed)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''
