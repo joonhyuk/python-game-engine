@@ -282,6 +282,11 @@ class ActorComponent(MObject):
         super().__init__(**kwargs)
         self.owner:BaseActor = None
         self._spawned = True
+        self.on_init()
+    
+    def on_init(self):
+        ''' setup additional parameters '''
+        pass
     
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
@@ -317,6 +322,7 @@ class BaseActor(MObject):
                 ticker.tick(delta_time)
                 # print('character_tick', delta_time)
         return True
+
 
 class TestComponent(ActorComponent):
     
@@ -462,9 +468,9 @@ class SpriteBody(ActorComponent):
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         
         if position is not None: 
-            self.sprite.position = position
+            self.position = position
         if angle is not None:
-            self.sprite.angle = angle
+            self.angle = angle
         
         spawn_to.add(self)
         return self
@@ -513,6 +519,9 @@ class StaticBody(ActorComponent):
                  shape_edge_radius:float = 0.0,
                  physics_shape:Union[physics_types.shape, type] = physics_types.poly,
                  offset_circle:Vector = vectors.zero,
+                 max_speed:float = None,
+                 custom_gravity:Vector = None,
+                 custom_damping:float = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         
@@ -522,73 +531,24 @@ class StaticBody(ActorComponent):
         
         self._collision_type = collision_type
         
-        self.physics:PhysicsObject = self._setup_physics(sprite=sprite,
-                                                         mass=mass,
-                                                         moment=moment,
-                                                         friction=friction,
-                                                         elasticity=elasticity,
-                                                         body_type=body_type,
-                                                         physics_shape=physics_shape,
-                                                         shape_edge_radius=shape_edge_radius,
-                                                         offset_circle=offset_circle
-                                                         )
+        self.physics:PhysicsObject = setup_physics_object(sprite=sprite,
+                                                          mass=mass,
+                                                          moment=moment,
+                                                          friction=friction,
+                                                          elasticity=elasticity,
+                                                          body_type=body_type,
+                                                          collision_type=collision_type,
+                                                          physics_shape=physics_shape,
+                                                          shape_edge_radius=shape_edge_radius,
+                                                          offset_circle=offset_circle,
+                                                          max_speed=max_speed,
+                                                          custom_gravity=custom_gravity,
+                                                          custom_damping=custom_damping,
+                                                          )
         
         if spawn_to is not None:
             ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
             self.spawn(spawn_to)
-    
-    def _setup_physics(self,
-                       sprite:Sprite, 
-                       mass:float = 0,
-                       moment = None,
-                       friction:float = 1.0,
-                       elasticity:float = None,
-                       body_type:int = physics_types.static,
-                       physics_shape = physics_types.poly,
-                       shape_edge_radius:float = 0.0,
-                       offset_circle:Vector = vectors.zero,
-                       ):
-        
-        size = Vector(sprite.width, sprite.height)
-        
-        if body_type == physics_types.static:
-            _moment = PhysicsEngine.MOMENT_INF
-        else:
-            if physics_shape == physics_types.circle or isinstance(physics_shape, physics_types.circle):
-                _moment = pymunk.moment_for_circle(mass, 0, 
-                                                  min(size.x, size.y) / 2 + shape_edge_radius, 
-                                                  offset_circle)
-            elif physics_shape == physics_types.box or isinstance(physics_shape, physics_types.box):
-                _moment = pymunk.moment_for_box(mass, size)
-            else:
-                scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
-                _moment = pymunk.moment_for_poly(mass, scaled_poly, offset_circle, radius=shape_edge_radius)
-        
-        if moment is None: moment = _moment
-        
-        body = physics_types.body(mass, moment, body_type)
-        body.position = self.sprite.position
-        body.angle = math.radians(self.sprite.angle)
-        
-        if isinstance(physics_shape, physics_types.shape):
-            shape = physics_shape
-            shape.body = body
-        else:
-            if physics_shape == physics_types.circle:
-                shape = physics_types.circle(body, 
-                                             min(size.x, size.y) / 2 + shape_edge_radius, 
-                                             offset_circle)
-            else:
-                scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
-                shape = physics_types.poly(body, scaled_poly, radius=shape_edge_radius)
-        
-        shape.collision_type = self._collision_type
-        if elasticity is not None:
-            shape.elasticity = elasticity
-
-        shape.friction = friction
-        
-        return PhysicsObject(body, shape)
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         
@@ -640,6 +600,30 @@ class StaticBody(ActorComponent):
         raise PhysicsException('Can\'t move unmovable static object')
         
     angle:float = property(_get_angle, _set_angle)
+    
+    def _get_mass(self):
+        return self.physics.mass
+    
+    def _set_mass(self, mass:float):
+        self.physics.mass = mass
+    
+    mass:float = property(_get_mass, _set_mass)
+    
+    def _get_elasticity(self):
+        return self.physics.elasticity
+    
+    def _set_elasticity(self, elasticity:float):
+        self.physics.elasticity = elasticity
+    
+    elasticity:float = property(_get_elasticity, _set_elasticity)
+    
+    def _get_friction(self):
+        return self.physics.friction
+    
+    def _set_friction(self, friction:float):
+        self.physics.friction = friction
+    
+    friction:float = property(_get_friction, _set_friction)
 
 
 class DynamicBody(StaticBody):
@@ -658,6 +642,9 @@ class DynamicBody(StaticBody):
                  shape_edge_radius: float = 0,
                  physics_shape: Union[physics_types.shape, type] = physics_types.circle,
                  offset_circle: Vector = vectors.zero,
+                 max_speed:float = None,
+                 custom_gravity:Vector = None,
+                 custom_damping:float = None,
                  **kwargs) -> None:
         super().__init__(sprite=sprite,
                          position=position,
@@ -672,14 +659,18 @@ class DynamicBody(StaticBody):
                          shape_edge_radius=shape_edge_radius,
                          physics_shape=physics_shape,
                          offset_circle=offset_circle,
+                         max_speed=max_speed,
+                         custom_gravity=custom_gravity,
+                         custom_damping=custom_damping,
                          **kwargs)
-        self.mass_mul:float = 1.0
-        self.mass_add:float = 0.0
-        self.friction_mul:float = 1.0
-        self.friction_add:float = 0.0
-        self.elasticity_mul:float = 1.0
-        self.elasticity_add:float = 0.0
-    
+        
+        # self.mass_mul:float = 1.0
+        # self.mass_add:float = 0.0
+        # self.friction_mul:float = 1.0
+        # self.friction_add:float = 0.0
+        # self.elasticity_mul:float = 1.0
+        # self.elasticity_add:float = 0.0
+
     def apply_force_local(self, force:Vector = vectors.zero):
         return self.physics.body.apply_force_at_local_point(force)
     
@@ -731,14 +722,6 @@ class DynamicBody(StaticBody):
     
     velocity:Vector = property(_get_velocity, _set_velocity)
     
-    def _get_mass(self):
-        return self.physics.body.mass * self.mass_mul + self.mass_add
-    
-    def _set_mass(self, mass:float):
-        self.physics.body.mass = mass
-    
-    mass:float = property(_get_mass, _set_mass)
-    
     def _get_damping(self):
         return self.sprite.pymunk.damping
     
@@ -755,13 +738,6 @@ class DynamicBody(StaticBody):
     
     max_speed:int = property(_get_max_speed, _set_max_speed)
     
-    def _get_friction(self):
-        return self.physics.shape.friction
-    
-    def _set_friction(self, friction:float):
-        self.physics.shape.friction = friction
-    
-    friction:float = property(_get_friction, _set_friction)
     """
     쿨롱 마찰력
     
