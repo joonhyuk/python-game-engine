@@ -280,7 +280,7 @@ class ActorComponent(MObject):
     '''component base class'''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.owner:BaseActor = None
+        self._owner:BaseActor = None
         self._spawned = True
         self.on_init()
     
@@ -291,9 +291,16 @@ class ActorComponent(MObject):
     def tick(self, delta_time:float) -> bool:
         return super().tick(delta_time)
     
-    def on_spawn(self):
+    def on_register(self):
         pass
 
+    def _get_owner(self):
+        return self._owner or self
+    
+    def _set_owner(self, owner):
+        self._owner = owner
+    
+    owner = property(_get_owner, _set_owner)
 
 class BaseActor(MObject):
     ''' can have actor components '''
@@ -313,7 +320,7 @@ class BaseActor(MObject):
                 if hasattr(v, 'tick'):
                     self.tick_group.append(v)
                     ''' for components that have tick '''
-                v.on_spawn()
+                v.on_register()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -340,7 +347,7 @@ class TestComponent(ActorComponent):
     def p3(self):
         return 'property 3'
     
-    def on_spawn(self):
+    def on_register(self):
         print('test component spawnned')
         self.owner.p1 = self.p1
     
@@ -475,6 +482,15 @@ class SpriteBody(ActorComponent):
         spawn_to.add(self)
         return self
     
+    def _get_owner(self):
+        return super()._get_owner()
+    
+    def _set_owner(self, owner):
+        super()._set_owner(owner)
+        self.sprite.owner = self.owner
+    
+    owner = property(_get_owner, _set_owner)
+    
     def _get_visibility(self) -> bool:
         return self.sprite.visible
     
@@ -526,6 +542,7 @@ class StaticBody(ActorComponent):
         super().__init__(**kwargs)
         
         self.sprite:Sprite = sprite
+        
         if position is not None: self.sprite.position = position
         if angle is not None: self.sprite.angle = angle
         
@@ -560,13 +577,26 @@ class StaticBody(ActorComponent):
             self.physics.angle = angle
         
         spawn_to.add(self)
+        if not self._owner: self.owner = self
         return self
-        
+    
+    def on_register(self):
+        self.sprite.owner = self.owner
+    
     def draw(self):
         ''' mostly not used because batch draw '''
         self.sprite.draw()
         if CONFIG.debug_draw: 
             self.physics.draw()
+    
+    def _get_owner(self):
+        return super()._get_owner()
+    
+    def _set_owner(self, owner):
+        super()._set_owner(owner)
+        self.sprite.owner = self.owner
+    
+    owner = property(_get_owner, _set_owner)
     
     def _get_size(self):
         return Vector(self.sprite.width, self.sprite.height)

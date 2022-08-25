@@ -6,6 +6,7 @@ VERSION = Version()
 
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
+PLAYER_ATTACK_RANGE = 500
 PHYSICS_TEST_DEBRIS_NUM = 300
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
@@ -211,7 +212,8 @@ class PhysicsTestView(View):
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         # self.player.body.apply_impulse_world(self.player.forward_vector * -10)
-        self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
+        self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
+        # self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
     
     def change_gravity(self, direction:Vector) -> None:
         
@@ -261,6 +263,7 @@ class PhysicsTestView(View):
         self.test_layer.draw()
         
         self.player.draw()
+        debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         # self.test_layer.__getitem__(0).draw()
         # 
         # debug_draw_segment(end = CONFIG.screen_size)
