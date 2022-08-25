@@ -283,9 +283,6 @@ class ActorComponent(MObject):
         self.owner:BaseActor = None
         self._spawned = True
     
-    def tick(self, delta_time:float) -> bool:
-        return super().tick(delta_time)
-    
     def on_spawn(self):
         pass
 
@@ -1435,7 +1432,23 @@ class _ObjectLayer:
     
 
 class Camera(arcade.Camera):
-    pass
+    
+    def __init__(self, viewport_width: int = 0, viewport_height: int = 0, window: Optional["arcade.Window"] = None, 
+                 max_lag_distance:float = None,
+                 ):
+        super().__init__(viewport_width, viewport_height, window)
+        self.max_lag_distance:float = max_lag_distance
+    
+    def update(self):
+        # last_tick_pos = self.position
+        super().update()
+        
+        if self.max_lag_distance:
+            distv = self.position - self.goal_position
+            if distv.mag > self.max_lag_distance:
+                # print(distv.mag)
+                self.position = self.goal_position + distv.limit(self.max_lag_distance)
+                # self.position.lerp(self.goal_position + distv.limit(self.max_lag_distance * 0.75), 0.9)
 
 
 class GLTexture(arcade.Texture):
