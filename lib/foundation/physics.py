@@ -704,8 +704,8 @@ class PhysicsEngine:
         ''' returns {PhysicsObject}'''
         query = self.space.segment_query(origin, end, radius, shape_filter)
         if not query: return None
-        for q in query:
-            shape = q.shape
+        return query
+                
             
     
     def add_collision_handler(self, 

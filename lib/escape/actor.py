@@ -29,8 +29,8 @@ class Player(Actor):
     def test_directional_attack(self, 
                                 target_direction:Vector = None, 
                                 thickness = 1.0,
-                                distance = 300,
-                                muzzle_speed:float = 1000,
+                                distance = 500,
+                                muzzle_speed:float = 300,
                                 ):
         origin = self.position
         if not target_direction: target_direction = Vector.directional(self.angle)
@@ -38,10 +38,13 @@ class Player(Actor):
         self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
         shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
         
-        query = ENV.physics_engine.space.segment_query_first(origin, end, thickness / 2, shape_filter)
+        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         
         if query:
-            pass
+            first_hit = query[0]
+            sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
+            sprite_first_hit.color = colors.RED
+            print(sprite_first_hit.owner)
     
     @property
     def is_alive(self) -> bool:
