@@ -259,9 +259,6 @@ class PhysicsObject:
         self.hitbox: Optional[pymunk.Shape] = hitbox or shape
         ''' custom hitbox collision if needed '''
         
-    # def spawn(self, space:pymunk.Space):
-    #     space.add(self.body, self.shape)
-    
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
@@ -320,7 +317,7 @@ class PhysicsObject:
     velocity:Vector = property(_get_position, _set_position)
     
     def _get_angle(self):
-        return self.body.angle # in radian
+        return math.degrees(self.body.angle)
     
     def _set_angle(self, angle:float):
         self.body.angle = math.radians(angle)

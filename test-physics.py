@@ -18,10 +18,10 @@ class PhysicsTestView(View):
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(ENV.physics_engine)
         self.debris_layer = ObjectLayer(ENV.physics_engine)
-        
+        self.character_layer = ObjectLayer(ENV.physics_engine)
         self.test_layer = ObjectLayer(ENV.physics_engine)
         
-        self.player:Player = None
+        self.player:EscapePlayer = None
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
         
@@ -33,8 +33,11 @@ class PhysicsTestView(View):
         
         ENV.physics_engine.damping = 0.01
         
-        self.player = Player(ENV.physics_engine)
-        self.player.spawn(Vector(100, 100))
+        # self.player = Player(ENV.physics_engine)
+        # self.player.spawn(Vector(100, 100))
+        self.player = EscapePlayer()
+        self.player.spawn(self.character_layer, Vector(100, 100))
+        
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
         # self.player.body.physics.shape.friction = 1.0
         self.player.body.mass = 1
@@ -69,6 +72,9 @@ class PhysicsTestView(View):
                                      )
         # test_simplebody.position = vectors.zero
         test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
+        # test_simpleactor.position = vectors.zero
+        
+        
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
         

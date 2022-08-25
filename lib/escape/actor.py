@@ -1,7 +1,36 @@
 from lib.foundation import *
 
+class EscapePlayer(Character):
+    
+    def __init__(self, hp: float = 100, body: DynamicBody = None, **kwargs) -> None:
+        super().__init__(body, hp, **kwargs)
+        if not body:
+            body = DynamicBody(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'),
+                               collision_type = collision.character,
+                               physics_shape = physics_types.circle(None, 16))
+        self.body = body
+    
+    def test_directional_attack(self, 
+                                target_direction:Vector = None, 
+                                thickness = 1.0,
+                                distance = 500,
+                                muzzle_speed:float = 300,
+                                ):
+        origin = self.position
+        if not target_direction: target_direction = Vector.directional(self.angle)
+        end = target_direction * distance + origin
+        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
+        
+        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
+        
+        if query:
+            first_hit = query[0]
+            sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
+            sprite_first_hit.color = colors.RED
+            print(sprite_first_hit.owner)
 
-class Player(Actor):
+class OldPlayer(Actor):
     
     def __init__(self, physics_engine: PhysicsEngine = None, **kwargs) -> None:
         super().__init__(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'), 
