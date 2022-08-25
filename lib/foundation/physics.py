@@ -575,6 +575,14 @@ class PhysicsEngine:
         if body.force[0] and grounding and grounding['body']:
             grounding['body'].apply_force_at_world_point((-body.force[0], 0), grounding['position'])
     
+    def query_segment(self, origin:Vector, end:Vector, radius = 1.0, shape_filter = None):
+        ''' returns {PhysicsObject}'''
+        query = self.space.segment_query(origin, end, radius, shape_filter)
+        if not query: return None
+        for q in query:
+            shape = q.shape
+            
+    
     def add_collision_handler(self, 
                               first_type:str,
                               second_type:str, 
