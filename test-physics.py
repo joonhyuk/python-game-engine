@@ -261,6 +261,7 @@ class PhysicsTestView(View):
         self.test_layer.draw()
         
         self.player.draw()
+        debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * 500, colors.RED)
         # self.test_layer.__getitem__(0).draw()
         # 
         # debug_draw_segment(end = CONFIG.screen_size)
