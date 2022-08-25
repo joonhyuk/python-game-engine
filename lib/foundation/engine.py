@@ -317,7 +317,33 @@ class BaseActor(MObject):
                 ticker.tick(delta_time)
                 # print('character_tick', delta_time)
         return True
+
+class TestComponent(ActorComponent):
     
+    p1:str = 'property 1'
+    
+    def _get_p2(self):
+        return 'property 2'
+    
+    def _set_p2(self, content):
+        self.p1 = content
+    
+    p2 = property(_get_p2, _set_p2)
+    
+    @property
+    def p3(self):
+        return 'property 3'
+    
+    def on_spawn(self):
+        print('test component spawnned')
+        self.owner.p1 = self.p1
+    
+
+class TestActor(BaseActor):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.component = TestComponent()
+
     
 class Actor(BaseActor):
     """ Actor that have world presence like body, position """
