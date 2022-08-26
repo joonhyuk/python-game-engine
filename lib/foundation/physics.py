@@ -364,14 +364,16 @@ class PhysicsEngine:
         self.space.gravity = gravity
         self.space.damping = damping    # ratio of speed(scalar) which is kept to next tick
         
-        self.space.sleep_time_threshold = 3.0
-        self.space.idle_speed_threshold = 300
+        self.space.sleep_time_threshold = 5.0
+        self.space.idle_speed_threshold = 100
         # self.space.collision_slop = 0.0
         
         # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
         self.objects: dict[Sprite, PhysicsObject] = {}
         self.non_static_objects: list[Sprite] = []
         self.maximum_incline_on_ground = 0.708  # no need for now
+        
+        # self.space.add_post_step_callback()
         
     def _set_gravity(self, gravity:tuple):
         self.space.gravity = gravity
@@ -702,7 +704,6 @@ class PhysicsEngine:
         query = self.space.segment_query(origin, end, radius, shape_filter)
         if not query: return None
         return query
-                
             
     
     def add_collision_handler(self, 
@@ -765,7 +766,11 @@ class PhysicsEngine:
             h.pre_solve = handler_pre
         if separate_handler:
             h.separate = handler_separate
-            
+    
+    def activate_objects(self):
+        for sprite in self.non_static_objects:
+            self.objects[sprite].body.activate()
+    
     def resync_objects(self):
         """
         Set visual sprites to be the same location as physics engine sprites.

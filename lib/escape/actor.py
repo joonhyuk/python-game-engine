@@ -1,5 +1,27 @@
 from lib.foundation import *
 
+class Ball(Pawn):
+    
+    def __init__(self, 
+                 radius = 16, 
+                 color = colors.OUTRAGEOUS_ORANGE,
+                 hp: float = 100, 
+                 mass: float = 1.0,
+                 elasticity: float = 0.75, 
+                 **kwargs) -> None:
+        body = DynamicBody(SpriteCircle(radius, color),
+                           mass=mass,
+                           collision_type=collision.projectile,
+                           elasticity=elasticity,
+                           physics_shape=physics_types.circle) 
+        super().__init__(body, hp, **kwargs)
+
+class BallProjectile(Ball):
+    
+    def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
+        super().__init__(radius, color, hp, mass, elasticity, **kwargs)
+        CLOCK.reserve_exec(3, self.destroy)
+
 class EscapePlayer(Character):
     
     def __init__(self, hp: float = 100, body: DynamicBody = None, **kwargs) -> None:
@@ -10,8 +32,13 @@ class EscapePlayer(Character):
                                physics_shape = physics_types.circle(None, 16))
         self.body = body
     
-    def test_projectile(self):
-        proj = Projectile(SpriteCircle(10, colors.ALABAMA_CRIMSON), owner=self)
+    def test_projectile(self, impulse:float = 10000):
+        # proj = Projectile(SpriteCircle(10, colors.ALABAMA_CRIMSON), owner=self)
+        
+        proj = Ball()
+        proj.body.damping = 1.0
+        proj.spawn(self.body.layers[0], self.position + self.forward_vector * 20,
+                   initial_impulse= self.forward_vector * impulse)
         # proj.spawn()
         # proj.sprite._sprite_list
     

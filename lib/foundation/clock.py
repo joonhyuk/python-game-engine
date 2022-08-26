@@ -162,14 +162,22 @@ class Clock:
         self.timer_game_ispaused = switch
 
     def reserve_exec(self, interval:float, function, *args, **kwargs):
+        for tt in threading.enumerate():
+            if isinstance(tt, threading.Timer):
+                if all((tt.function == function, tt.args == args, tt.kwargs == kwargs)):
+                    tt.cancel()
         if interval <= 0: return function(*args, **kwargs)
-        threading.Timer(interval, function, args, kwargs).start()
+        tt = threading.Timer(interval, function, args, kwargs)
+        tt.start()
+        return tt
     
-    def reserve_cancel(self):
+    def reserve_cancel(self, function = None):
         thread_list = threading.enumerate()
         for tt in thread_list:
             if isinstance(tt, threading.Timer):
-                tt.cancel()
+                if function:
+                    if tt.function == function: tt.cancel()
+                else: tt.cancel()
     
     @property
     def fps_average(self):

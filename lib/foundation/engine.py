@@ -88,8 +88,30 @@ class DebugTextLayer(dict, metaclass=SingletonType):
             if isinstance(self[name], float): return self.perf_end(name)
         return self.perf_start(name)
     
+    def timer_start(self, name:str = 'foo'):
+        self[name] = round(CLOCK.timer_start(name),2)
+        
+    
+    def timer_end(self, name:str = 'foo', remain_time:float = 1.0):
+        self[name] = round(CLOCK.timer_remove(name),2)
+        self.remove_item(name, remain_time)
+    
+    def show_timer(self, name:str = 'foo'):
+        if name not in CLOCK.timers: return None
+        self[name] = round(CLOCK.timer_get(name),2)
+    
+    def remove_item(self, name:str = 'foo', delay:float = 0.0):
+        
+        def _remove(name:str):
+            if name in self: self.pop(name)
+        
+        if not delay: _remove(name)
+        else:
+            CLOCK.reserve_exec(delay, self.remove_item, name, 0.0)
+    
     position = property(_get_topleft_position, _set_topleft_position)
     ''' topleft position of text box '''
+
 
 
 @dataclass
@@ -123,6 +145,7 @@ class Environment(metaclass = SingletonType):
     
     last_abs_pos_mouse_lb_pressed:Vector = vectors.zero
     last_abs_pos_mouse_lb_released:Vector = vectors.zero
+    last_mouse_lb_hold_time = 0.0
     
     window_shortside = None
     window_longside = None
@@ -161,6 +184,7 @@ class Environment(metaclass = SingletonType):
     def on_key_release(self, key:int, modifiers:int):
         self.key_inputs.remove(key)
         # self.key_inputs.remove(modifiers)
+    
     
     @property
     def lstick(self) -> Vector:
@@ -260,7 +284,7 @@ class MObject(object):
     def destroy(self) -> bool:
         self._alive = False
         CLOCK.timer_remove(self.id)
-        # del self    # ????? do we need it?
+        del self    # ????? do we need it?
         return False
     
     def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
@@ -1206,7 +1230,7 @@ class App(arcade.Window):
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
             ENV.last_abs_pos_mouse_lb_released = ENV.abs_cursor_position
-    
+
     def run(self):
         arcade.run()
     
@@ -1425,6 +1449,9 @@ class SoundBank:
     
     def set_volume_master(self, amount:float):
         self.volume_master = amount
+        
+    def beep(self):
+        self.play('beep', 1.0)
 
 
 if __name__ != "__main__":
