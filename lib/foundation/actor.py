@@ -80,21 +80,39 @@ class CameraHandler(ActorComponent):
     '''handling actor camera
     should be possesed by engine camera system'''
     
-    def __init__(self) -> None:
+    def __init__(self,
+                 offset:Vector = vectors.zero,
+                 interp_speed:float = 0.05,
+                 boom_length:float = 200,
+                 dynamic_boom:bool = True,
+                 max_lag_distance:float = 300,
+                 ) -> None:
         super().__init__()
         self._spawned = False
-        self.offset:Vector = Vector(0,0)
-        self.camera = Camera(*CONFIG.screen_size)
-        self.camera_interp_speed = 0.05
-        self.boom_length = 200.0
+        self.offset:Vector = offset
+        self.camera = Camera(*CONFIG.screen_size, max_lag_distance=max_lag_distance)
+        self.camera_interp_speed = interp_speed
+        self.boom_length = boom_length
+        self.dynamic_boom = dynamic_boom
+        self.max_lag_distance = max_lag_distance
+        self.owner_has_position = True
+    
+    def on_spawn(self):
+        if not hasattr(self.owner, 'position'):
+            self.owner_has_position = True
+            self.set_update(False)  # failsafe, will be removed
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
+        # ENV.debug_text.perf_check('update_camera')
         self.center = self.owner.position
+        
         ENV.abs_screen_center = self.center # not cool...
         self._spawned = False
         # print('camera_tick')
-    
+        # ENV.debug_text.perf_check('update_camera')
+        
+
     def use(self):
         self._spawned = True
         self.camera.use()
@@ -103,19 +121,24 @@ class CameraHandler(ActorComponent):
         return self.camera.position + CONFIG.screen_size / 2
     
     def _set_center(self, new_center:Vector = Vector()):
+        # cam_accel = map_range(self.owner.speed, 500, 1000, 1, 3, True)
         self.camera.move_to(new_center - CONFIG.screen_size / 2 + self.offset + self._get_boom_vector(), self.camera_interp_speed)
     
     center:Vector = property(_get_center, _set_center)
     
     def _get_boom_vector(self) -> Vector:
+        if not self.owner_has_position: return vectors.zero
+        if not self.dynamic_boom: return self.owner.forward_vector.unit * self.boom_length
         # distv = ENV.cursor_position - ENV.scren_center
         distv = self.owner.position - ENV.abs_cursor_position
         # print(self.owner.rel_position, ENV.cursor_position)
         # return Vector()
+        alpha = map_range(self.owner.speed, 500, 1000, 1, 0, clamped = True)
+        
         in_min = ENV.window_shortside // 5
         in_max = ENV.window_shortside // 1.2
         ''' 최적화 필요 '''
-        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True)
+        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 
 class CharacterMovement(ActorComponent):
