@@ -84,7 +84,7 @@ class EscapeGameView(View):
         
         # self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'), size = 32)
         self.physics_complex = PhysicsEngine()
-        self.player = Player(self.physics_complex)
+        self.player = OldPlayer(self.physics_complex)
         self.player_list.append(self.player.body.sprite)
         # self.player.spawn(Vector(-100, -100), 0, self.player_list, self.movable_list)
         self.player.spawn(Vector(-100,-100))

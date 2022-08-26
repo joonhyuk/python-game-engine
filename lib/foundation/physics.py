@@ -131,6 +131,115 @@ class physics_types:
     circle = pymunk.Circle
     poly = pymunk.Poly
     segment = pymunk.Segment
+    infinite = float('inf')
+
+
+def setup_physics_object(sprite:Sprite, 
+                         mass:float = 0,
+                         moment = None,
+                         friction:float = 1.0,
+                         elasticity:float = None,
+                         body_type:int = physics_types.static,
+                         collision_type = collision.default,
+                         physics_shape = physics_types.poly,
+                         shape_edge_radius:float = 0.0,
+                         offset_circle:Vector = vectors.zero,
+                         max_speed:float = None,
+                         custom_gravity:Vector = None,
+                         custom_damping:float = None,
+                         ):
+    
+    size = Vector(sprite.width, sprite.height)
+    
+    if body_type == physics_types.static:
+        _moment = physics_types.infinite
+    else:
+        if physics_shape == physics_types.circle or isinstance(physics_shape, physics_types.circle):
+            _moment = pymunk.moment_for_circle(mass, 0, 
+                                                min(size.x, size.y) / 2 + shape_edge_radius, 
+                                                offset_circle)
+        elif physics_shape == physics_types.box or isinstance(physics_shape, physics_types.box):
+            _moment = pymunk.moment_for_box(mass, size)
+        else:
+            scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
+            _moment = pymunk.moment_for_poly(mass, scaled_poly, offset_circle, radius=shape_edge_radius)
+    
+    if moment is None: moment = _moment
+    
+    body = physics_types.body(mass, moment, body_type)
+    body.position = sprite.position
+    body.angle = math.radians(sprite.angle)
+    
+    if isinstance(physics_shape, physics_types.shape):
+        shape = physics_shape
+        shape.body = body
+    else:
+        if physics_shape == physics_types.circle:
+            shape = physics_types.circle(body, 
+                                            min(size.x, size.y) / 2 + shape_edge_radius, 
+                                            offset_circle)
+        else:
+            scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
+            shape = physics_types.poly(body, scaled_poly, radius=shape_edge_radius)
+    
+    shape.collision_type = collision_type
+    shape.friction = friction
+
+    if elasticity is not None:
+        shape.elasticity = elasticity
+
+    def velocity_callback(my_body, my_gravity, my_damping, dt):
+        """ Used for custom damping, gravity, and max_velocity. """
+        # Custom damping
+        if sprite.pymunk.damping is not None:
+            adj_damping = ((sprite.pymunk.damping * 100.0) / 100.0) ** dt
+            # print(f"Custom damping {sprite.pymunk.damping} {my_damping} default to {adj_damping}")
+            my_damping = adj_damping
+
+        # Custom gravity
+        if sprite.pymunk.gravity is not None:
+            my_gravity = sprite.pymunk.gravity
+
+        # Go ahead and update velocity
+        pymunk.Body.update_velocity(my_body, my_gravity, my_damping, dt)
+
+        # Now see if we are going too fast...
+
+        # Support max velocity
+        if sprite.pymunk.max_velocity:
+            velocity = my_body.velocity.length
+            if velocity > sprite.pymunk.max_velocity:
+                scale = sprite.pymunk.max_velocity / velocity
+                my_body.velocity = my_body.velocity * scale
+
+        ### Not needed for now. if making platformer game, we'll need it
+        # # Support max horizontal velocity
+        # if sprite.pymunk.max_horizontal_velocity:
+        #     velocity = my_body.velocity.x
+        #     if abs(velocity) > sprite.pymunk.max_horizontal_velocity:
+        #         velocity = sprite.pymunk.max_horizontal_velocity * math.copysign(1, velocity)
+        #         my_body.velocity = pymunk.Vec2d(velocity, my_body.velocity.y)
+
+        # # Support max vertical velocity
+        # if max_vertical_velocity:
+        #     velocity = my_body.velocity[1]
+        #     if abs(velocity) > max_vertical_velocity:
+        #         velocity = max_horizontal_velocity * math.copysign(1, velocity)
+        #         my_body.velocity = pymunk.Vec2d(my_body.velocity.x, velocity)
+
+    if max_speed is not None:
+        sprite.pymunk.max_velocity = max_speed
+    
+    if custom_gravity is not None:
+        sprite.pymunk.gravity = custom_gravity
+    
+    if custom_damping is not None:
+        sprite.pymunk.damping = custom_damping
+
+    if body_type == physics_types.dynamic:
+        body.velocity_func = velocity_callback
+    
+    return PhysicsObject(body, shape)
 
 
 class PhysicsObject:
@@ -150,9 +259,6 @@ class PhysicsObject:
         self.hitbox: Optional[pymunk.Shape] = hitbox or shape
         ''' custom hitbox collision if needed '''
         
-    # def spawn(self, space:pymunk.Space):
-    #     space.add(self.body, self.shape)
-    
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
@@ -169,6 +275,22 @@ class PhysicsObject:
     def __del__(self):
         # print(self.__name__, 'deleted just now')
         pass
+    
+    def _get_mass(self):
+        return self.body.mass
+    
+    def _set_mass(self, mass:float):
+        self.body.mass = mass
+    
+    mass:float = property(_get_mass, _set_mass)
+    
+    def _get_elasticity(self):
+        return self.shape.elasticity
+    
+    def _set_elasticity(self, elasticity:float):
+        self.shape.elasticity = elasticity
+    
+    elasticity:float = property(_get_elasticity, _set_elasticity)
     
     def _get_friction(self):
         return self.shape.friction
@@ -195,7 +317,7 @@ class PhysicsObject:
     velocity:Vector = property(_get_position, _set_position)
     
     def _get_angle(self):
-        return self.body.angle # in radian
+        return math.degrees(self.body.angle)
     
     def _set_angle(self, angle:float):
         self.body.angle = math.radians(angle)
@@ -236,20 +358,22 @@ class PhysicsEngine:
     KINEMATIC = pymunk.Body.KINEMATIC
     MOMENT_INF = float('inf')
     
-    def __init__(self) -> None:
+    def __init__(self, gravity = vectors.zero, damping = 0.1) -> None:
         self.space = pymunk.Space(threaded=True)
         self.space.threads = os.cpu_count() // 2
-        self.space.gravity = (0, 0)
-        self.space.damping = 0.1        # ratio of speed(scalar) which is kept to next tick
+        self.space.gravity = gravity
+        self.space.damping = damping    # ratio of speed(scalar) which is kept to next tick
         
-        self.space.sleep_time_threshold = 3.0
-        self.space.idle_speed_threshold = 300
+        self.space.sleep_time_threshold = 5.0
+        self.space.idle_speed_threshold = 100
         # self.space.collision_slop = 0.0
         
         # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
         self.objects: dict[Sprite, PhysicsObject] = {}
         self.non_static_objects: list[Sprite] = []
         self.maximum_incline_on_ground = 0.708  # no need for now
+        
+        # self.space.add_post_step_callback()
         
     def _set_gravity(self, gravity:tuple):
         self.space.gravity = gravity
@@ -575,6 +699,13 @@ class PhysicsEngine:
         if body.force[0] and grounding and grounding['body']:
             grounding['body'].apply_force_at_world_point((-body.force[0], 0), grounding['position'])
     
+    def query_segment(self, origin:Vector, end:Vector, radius = 1.0, shape_filter = None):
+        ''' returns {PhysicsObject}'''
+        query = self.space.segment_query(origin, end, radius, shape_filter)
+        if not query: return None
+        return query
+            
+    
     def add_collision_handler(self, 
                               first_type:str,
                               second_type:str, 
@@ -635,7 +766,11 @@ class PhysicsEngine:
             h.pre_solve = handler_pre
         if separate_handler:
             h.separate = handler_separate
-            
+    
+    def activate_objects(self):
+        for sprite in self.non_static_objects:
+            self.objects[sprite].body.activate()
+    
     def resync_objects(self):
         """
         Set visual sprites to be the same location as physics engine sprites.

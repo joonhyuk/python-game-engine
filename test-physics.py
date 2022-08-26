@@ -6,7 +6,8 @@ VERSION = Version()
 
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
-PHYSICS_TEST_DEBRIS_NUM = 300
+PLAYER_ATTACK_RANGE = 500
+PHYSICS_TEST_DEBRIS_NUM = 5
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 class PhysicsTestView(View):
@@ -14,13 +15,22 @@ class PhysicsTestView(View):
     def __init__(self, window: App = None):
         super().__init__(window)
         
+        self.test_physics_engine = []
+        self.test_physics_layers = []
+        for _ in range(1000):
+            pe = PhysicsEngine((0, -980), 0.0)
+            pl = ObjectLayer(pe)
+            
+            self.test_physics_engine.append(pe)
+            self.test_physics_layers.append(pl)
+        
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(ENV.physics_engine)
         self.debris_layer = ObjectLayer(ENV.physics_engine)
-        
+        self.character_layer = ObjectLayer(ENV.physics_engine)
         self.test_layer = ObjectLayer(ENV.physics_engine)
         
-        self.player:Player = None
+        self.player:EscapePlayer = None
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
         
@@ -32,8 +42,11 @@ class PhysicsTestView(View):
         
         ENV.physics_engine.damping = 0.01
         
-        self.player = Player(ENV.physics_engine)
-        self.player.spawn(Vector(100, 100))
+        # self.player = Player(ENV.physics_engine)
+        # self.player.spawn(Vector(100, 100))
+        self.player = EscapePlayer()
+        self.player.spawn(self.character_layer, Vector(100, 100))
+        
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
         # self.player.body.physics.shape.friction = 1.0
         self.player.body.mass = 1
@@ -64,10 +77,14 @@ class PhysicsTestView(View):
         ### test new method!
         test_simplebody = StaticBody(SpriteCircle(32), 
                                      physics_shape = physics_types.circle,
-                                     position=Vector(300,300)
+                                     position=Vector(300,300),
+                                     elasticity=1.0
                                      )
         # test_simplebody.position = vectors.zero
         test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
+        # test_simpleactor.position = vectors.zero
+        
+        
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
         
@@ -140,15 +157,23 @@ class PhysicsTestView(View):
         ### StaticBody only test
         for x in range(0, CONFIG.screen_size.x + 1, 32):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
-                              Vector(x, 0), spawn_to = layer)
+                              Vector(x, 0), 
+                              elasticity=0.75,
+                              spawn_to = layer)
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
-                              Vector(x, CONFIG.screen_size.y), spawn_to = layer)
+                              Vector(x, CONFIG.screen_size.y), 
+                              elasticity=0.75,
+                              spawn_to = layer)
         
         for y in range(32, CONFIG.screen_size.y, 32):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
-                              Vector(0, y), spawn_to = layer)
+                              Vector(0, y), 
+                              elasticity=0.75,
+                              spawn_to = layer)
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
-                              Vector(CONFIG.screen_size.x, y), spawn_to = layer)
+                              Vector(CONFIG.screen_size.x, y), 
+                              elasticity=0.75,
+                              spawn_to = layer)
         
     def _setup_field(self, layer:ObjectLayer):
         field_size = 6400
@@ -210,8 +235,18 @@ class PhysicsTestView(View):
         return super().on_key_release(key, modifiers)
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        # self.player.body.apply_impulse_world(self.player.forward_vector * -10)
-        self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
+        ENV.last_mouse_lb_hold_time = CLOCK.perf
+        ENV.debug_text.timer_start('mouse_lb_hold')
+        
+        
+    
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
+        ENV.debug_text.timer_end('mouse_lb_hold', 3)
+        
+        self.player.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        # self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
+        # self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
     
     def change_gravity(self, direction:Vector) -> None:
         
@@ -222,6 +257,7 @@ class PhysicsTestView(View):
         
         ENV.physics_engine.gravity = direction * GRAVITY
         ENV.physics_engine.damping = 1.0
+        ENV.physics_engine.activate_objects()
         return
         
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
@@ -260,8 +296,9 @@ class PhysicsTestView(View):
         
         self.test_layer.draw()
         
-        self.player.draw()
-        debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * 500, colors.RED)
+        # self.player.draw()
+        self.character_layer.draw()
+        debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         # self.test_layer.__getitem__(0).draw()
         # 
         # debug_draw_segment(end = CONFIG.screen_size)
@@ -277,13 +314,18 @@ class PhysicsTestView(View):
         self.player.tick(delta_time)
         # print(self.player.body.physics.shape.segment_query((0,0), CONFIG.screen_size))
         
-        ENV.debug_text['distance'] = round(self.player.position.length, 1)
+        # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
         
         if ENV.physics_engine.non_static_objects:
             total = len(ENV.physics_engine.non_static_objects)
             sleeps = list(map(lambda a:a.is_sleeping, ENV.physics_engine.space.bodies)).count(True)
             ENV.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
+        # ENV.debug_text.perf_check('update_empty_physics')
+        # for pe in self.test_physics_layers:
+        #     pe.physics_instance.step(delta_time)
+        # ENV.debug_text.perf_check('update_empty_physics')
+        ENV.debug_text.show_timer('mouse_lb_hold')
         ENV.debug_text.perf_check('update_game')
         
         

@@ -9,12 +9,45 @@ from lib.foundation.engine import *
 from lib.foundation.physics import *
 
 
-class Projectile(Actor):
+class Projectile(DynamicBody):
     
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, 
+                 sprite: Sprite, 
+                 position: Vector = None, 
+                 angle: float = None, 
+                 spawn_to: ObjectLayer = None, 
+                 mass: float = 1,
+                 collision_type: int = collision.projectile, 
+                 elasticity: float = None, 
+                 friction: float = 1, 
+                 shape_edge_radius: float = 0, 
+                 physics_shape: Union[physics_types.shape, type] = ..., 
+                 offset_circle: Vector = ..., 
+                 custom_gravity: Vector = vectors.zero, 
+                 custom_damping: float = 0.0, 
+                 owner: ... = None,
+                 **kwargs) -> None:
+        super().__init__(sprite, 
+                         position,
+                         angle,
+                         spawn_to,
+                         mass,
+                         None,
+                         collision_type = collision_type, 
+                         elasticity=elasticity, 
+                         friction=friction, 
+                         shape_edge_radius=shape_edge_radius,
+                         physics_shape=physics_shape,
+                         offset_circle=offset_circle,
+                         max_speed = CONFIG.terminal_speed,
+                         custom_gravity = custom_gravity,
+                         custom_damping = custom_damping,
+                         **kwargs)
+        self.owner = None
     
-    
+    def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
+        return super().spawn(spawn_to, position, angle)
+
 class AIController(ActorComponent):
     
     def __init__(self) -> None:
@@ -25,7 +58,6 @@ class AIController(ActorComponent):
         if not super().tick(delta_time): return False
         # self.owner.movement.turn_toward(self.move_path[0])
         # self.owner.movement.move_toward(self.move_path[0])
-
 
 
 class InteractionHandler(ActorComponent):
@@ -579,3 +611,41 @@ class NPC(Character2D):
     def get_physics_body(self) -> Sprite:
         return None
 
+
+class Pawn(DynamicObject):
+    
+    def __init__(self, 
+                 body: DynamicBody, 
+                 hp:float = 100,
+                 **kwargs) -> None:
+        super().__init__(body, **kwargs)
+        self.hp = hp
+    
+    def apply_damage(self, damage:float):
+        self.hp -= damage
+        if not self.is_alive: self.die()
+        
+    def die(self):
+        self.destroy()
+    
+    @property
+    def is_alive(self) -> bool:
+        if self.hp <=0: return False
+        return super().is_alive
+
+
+class Character(Pawn):
+    
+    def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
+        super().__init__(body, hp, **kwargs)
+        
+        self.movement = PhysicsMovement()
+        self.camera = CameraHandler()
+        
+    def tick(self, delta_time: float = None) -> bool:
+        if not super().tick(delta_time): return False
+        direction = ENV.direction_input
+        if direction: self.movement.turn_toward(direction)
+        self.movement.move(ENV.move_input)
+        ENV.debug_text['player_speed'] = round(self.speed, 1)
+        

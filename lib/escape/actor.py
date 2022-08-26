@@ -1,7 +1,68 @@
 from lib.foundation import *
 
+class Ball(Pawn):
+    
+    def __init__(self, 
+                 radius = 16, 
+                 color = colors.OUTRAGEOUS_ORANGE,
+                 hp: float = 100, 
+                 mass: float = 1.0,
+                 elasticity: float = 0.75, 
+                 **kwargs) -> None:
+        body = DynamicBody(SpriteCircle(radius, color),
+                           mass=mass,
+                           collision_type=collision.projectile,
+                           elasticity=elasticity,
+                           physics_shape=physics_types.circle) 
+        super().__init__(body, hp, **kwargs)
 
-class Player(Actor):
+class BallProjectile(Ball):
+    
+    def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
+        super().__init__(radius, color, hp, mass, elasticity, **kwargs)
+        CLOCK.reserve_exec(3, self.destroy)
+
+class EscapePlayer(Character):
+    
+    def __init__(self, hp: float = 100, body: DynamicBody = None, **kwargs) -> None:
+        super().__init__(body, hp, **kwargs)
+        if not body:
+            body = DynamicBody(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'),
+                               collision_type = collision.character,
+                               physics_shape = physics_types.circle(None, 16))
+        self.body = body
+    
+    def test_projectile(self, impulse:float = 10000):
+        # proj = Projectile(SpriteCircle(10, colors.ALABAMA_CRIMSON), owner=self)
+        
+        proj = Ball()
+        proj.body.damping = 1.0
+        proj.spawn(self.body.layers[0], self.position + self.forward_vector * 20,
+                   initial_impulse= self.forward_vector * impulse)
+        # proj.spawn()
+        # proj.sprite._sprite_list
+    
+    def test_directional_attack(self, 
+                                target_direction:Vector = None, 
+                                thickness = 1.0,
+                                distance = 500,
+                                muzzle_speed:float = 300,
+                                ):
+        origin = self.position
+        if not target_direction: target_direction = Vector.directional(self.angle)
+        end = target_direction * distance + origin
+        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
+        
+        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
+        
+        if query:
+            first_hit = query[0]
+            sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
+            sprite_first_hit.color = colors.RED
+            print(sprite_first_hit.owner)
+
+class OldPlayer(Actor):
     
     def __init__(self, physics_engine: PhysicsEngine = None, **kwargs) -> None:
         super().__init__(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'), 
@@ -25,6 +86,26 @@ class Player(Actor):
         
     def apply_damage(self, damage:float):
         self.hp -= damage
+    
+    def test_directional_attack(self, 
+                                target_direction:Vector = None, 
+                                thickness = 1.0,
+                                distance = 500,
+                                muzzle_speed:float = 300,
+                                ):
+        origin = self.position
+        if not target_direction: target_direction = Vector.directional(self.angle)
+        end = target_direction * distance + origin
+        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
+        
+        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
+        
+        if query:
+            first_hit = query[0]
+            sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
+            sprite_first_hit.color = colors.RED
+            print(sprite_first_hit.owner)
     
     @property
     def is_alive(self) -> bool:
