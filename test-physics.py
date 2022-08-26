@@ -15,6 +15,15 @@ class PhysicsTestView(View):
     def __init__(self, window: App = None):
         super().__init__(window)
         
+        self.test_physics_engine = []
+        self.test_physics_layers = []
+        for _ in range(1000):
+            pe = PhysicsEngine((0, -980), 0.0)
+            pl = ObjectLayer(pe)
+            
+            self.test_physics_engine.append(pe)
+            self.test_physics_layers.append(pl)
+        
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(ENV.physics_engine)
         self.debris_layer = ObjectLayer(ENV.physics_engine)
@@ -291,6 +300,11 @@ class PhysicsTestView(View):
             total = len(ENV.physics_engine.non_static_objects)
             sleeps = list(map(lambda a:a.is_sleeping, ENV.physics_engine.space.bodies)).count(True)
             ENV.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
+        
+        # ENV.debug_text.perf_check('update_empty_physics')
+        # for pe in self.test_physics_layers:
+        #     pe.physics_instance.step(delta_time)
+        # ENV.debug_text.perf_check('update_empty_physics')
         
         ENV.debug_text.perf_check('update_game')
         

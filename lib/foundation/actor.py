@@ -25,6 +25,7 @@ class Projectile(DynamicBody):
                  offset_circle: Vector = ..., 
                  custom_gravity: Vector = vectors.zero, 
                  custom_damping: float = 0.0, 
+                 owner: ... = None,
                  **kwargs) -> None:
         super().__init__(sprite, 
                          position,
@@ -42,7 +43,10 @@ class Projectile(DynamicBody):
                          custom_gravity = custom_gravity,
                          custom_damping = custom_damping,
                          **kwargs)
+        self.owner = None
     
+    def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
+        return super().spawn(spawn_to, position, angle)
 
 class AIController(ActorComponent):
     

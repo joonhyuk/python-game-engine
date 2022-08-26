@@ -540,6 +540,11 @@ class BodyComponent(ActorComponent):
     @property
     def size(self) -> Vector:
         return Vector(self.sprite.width, self.sprite.height)
+    
+    @property
+    def layers(self) -> list[ObjectLayer]:
+        ''' Layers(ObjectLayer list) where this body is '''
+        return self.sprite.sprite_lists
 
 
 class SpriteBody(BodyComponent):
@@ -1315,7 +1320,6 @@ class ObjectLayer(arcade.SpriteList):
                  use_spatial_hash=None, spatial_hash_cell_size=128, is_static=False, atlas: arcade.TextureAtlas = None, capacity: int = 100, lazy: bool = False, visible: bool = True):
         super().__init__(use_spatial_hash, spatial_hash_cell_size, is_static, atlas, capacity, lazy, visible)
         self.physics_instance = physics_instance
-        # self.sprites = []
         
     def add(self, obj:Union[BaseActor, BodyComponent, Sprite, SpriteCircle]):
         sprite:Sprite = None
@@ -1332,7 +1336,6 @@ class ObjectLayer(arcade.SpriteList):
         
         if sprite:
             self.append(sprite)
-            # self.sprites.append(sprite)
         
         if self.physics_instance:
             if body:
@@ -1353,14 +1356,19 @@ class ObjectLayer(arcade.SpriteList):
             sprite = obj
         else: raise Exception('ObjectLayer only accept Sprite, Body, Actor')
         
-        # if body:
-        #    if body.physics:
-        #        self.physics_instance.remove_sprite(sprite)
         ''' 
         Because arcade spritelist remove method automatically remove body from physics,
         we don't need it
+        
+        if body:
+           if body.physics:
+               self.physics_instance.remove_sprite(sprite)
         '''
         return super().remove(sprite)
+    
+    def step(self, delta_time:float = 1/60, sync:bool = True):
+        ''' Don't use it usually. For better performance, call directly from physics instance '''
+        self.physics_instance.step(delta_time=delta_time, resync_objects=sync)
 
 
 class Camera(arcade.Camera):

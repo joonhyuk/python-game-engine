@@ -10,6 +10,11 @@ class EscapePlayer(Character):
                                physics_shape = physics_types.circle(None, 16))
         self.body = body
     
+    def test_projectile(self):
+        proj = Projectile(SpriteCircle(10, colors.ALABAMA_CRIMSON), owner=self)
+        # proj.spawn()
+        # proj.sprite._sprite_list
+    
     def test_directional_attack(self, 
                                 target_direction:Vector = None, 
                                 thickness = 1.0,

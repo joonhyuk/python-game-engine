@@ -358,11 +358,11 @@ class PhysicsEngine:
     KINEMATIC = pymunk.Body.KINEMATIC
     MOMENT_INF = float('inf')
     
-    def __init__(self) -> None:
+    def __init__(self, gravity = vectors.zero, damping = 0.1) -> None:
         self.space = pymunk.Space(threaded=True)
         self.space.threads = os.cpu_count() // 2
-        self.space.gravity = (0, 0)
-        self.space.damping = 0.1        # ratio of speed(scalar) which is kept to next tick
+        self.space.gravity = gravity
+        self.space.damping = damping    # ratio of speed(scalar) which is kept to next tick
         
         self.space.sleep_time_threshold = 3.0
         self.space.idle_speed_threshold = 300
