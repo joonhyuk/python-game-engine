@@ -357,35 +357,45 @@ class BaseActor(MObject):
     ''' can have actor components '''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.components:list[ActorComponent] = []
+        self.tick_components:list[ActorComponent] = []
     
     def spawn(self, lifetime: float = None):
         self.register_components()
         return super().spawn(lifetime)
     
     def register_components(self):
-        for k, v in self.__dict__.items():
-            if isinstance(v, (ActorComponent, )):
-                v.owner = self
-                ''' set owner '''
-                if hasattr(v, 'tick'):
-                    self.components.append(v)
-                    ''' for components that have tick '''
-                v.on_register()
+        
+        candidate = (ActorComponent, )
+        components:list[ActorComponent] = []    ### type hinting
+        
+        def check_component(component:Union(*candidate)):
+            return isinstance(component, candidate)
+        
+        if hasattr(self, '__dict__'):    ### for those have only __slots__
+            components.extend([c for c in self.__dict__.values() if check_component(c)])
+        
+        if hasattr(self, '__slots__'):
+            components.extend([getattr(self, c) for c in self.__slots__ if check_component(getattr(self, c))])
+        
+        if components:
+            for component in components:
+                if hasattr(component, 'owner'): component.owner = self  ### set owner
+                if hasattr(component, 'tick'): self.tick_components.append(component)
+                if hasattr(component, 'on_register'): component.on_register()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
-        if self.components:
-            for ticker in self.components:
+        if self.tick_components:
+            for ticker in self.tick_components:
                 ticker.tick(delta_time)
                 # print('character_tick', delta_time)
         return True
     
     def destroy(self) -> bool:
-        for component in self.components:
+        for component in self.tick_components:
             component.destroy()
             # self.components.remove(component)
-        self.components = []
+        self.tick_components = []
         return super().destroy()
     
     def __del__(self):
