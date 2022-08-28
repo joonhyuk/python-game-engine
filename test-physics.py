@@ -131,18 +131,6 @@ class PhysicsTestView(View):
 
         print(f'INITIAL LOADING TIME : {round(CLOCK.get_perf() - start_loading_time, 2)} sec')
         
-    def _setup_debris(self, layer:ObjectLayer):
-        for _ in range(PHYSICS_TEST_DEBRIS_NUM):
-            # debri = Sprite(":resources:images/tiles/bomb.png", 0.2)
-            debri = SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96))
-            debri.pymunk.max_velocity = CONFIG.terminal_speed
-            placed = False
-            while not placed:
-                debri.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
-                if not arcade.check_for_collision_with_lists(debri, [self.wall_layer, layer]):
-                    placed = True
-            layer.append(debri)
-            
     def _setup_debris_onecue(self, layer:ObjectLayer):
         ### DynamicBody only test
         for _ in range(PHYSICS_TEST_DEBRIS_NUM):
@@ -187,35 +175,6 @@ class PhysicsTestView(View):
                 ground.color = (30, 30, 30)
                 layer.append(ground)
     
-    def _setup_walls(self, layer:ObjectLayer):
-        # Set up the walls
-        for x in range(0, CONFIG.screen_size.x + 1, 32):
-            wall = Sprite(":resources:images/tiles/grassCenter.png",
-                                 SPRITE_SCALING_PLAYER)
-            wall.center_x = x
-            wall.center_y = 0
-            layer.add(wall)
-
-            wall = Sprite(":resources:images/tiles/grassCenter.png",
-                                 SPRITE_SCALING_PLAYER)
-            wall.center_x = x
-            wall.center_y = CONFIG.screen_size.y
-            layer.add(wall)
-
-        # Set up the walls
-        for y in range(32, CONFIG.screen_size.y, 32):
-            wall = Sprite(":resources:images/tiles/grassCenter.png",
-                                 SPRITE_SCALING_PLAYER)
-            wall.center_x = 0
-            wall.center_y = y
-            layer.add(wall)
-
-            wall = Sprite(":resources:images/tiles/grassCenter.png",
-                                 SPRITE_SCALING_PLAYER)
-            wall.center_x = CONFIG.screen_size.x
-            wall.center_y = y
-            layer.add(wall)
-
     def on_key_press(self, key: int, modifiers: int):
         # print(modifiers, keys.MOD_OPTION)
         if key == keys.G: 
