@@ -81,6 +81,7 @@ class PhysicsTestView(View):
         test_simplebody = StaticBody(SpriteCircle(32), 
                                      physics_shape = physics_types.circle,
                                      position=Vector(300,300),
+                                     collision_type=collision.none,
                                      elasticity=1.0
                                      )
         # test_simplebody.position = vectors.zero
@@ -199,6 +200,8 @@ class PhysicsTestView(View):
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf
         ENV.debug_text.timer_start('mouse_lb_hold')
+        
+        self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
         if self._tmp: 
             unschedule(self._tmp.delay_destroy)

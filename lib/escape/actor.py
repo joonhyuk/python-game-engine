@@ -21,11 +21,14 @@ class BallProjectile(Ball):
     
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
-        schedule_once(self.delay_destroy, 3)
+        # schedule_once(self.hide, 1)
+        # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=pymunk.ShapeFilter.ALL_MASKS())
     
     def __del__(self):
         print('goodbye from ballprojectile actor')
     
+    def hide(self, dt):
+        self.visibility = False
 
 
 class EscapePlayer(Character):
@@ -37,6 +40,7 @@ class EscapePlayer(Character):
                                collision_type = collision.character,
                                physics_shape = physics_types.circle(None, 16))
         self.body = body
+        body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
     
     def tick(self, delta_time: float = None) -> bool:
@@ -60,7 +64,7 @@ class EscapePlayer(Character):
         # delay_run(2, proj.destroy)
         # proj2 = BallProjectile()
         proj.body.damping = 1.0
-        proj.spawn(self.body.layers[0], self.position + self.forward_vector * 20,
+        proj.spawn(self.body.layers[0], self.position,
                    initial_impulse= self.forward_vector * impulse)
         
         # print(proj.destroy.__closure__)
