@@ -21,21 +21,7 @@ class BallProjectile(Ball):
     
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
-        # CLOCK.reserve_exec(10, self.destroy)
-        
-        # delay_run(1, self.destroy)
-        # schedule_once(self.dest, 3)
-        self.delay_dest(10)
-    
-    def destroy(self) -> bool:
-        # print('DESTROY')
-        return super().destroy()
-    
-    def dest(self, dt):
-        self.destroy()
-    
-    def delay_dest(self, delay:float):
-        delay_run(delay, self.destroy)
+        schedule_once(self.delay_destroy, 3)
     
     def __del__(self):
         print('goodbye from ballprojectile actor')

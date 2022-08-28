@@ -241,8 +241,8 @@ class PhysicsTestView(View):
         ENV.last_mouse_lb_hold_time = CLOCK.perf
         ENV.debug_text.timer_start('mouse_lb_hold')
 
-        # if self._tmp: 
-        #     unschedule(self._tmp.destroy)
+        if self._tmp: 
+            unschedule(self._tmp.delay_destroy)
         # if self._tmp: CLOCK.reserve_cancel(self._tmp.destroy) # works well
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):

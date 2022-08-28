@@ -288,6 +288,10 @@ class MObject(object):
         # SOUND.beep()
         return self.on_destroy()
     
+    def delay_destroy(self, dt):
+        print(dt)
+        return self.destroy()
+    
     def on_destroy(self):
         pass
     

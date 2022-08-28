@@ -27,8 +27,6 @@ def delay_run(delay:float, func:Callable, *args, **kwargs):
         print(dt)
         return func(*args, **kwargs)
     
-    # func.__dict__['dt'] = None
-    
     return schedule_once(_wrapper, delay, *args, **kwargs)
 
 def add_dt(func):
@@ -46,16 +44,5 @@ class Foo:
 
 
 f = Foo()
-# delay_run(1, f.destroy)
-# unschedule(f.destroy)
-print(f.destroy)
-f.destroy()
-# import pyglet
-
-# def foo(arg1):
-#     return arg1
-
-# def bar(dt, arg1):
-#     return arg1
-
-# pyglet.clock.schedule_once(bar, 1, 'hello')
+delay_run(1, f.destroy)
+unschedule(f.destroy)
