@@ -74,7 +74,7 @@ class InteractionHandler(ActorComponent):
     
     def end_overlap(self, other:Actor2D):
         self.others.remove(other)
-      
+    
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -648,4 +648,5 @@ class Character(Pawn):
         if direction: self.movement.turn_toward(direction)
         self.movement.move(ENV.move_input)
         ENV.debug_text['player_speed'] = round(self.speed, 1)
+        return True
         

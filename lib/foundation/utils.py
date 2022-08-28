@@ -2,6 +2,8 @@
 utils coupled with arcade, pymunk, pyglet, etc
 
 '''
+import functools
+
 import arcade
 from arcade.experimental import Shadertoy, lights
 from lib.foundation.base import *
@@ -69,3 +71,18 @@ def add_sprite_timeout(sprite:arcade.Sprite, location:Vector, layer:arcade.Sprit
     layer.append(sprite)
     
     schedule_once(sprite.scheduled_remove_from_sprite_lists, timeout)
+
+def delay_run(delay:float, func, *args, **kwargs):
+    if not isinstance(delay, (float, int)): return False
+    if delay <= 0: return func(*args, **kwargs)
+    
+    ### 아래처럼 래핑하면 인스턴스 메소드의 레퍼런스로 참조되는게 아닌, 클래스의 메소드로만 참조된다.
+    @functools.wraps(func)
+    def _wrapper(dt, func=func, *args, **kwargs):
+        return func(*args, **kwargs)
+    
+    return schedule_once(_wrapper, delay, *args, **kwargs)
+
+def delay_cancel(func):
+    
+    unschedule(func)

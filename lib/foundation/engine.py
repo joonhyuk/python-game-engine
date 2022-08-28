@@ -113,7 +113,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     ''' topleft position of text box '''
 
 
-
 @dataclass
 class Environment(metaclass = SingletonType):
     ''' I/O for game
@@ -284,8 +283,16 @@ class MObject(object):
     def destroy(self) -> bool:
         self._alive = False
         CLOCK.timer_remove(self.id)
-        del self    # ????? do we need it?
-        return False
+        self.on_destroy()
+        # del self    # ????? do we need it?
+        # SOUND.beep()
+        return self.on_destroy()
+    
+    def on_destroy(self):
+        pass
+    
+    # def __del__(self):
+    #     print('good bye')
     
     def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
         self.__dict__[keyword] = get_from_dict(kwargs, keyword, default)
@@ -321,7 +328,18 @@ class ActorComponent(MObject):
     
     def on_register(self):
         pass
-
+    
+    def destroy(self) -> bool:
+        self._spawned = False
+        # self._owner.components.remove(self)
+        return super().destroy()
+    
+    def on_destroy(self):
+        pass
+    
+    def __del__(self):
+        print('goodbye from actorcomponent')
+    
     def _get_owner(self):
         return self._owner or self
     
@@ -335,7 +353,7 @@ class BaseActor(MObject):
     ''' can have actor components '''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.tick_group:list[ActorComponent] = []
+        self.components:list[ActorComponent] = []
     
     def spawn(self, lifetime: float = None):
         self.register_components()
@@ -347,17 +365,27 @@ class BaseActor(MObject):
                 v.owner = self
                 ''' set owner '''
                 if hasattr(v, 'tick'):
-                    self.tick_group.append(v)
+                    self.components.append(v)
                     ''' for components that have tick '''
                 v.on_register()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
-        if self.tick_group:
-            for ticker in self.tick_group:
+        if self.components:
+            for ticker in self.components:
                 ticker.tick(delta_time)
                 # print('character_tick', delta_time)
         return True
+    
+    def destroy(self) -> bool:
+        for component in self.components:
+            component.destroy()
+            # self.components.remove(component)
+        self.components = []
+        return super().destroy()
+    
+    def __del__(self):
+        print('goodbye from actor')
 
 
 class TestComponent(ActorComponent):
@@ -386,7 +414,14 @@ class TestActor(BaseActor):
         super().__init__(**kwargs)
         self.component = TestComponent()
 
-    
+
+class ActionComponent(ActorComponent):
+    '''
+    Action : custom functions for owner
+    '''
+    pass
+
+
 class Actor(BaseActor):
     """ LEGACY : WILL BE DEPRECATED """
     """ Actor that have world presence like body, position """
@@ -502,6 +537,9 @@ class BodyComponent(ActorComponent):
     def get_ref(self):
         return self.sprite
     
+    def __del__(self):
+        print('goodbye from body')
+    
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         
         if position is not None: 
@@ -514,6 +552,10 @@ class BodyComponent(ActorComponent):
     
     def draw(self, *args, **kwargs):
         self.sprite.draw(*args, **kwargs)
+    
+    def destroy(self) -> bool:
+        self.sprite.remove_from_sprite_lists()
+        return super().destroy()
     
     def _set_owner(self, owner):
         super()._set_owner(owner)
@@ -844,11 +886,6 @@ class DynamicObject(BaseActor):
         if initial_impulse:
             self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
-    
-    def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = ENV.delta_time
-        if not super().tick(delta_time): return False
-        return True
     
     def draw(self):
         self.body.draw()
@@ -1302,6 +1339,7 @@ class SpriteCircle(arcade.SpriteCircle):
                  radius: int = 16, 
                  color: colors = colors.ALLOY_ORANGE, 
                  soft: bool = False):
+        self.owner = None
         super().__init__(radius, color, soft)
 
     def scheduled_remove_from_sprite_lists(self, dt):

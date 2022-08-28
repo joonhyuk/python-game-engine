@@ -160,16 +160,16 @@ class Clock:
                     self.timer_pause(paused_id, False)
                 self.timer_game_paused_list = []
         self.timer_game_ispaused = switch
-
+    
     def reserve_exec(self, interval:float, function, *args, **kwargs):
+        ''' function reference not deleted after timer ends. so do not use it for destruction '''
         for tt in threading.enumerate():
             if isinstance(tt, threading.Timer):
                 if all((tt.function == function, tt.args == args, tt.kwargs == kwargs)):
                     tt.cancel()
         if interval <= 0: return function(*args, **kwargs)
-        tt = threading.Timer(interval, function, args, kwargs)
-        tt.start()
-        return tt
+        # print('thread active count ',threading.active_count())
+        return threading.Timer(interval, function, args, kwargs).start()
     
     def reserve_cancel(self, function = None):
         thread_list = threading.enumerate()

@@ -10,6 +10,7 @@ PLAYER_ATTACK_RANGE = 500
 PHYSICS_TEST_DEBRIS_NUM = 5
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
+
 class PhysicsTestView(View):
     
     def __init__(self, window: App = None):
@@ -33,6 +34,8 @@ class PhysicsTestView(View):
         self.player:EscapePlayer = None
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
+        
+        self._tmp = None
         
     def on_show(self):
         arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
@@ -237,14 +240,19 @@ class PhysicsTestView(View):
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf
         ENV.debug_text.timer_start('mouse_lb_hold')
-        
-        
+
+        # if self._tmp: 
+        #     unschedule(self._tmp.destroy)
+        # if self._tmp: CLOCK.reserve_cancel(self._tmp.destroy) # works well
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
         ENV.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self.player.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        self._tmp = self.player.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        # delay_run(2, self._tmp.destroy)
+        # CLOCK.reserve_exec(2, self._tmp.destroy)
+        
         # self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
         # self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
     

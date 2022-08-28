@@ -16,11 +16,31 @@ class Ball(Pawn):
                            physics_shape=physics_types.circle) 
         super().__init__(body, hp, **kwargs)
 
+
 class BallProjectile(Ball):
     
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
-        CLOCK.reserve_exec(3, self.destroy)
+        # CLOCK.reserve_exec(10, self.destroy)
+        
+        # delay_run(1, self.destroy)
+        # schedule_once(self.dest, 3)
+        self.delay_dest(10)
+    
+    def destroy(self) -> bool:
+        # print('DESTROY')
+        return super().destroy()
+    
+    def dest(self, dt):
+        self.destroy()
+    
+    def delay_dest(self, delay:float):
+        delay_run(delay, self.destroy)
+    
+    def __del__(self):
+        print('goodbye from ballprojectile actor')
+    
+
 
 class EscapePlayer(Character):
     
@@ -31,16 +51,36 @@ class EscapePlayer(Character):
                                collision_type = collision.character,
                                physics_shape = physics_types.circle(None, 16))
         self.body = body
+        self._fire_counter = 0
+    
+    def tick(self, delta_time: float = None) -> bool:
+        if not super().tick(delta_time): return False
+        if self._fire_counter % 6 == 0:
+            # self.test_projectile(1000)
+            self._fire_counter = 0
+        self._fire_counter += 1
+        '''
+        빠르게 쏘고 삭제하고를 반복할 경우,
+        삭제를 threading.Timer 스레드락 없이 쓰면 아래와 같은 에러가 나온다.
+        아마도 쿼리 도는 중에 바디를 삭제해버린게 아닐지.
+        
+        Aborting due to Chipmunk error: This operation cannot be done safely during a call to cpSpaceStep() or during a query. Put these calls into a post-step callback.
+        Failed condition: !space->locked
+        Source:Chipmunk2D/src/cpSpace.c:527
+        '''
     
     def test_projectile(self, impulse:float = 10000):
-        # proj = Projectile(SpriteCircle(10, colors.ALABAMA_CRIMSON), owner=self)
-        
-        proj = Ball()
+        proj = BallProjectile()
+        # delay_run(2, proj.destroy)
+        # proj2 = BallProjectile()
         proj.body.damping = 1.0
         proj.spawn(self.body.layers[0], self.position + self.forward_vector * 20,
                    initial_impulse= self.forward_vector * impulse)
-        # proj.spawn()
-        # proj.sprite._sprite_list
+        
+        # print(proj.destroy.__closure__)
+        # print('proj.dest ', proj.dest)
+        # print(threading.enumerate()
+        return proj
     
     def test_directional_attack(self, 
                                 target_direction:Vector = None, 
@@ -62,6 +102,8 @@ class EscapePlayer(Character):
             sprite_first_hit.color = colors.RED
             print(sprite_first_hit.owner)
 
+    
+    
 class OldPlayer(Actor):
     
     def __init__(self, physics_engine: PhysicsEngine = None, **kwargs) -> None:
