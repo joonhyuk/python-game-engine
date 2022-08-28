@@ -320,7 +320,7 @@ class ActorComponent(MObject):
     
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._owner:BaseActor = None
+        self._owner = self
         # spawn = getattr(self, 'spawn', None)
         # if callable(spawn):
         #     print('spawn existence check ', spawn)
@@ -558,6 +558,7 @@ class BodyComponent(ActorComponent):
         # print('goodbye from body')
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        self.sprite.owner = self.owner
         
         if position is not None: 
             self.position = position
