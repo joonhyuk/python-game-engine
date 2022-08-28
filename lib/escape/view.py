@@ -50,10 +50,10 @@ class EscapeGameView(View):
         # self.window.set_mouse_visible(True)
         # Sprites and sprite lists
         self.field_list = ObjectLayer()
-        self.wall_list = ObjectLayer()
-        self.player_list = ObjectLayer()
-        self.npc_list = ObjectLayer()
-        self.bomb_list = ObjectLayer()
+        self.wall_list = ObjectLayer(ENV.physics_engine)
+        self.player_list = ObjectLayer(ENV.physics_engine)
+        self.npc_list = ObjectLayer(ENV.physics_engine)
+        self.bomb_list = ObjectLayer(ENV.physics_engine)
         self.movable_list = ObjectLayer()
         self.physics_simple = None
         
@@ -82,17 +82,20 @@ class EscapeGameView(View):
     
     def setup(self):
         
-        # self.player = Character2D(Sprite(IMG_PATH + 'player_handgun_original.png'), size = 32)
         self.physics_complex = PhysicsEngine()
-        self.player = OldPlayer(self.physics_complex)
-        self.player_list.append(self.player.body.sprite)
-        # self.player.spawn(Vector(-100, -100), 0, self.player_list, self.movable_list)
-        self.player.spawn(Vector(-100,-100))
+        
+        self.player = EscapePlayer()
+        self.player.spawn(self.player_list, Vector(100,100))
         self.camera = self.player.camera
         
-        self.enemy = NPC(Sprite(":resources:images/tiles/boxCrate_double.png", 1))
-        # self.enemy = NPC(Capsule(64))
-        self.enemy.spawn(Vector(-200, -200), 90, self.npc_list, self.movable_list)
+        self.enemy = Pawn(DynamicBody(Sprite(":resources:images/tiles/boxCrate_double.png", 1),
+                                      mass=10,
+                                      elasticity=0.8,
+                                      collision_type=collision.enemy,
+                                      ),
+                          
+                          )
+        self.enemy.spawn(self.npc_list, Vector(-200, -200), 90)
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
@@ -102,33 +105,16 @@ class EscapeGameView(View):
         
         # self._setup_pathfinding()
         
-        # body =  self.player.body_movement if self.player.body_movement else self.player.body
-        # self.physics_simple = arcade.PhysicsEngineSimple(body, [self.wall_list, self.npc_list])
-        
-        # self.physics_complex.add_sprite(self.player.body.sprite, 
-        #                                 friction=1.0,
-        #                                 body_type = PhysicsEngine.DYNAMIC, 
-        #                                 moment_of_inertia=PhysicsEngine.MOMENT_INF,
-        #                                 collision_type=collision.character, 
-        #                                 max_velocity=1000)
-                                
-        self.physics_complex.add_sprite_list(self.wall_list,
-                                     friction=0.2, 
-                                     collision_type = collision.wall, 
-                                     body_type = PhysicsEngine.STATIC)
-        
-        self.physics_complex.add_sprite_list(self.bomb_list, 
+        ENV.physics_engine.add_sprite_list(self.bomb_list, 
                                      friction = 1.0, 
                                      body_type = PhysicsEngine.DYNAMIC, 
                                      collision_type = collision.enemy)
 
-        self.physics_complex.add_sprite(self.enemy.body, mass = 10, collision_type=collision.enemy)
-        
         def player_hit_wall(player, wall, arbiter, space, data):
             print(wall)
             return True
         
-        self.physics_complex.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
+        ENV.physics_engine.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
         
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2
@@ -154,10 +140,10 @@ class EscapeGameView(View):
                 self.field_list.append(ground)
                 
                 if flip_coin(wall_prob):
-                    wall = Sprite(':resources:images/tiles/boxCrate_double.png', 0.5)
-                    
-                    wall.position = x, y
-                    self.wall_list.append(wall)
+                    wall = StaticBody(Sprite(':resources:images/tiles/boxCrate_double.png', 0.5),
+                                      (x, y),
+                                      elasticity=0.75,
+                                      spawn_to=self.wall_list)
         
         for _ in range(30):
             bomb = Sprite(":resources:images/tiles/bomb.png", 0.125)

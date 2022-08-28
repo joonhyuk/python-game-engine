@@ -121,17 +121,29 @@ arcade.sprite_list.spatial_hash._check_for_collision = _check_for_collision
 
 @dataclass
 class physics_types:
+    __slots__ = ()
+    ''' 그닥 필요는 없지만 '''
+    
+    fps_base = 60
+    delta_time = 1 / fps_base
+    
     space = pymunk.Space
+    
     body = pymunk.Body
-    static = pymunk.Body.STATIC
-    dynamic = pymunk.Body.DYNAMIC
-    kinematic = pymunk.Body.KINEMATIC
     shape = pymunk.Shape
+    
+    segment = pymunk.Segment
     box = pymunk.Poly
     circle = pymunk.Circle
     poly = pymunk.Poly
-    segment = pymunk.Segment
-    infinite = float('inf')
+    
+    static = pymunk.Body.STATIC
+    dynamic = pymunk.Body.DYNAMIC
+    kinematic = pymunk.Body.KINEMATIC
+    
+    infinite:float = float('inf')
+    allmask:int = pymunk.ShapeFilter.ALL_MASKS()
+    allcategories:int = pymunk.ShapeFilter.ALL_CATEGORIES()
 
 
 def setup_physics_object(sprite:Sprite, 
@@ -247,6 +259,9 @@ class PhysicsObject:
     physics object that holds pymunk body and shape for a sprite
     think usecase only!
     '''
+    __slots__ = ('body',
+                 'shape',
+                 'hitbox')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
@@ -705,6 +720,10 @@ class PhysicsEngine:
         if not query: return None
         return query
             
+    def hide(self, sprite: Sprite):
+        physics_object = self.get_physics_object(sprite)
+        self.space.add_default_collision_handler()
+        physics_object.body.sleep()
     
     def add_collision_handler(self, 
                               first_type:str,

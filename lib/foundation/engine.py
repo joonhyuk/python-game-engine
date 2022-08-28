@@ -113,7 +113,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     ''' topleft position of text box '''
 
 
-
 @dataclass
 class Environment(metaclass = SingletonType):
     ''' I/O for game
@@ -237,6 +236,8 @@ class Environment(metaclass = SingletonType):
 
 
 class MObject(object):
+    __slots__ = ('id', '_alive', '_lifetime', '_update_tick', '_spawned', )
+    
     def __init__(self, **kwargs) -> None:
         self.id:str = self.get_id()
         """set id by id()"""
@@ -284,8 +285,20 @@ class MObject(object):
     def destroy(self) -> bool:
         self._alive = False
         CLOCK.timer_remove(self.id)
-        del self    # ????? do we need it?
-        return False
+        self.on_destroy()
+        # del self    # ????? do we need it?
+        # SOUND.beep()
+        return self.on_destroy()
+    
+    def delay_destroy(self, dt):
+        print(dt)
+        return self.destroy()
+    
+    def on_destroy(self):
+        pass
+    
+    # def __del__(self):
+    #     print('good bye')
     
     def set_kwargs(self, kwargs:dict, keyword:str, default:... = None):
         self.__dict__[keyword] = get_from_dict(kwargs, keyword, default)
@@ -303,9 +316,11 @@ class MObject(object):
 
 class ActorComponent(MObject):
     '''component base class'''
+    __slots__ = ('_owner', )
+    
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._owner:BaseActor = None
+        self._owner = self
         # spawn = getattr(self, 'spawn', None)
         # if callable(spawn):
         #     print('spawn existence check ', spawn)
@@ -321,6 +336,14 @@ class ActorComponent(MObject):
     
     def on_register(self):
         pass
+    
+    def destroy(self) -> bool:
+        self._spawned = False
+        # self._owner.components.remove(self)
+        return super().destroy()
+    
+    def on_destroy(self):
+        pass
 
     def _get_owner(self):
         return self._owner or self
@@ -333,32 +356,50 @@ class ActorComponent(MObject):
 
 class BaseActor(MObject):
     ''' can have actor components '''
+    __slots__ = ('tick_components', )
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.tick_group:list[ActorComponent] = []
+        self.tick_components:list[ActorComponent] = []
     
     def spawn(self, lifetime: float = None):
         self.register_components()
         return super().spawn(lifetime)
     
     def register_components(self):
-        for k, v in self.__dict__.items():
-            if isinstance(v, (ActorComponent, )):
-                v.owner = self
-                ''' set owner '''
-                if hasattr(v, 'tick'):
-                    self.tick_group.append(v)
-                    ''' for components that have tick '''
-                v.on_register()
+        
+        candidate = (ActorComponent, )
+        components:list[ActorComponent] = []    ### type hinting
+        
+        def check_component(component:Union(*candidate)):
+            return isinstance(component, candidate)
+        
+        if hasattr(self, '__dict__'):    ### for those have only __slots__
+            components.extend([c for c in self.__dict__.values() if check_component(c)])
+        
+        if hasattr(self, '__slots__'):
+            components.extend([getattr(self, c) for c in self.__slots__ if check_component(getattr(self, c))])
+        
+        if components:
+            for component in components:
+                if hasattr(component, 'owner'): component.owner = self  ### set owner
+                if hasattr(component, 'tick'): self.tick_components.append(component)
+                if hasattr(component, 'on_register'): component.on_register()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
-        if self.tick_group:
-            for ticker in self.tick_group:
+        if self.tick_components:
+            for ticker in self.tick_components:
                 ticker.tick(delta_time)
                 # print('character_tick', delta_time)
         return True
-
+    
+    def destroy(self) -> bool:
+        for component in self.tick_components:
+            component.destroy()
+            # self.components.remove(component)
+        self.tick_components = []
+        return super().destroy()
+    
 
 class TestComponent(ActorComponent):
     
@@ -382,110 +423,23 @@ class TestComponent(ActorComponent):
     
 
 class TestActor(BaseActor):
+    __slots__ = ()
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.component = TestComponent()
 
-    
-class Actor(BaseActor):
-    """ LEGACY : WILL BE DEPRECATED """
-    """ Actor that have world presence like body, position """
-    def __init__(self, 
-                 sprite:Sprite,
-                 size:Vector = None,
-                 physics_engine:PhysicsEngine = None,
-                 mass:float = 1.0,
-                 body_type:int = None,
-                 collision_type:int = None,
-                 elasticity:float = None,
-                 friction:float = 0.2,
-                 shape_edge_radius:float = 0.0,
-                 physics_shape = None,
-                 name:Optional[str] = None,
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.body:Body = Body(sprite, 
-                              size, 
-                              physics_engine, 
-                              mass, body_type, 
-                              collision_type, 
-                              elasticity, 
-                              friction, 
-                              shape_edge_radius, 
-                              physics_shape)
-    
-    def spawn(self, 
-              position:Vector = vectors.zero, 
-              angle:float = 0.0, 
-              velocity:Vector = None,
-              visibility:bool = True,
-              lifetime:float = 0.0
-              ):
-        # self.register_components()
-        
-        self.body.spawn()
-        self.position = position
-        self.angle = angle
-        
-        if velocity: self.velocity = velocity
-        if not visibility: self.visibility = False
-        return super().spawn(lifetime)
-    
-    def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = ENV.delta_time
-        if not super().tick(delta_time): return False
-        return True
-    
-    def draw(self):
-        self.body.draw()
-    
-    def _get_visibility(self) -> bool:
-        return self.body.visibility
-    
-    def _set_visibility(self, switch:bool):
-        self.body.visibility = switch
-    
-    visibility:bool = property(_get_visibility, _set_visibility)
-    
-    def _get_position(self) -> Vector:
-        return self.body.position
-    
-    def _set_position(self, position) -> None:
-        self.body.position = position
-    
-    position:Vector = property(_get_position, _set_position)
-    
-    def _get_angle(self) -> float:
-        return self.body.angle
-    
-    def _set_angle(self, angle:float):
-        self.body.angle = angle
-    
-    angle:float = property(_get_angle, _set_angle)
-    
-    def _get_velocity(self) -> Vector:
-        return self.body.velocity
-    
-    def _set_velocity(self, velocity):
-        self.body.velocity = velocity
-    
-    velocity:Vector = property(_get_velocity, _set_velocity)
-    
-    @property
-    def screen_position(self) -> Vector:
-        ''' relative position in viewport '''
-        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
-    
-    @property
-    def forward_vector(self) -> Vector:
-        return self.body.forward_vector
 
-    @property
-    def speed(self) -> float:
-        return self.body.speed
+class ActionComponent(ActorComponent):
+    '''
+    Action : custom functions for owner
+    '''
+    pass
 
 
 class BodyComponent(ActorComponent):
+    __slots__ = ('sprite', 
+                 '_hidden', 
+                 )
     
     def __init__(self, 
                  sprite:Sprite,
@@ -495,14 +449,23 @@ class BodyComponent(ActorComponent):
         super().__init__(**kwargs)
         
         self.sprite:Sprite = sprite
+        self._hidden:bool = False
+        
         if position: self.position = position
         if angle: self.angle = angle
         # self.get_ref() = self.sprite
     
+    # def on_register(self):
+    #     print('body component set',self)
+    
     def get_ref(self):
         return self.sprite
     
+    # def __del__(self):
+        # print('goodbye from body')
+    
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        self.sprite.owner = self.owner
         
         if position is not None: 
             self.position = position
@@ -514,6 +477,16 @@ class BodyComponent(ActorComponent):
     
     def draw(self, *args, **kwargs):
         self.sprite.draw(*args, **kwargs)
+    
+    def hide(self, switch:bool = None):
+        ''' hide sprite and physics body '''
+        if switch is None: switch = not self._hidden
+        self.visibility = switch
+        pass
+    
+    def destroy(self) -> bool:
+        self.sprite.remove_from_sprite_lists()
+        return super().destroy()
     
     def _set_owner(self, owner):
         super()._set_owner(owner)
@@ -555,6 +528,11 @@ class BodyComponent(ActorComponent):
     
     @property
     def speed(self) -> float :
+        ''' different from physics or sprite 
+        
+        :physics = per sec
+        :sprite = per tick
+        '''
         return self.velocity.length
     
     @property
@@ -573,6 +551,7 @@ class BodyComponent(ActorComponent):
 
 class SpriteBody(BodyComponent):
     
+    __slots__ = ()
     def __init__(self, 
                  sprite:Sprite,
                  position:Vector = None,
@@ -587,6 +566,8 @@ class SpriteBody(BodyComponent):
 
 
 class StaticBody(BodyComponent):
+    
+    __slots__ = ('physics', )
     def __init__(self, 
                  sprite:Sprite,
                  position:Vector = None,
@@ -698,6 +679,7 @@ class StaticBody(BodyComponent):
 
 class DynamicBody(StaticBody):
 
+    __slots__ = ()
     def __init__(self, 
                  sprite: Sprite, 
                  position: Vector = None, 
@@ -706,7 +688,7 @@ class DynamicBody(StaticBody):
                  mass:float = 1.0,
                  moment = None,
                  body_type:int = physics_types.dynamic,
-                 collision_type:int = None,
+                 collision_type:int = collision.default,
                  elasticity: float = None,
                  friction: float = 1,
                  shape_edge_radius: float = 0,
@@ -793,6 +775,7 @@ class DynamicBody(StaticBody):
 
 class StaticObject(MObject):
     ''' Actor with simple sprite '''
+    __slots__ = ('body', )
     
     def __init__(self, body:StaticBody, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -828,6 +811,7 @@ class StaticObject(MObject):
 
 class DynamicObject(BaseActor):
     
+    __slots__ = ('body', )
     def __init__(self, 
                  body:DynamicBody,
                  **kwargs) -> None:
@@ -844,11 +828,6 @@ class DynamicObject(BaseActor):
         if initial_impulse:
             self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
-    
-    def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = ENV.delta_time
-        if not super().tick(delta_time): return False
-        return True
     
     def draw(self):
         self.body.draw()
@@ -898,267 +877,6 @@ class DynamicObject(BaseActor):
     def speed(self) -> float:
         return self.body.speed
         
-
-class Body(ActorComponent):
-    """ LEGACY : WILL BE DEPRECATED """
-    '''
-    has size, sprite for draw, move(collision), hit(collision)
-    based on pymunk physics engine
-    가능한 엔진에 종속되지 않도록.
-    '''
-    
-    def __init__(self, 
-                 sprite:Sprite, 
-                 size:Vector = None,
-                 physics_engine:PhysicsEngine = None,
-                 mass:float = 1.0,
-                 body_type:int = None,
-                 collision_type:int = None,
-                 elasticity:float = None,
-                 friction:float = None,
-                 shape_edge_radius:float = 0.0,
-                 physics_shape = None,
-                 ) -> None:
-        super().__init__()
-        self.sprite:Sprite = None
-        ''' for draw. should be expanded for attachment and vfx '''
-        self.physics:PhysicsObject = None
-        ''' for move, hit check
-        body : [mass, moment, type(STATIC, DYNAMIC, KINEMATIC)]
-        shape : [body, size or vertices, radius, collision_type, elasticity, friction]
-        hitbox : use shape or sprite poly
-        '''
-        self._physics_engine:PhysicsEngine = None
-        self.mass_mul:float = 1.0
-        self.mass_add:float = 0.0
-        self.friction_mul:float = 1.0
-        self.friction_add:float = 0.0
-        self.elasticity_mul:float = 1.0
-        self.elasticity_add:float = 0.0
-        
-        if physics_shape is physics_types.circle:
-            rad = max(size.x, size.y) / 2
-            shape = physics_types.circle(body = None, radius = rad)
-            moment = pymunk.moment_for_circle(mass, 0, rad)
-            # moment = PhysicsEngine.MOMENT_INF
-        else:
-            shape = None
-            moment = None
-        self.setup(sprite = sprite, 
-                   physics_engine = physics_engine, 
-                   mass = mass, 
-                   moment = moment, 
-                   body_type = body_type, 
-                   shape = shape, 
-                   collision_type = collision_type, 
-                   elasticity = elasticity, 
-                   friction = friction, 
-                   shape_edge_radius = shape_edge_radius
-                   )
-    
-    def setup(self,
-              sprite:Sprite,
-              physics_engine:PhysicsEngine = None,
-              mass:float = 1,
-              moment:float = 0,
-              body_type:int = None,
-              shape:physics_types.shape = None,
-              collision_type:int = collision.default,
-              elasticity:float = None,
-              friction:float = 0.2,
-              shape_edge_radius:float = 0.0,
-              ):
-        self.sprite = sprite
-        self._physics_engine = physics_engine
-        if self._physics_engine:
-            self.physics = self._physics_engine.add_sprite(sprite = self.sprite,
-                                                           mass = mass,
-                                                           moment_of_inertia = moment,
-                                                           body_type = body_type,
-                                                           shape = shape,
-                                                           elasticity = elasticity,
-                                                           friction = friction,
-                                                           radius = shape_edge_radius,
-                                                           collision_type = collision_type,
-                                                           spawn = False,
-                                                           )
-        
-    @property
-    def has_physics(self) -> bool:
-        if self._physics_engine: return True
-        return False
-    
-    def spawn(self, object_layer:ObjectLayer = None, physics_instance:PhysicsEngine = None):
-        if self.has_physics:
-            self._physics_engine.add_to_space(self.sprite)
-        if object_layer:
-            object_layer.add(self.sprite)
-        return super().spawn()
-    
-    def despawn(self):
-        self.remove()
-    
-    def remove(self):
-        if self.has_physics: self._physics_engine.remove_sprite(self.sprite)
-        if self.sprite: self.sprite.remove_from_sprite_lists()
-        # if self.physics: self.physics
-        # if self.hit_collision: self.hit_collision.remove_from_sprite_lists()
-    
-    def draw(self):
-        self.sprite.draw()
-        if CONFIG.debug_draw: 
-            self.physics.draw()
-    
-    def apply_force_local(self, force:Vector = vectors.zero):
-        if not self.has_physics: self.velocity += force / self.physics.body.mass
-        else: return self.physics.body.apply_force_at_local_point(force)
-    
-    def apply_impulse_local(self, impulse:Vector = vectors.zero):
-        if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
-        return self.physics.body.apply_impulse_at_local_point(impulse)
-    
-    def apply_force_world(self, force:Vector = vectors.zero):
-        if not self.has_physics: self.velocity += force / self.physics.body.mass    ### should revisit later
-        return self.physics.body.apply_force_at_world_point(force, self.position)
-    
-    def apply_impulse_world(self, impulse:Vector = vectors.zero):
-        if not self.has_physics: PhysicsException('Can\'t apply impulse to non-physics object')
-        return self.physics.body.apply_impulse_at_world_point(impulse, self.position)
-    
-    def apply_acceleration_world(self, acceleration:Vector):
-        self.apply_force_world(acceleration * self.mass)
-    
-    def sync(self):
-        ''' mostly not used manually '''
-        if not self.physics: return False
-        if self.physics.body.is_sleeping: return False
-        
-        pos_diff = self.position - self.sprite.position
-        ang_diff = self.angle - self.sprite.angle
-        
-        self.sprite.position = self.position
-        self.sprite.angle = self.angle
-        
-        self.sprite.pymunk_moved(self.physics, pos_diff, ang_diff)
-        return True
-    
-    def _get_visibility(self) -> bool:
-        return self.sprite.visible
-    
-    def _set_visibility(self, switch:bool):
-        self.sprite.visible = switch
-    
-    visibility:bool = property(_get_visibility, _set_visibility)
-        
-    def _get_position(self) -> Vector:
-        if self.physics:
-            return Vector(self.physics.position)
-        return Vector(self.sprite.position)
-    
-    def _set_position(self, position) -> None:
-        if self.physics:
-            self.physics.position = position
-        else: self.sprite.position = position
-    
-    position:Vector = property(_get_position, _set_position)
-    
-    def _get_angle(self) -> float:
-        if self.physics:
-            return self.physics.angle
-        return self.sprite.angle
-    
-    def _set_angle(self, angle:float = 0.0):
-        if self.physics:
-            self.physics.angle = angle
-        else: self.sprite.angle = angle
-    
-    angle:float = property(_get_angle, _set_angle)
-    
-    def _get_velocity(self) -> Vector:
-        if self.physics:
-            return Vector(self.physics.body.velocity)
-        return Vector(self.sprite.velocity)
-    
-    def _set_velocity(self, velocity):
-        if self.physics:
-            self.physics.body.velocity = velocity   ### physics.body.velocity is tuple
-        else: self.sprite.velocity[:] = velocity[:] ### trivial optimization for list
-    
-    velocity:Vector = property(_get_velocity, _set_velocity)
-    
-    def _get_mass(self):
-        return self.physics.body.mass * self.mass_mul + self.mass_add
-    
-    def _set_mass(self, mass:float):
-        self.physics.body.mass = mass
-    
-    mass:float = property(_get_mass, _set_mass)
-    
-    def _get_damping(self):
-        return self.sprite.pymunk.damping
-    
-    def _set_damping(self, damping:float):
-        self.sprite.pymunk.damping = damping
-    
-    damping:float = property(_get_damping, _set_damping)
-    
-    def _get_max_speed(self):
-        return self.sprite.pymunk.max_velocity
-    
-    def _set_max_speed(self, max_speed:int):
-        self.sprite.pymunk.max_velocity = max_speed
-    
-    max_speed:int = property(_get_max_speed, _set_max_speed)
-    
-    def _get_friction(self):
-        return self.physics.shape.friction
-    
-    def _set_friction(self, friction:float):
-        self.physics.shape.friction = friction
-    
-    friction:float = property(_get_friction, _set_friction)
-    """
-    쿨롱 마찰력
-    
-        Some real world example values from Wikipedia (Remember that
-        it is what looks good that is important, not the exact value).
-
-        ==============  ======  ========
-        Material        Other   Friction
-        ==============  ======  ========
-        Aluminium       Steel   0.61
-        Copper          Steel   0.53
-        Brass           Steel   0.51
-        Cast iron       Copper  1.05
-        Cast iron       Zinc    0.85
-        Concrete (wet)  Rubber  0.30
-        Concrete (dry)  Rubber  1.0
-        Concrete        Wood    0.62
-        Copper          Glass   0.68
-        Glass           Glass   0.94
-        Metal           Wood    0.5
-        Polyethene      Steel   0.2
-        Steel           Steel   0.80
-        Steel           Teflon  0.04
-        Teflon (PTFE)   Teflon  0.04
-        Wood            Wood    0.4
-        ==============  ======  ========
-
-    """
-    
-    @property
-    def forward_vector(self) -> Vector:
-        return vectors.right.rotate(self.angle)
-    
-    @property
-    def speed(self):
-        ''' different from physics or sprite 
-        
-        :physics = per sec
-        :sprite = per tick
-        '''
-        return self.velocity.length
-
 
 class App(arcade.Window):
     
@@ -1278,6 +996,10 @@ class View(arcade.View):
 
 
 class Sprite(arcade.Sprite):
+    
+    __slots__ = ('owner',
+                 'collide_with_radius',
+                 )
     def __init__(self, 
                  filename: str = None, 
                  scale: float = 1, 
@@ -1302,6 +1024,7 @@ class SpriteCircle(arcade.SpriteCircle):
                  radius: int = 16, 
                  color: colors = colors.ALLOY_ORANGE, 
                  soft: bool = False):
+        self.owner = None
         super().__init__(radius, color, soft)
 
     def scheduled_remove_from_sprite_lists(self, dt):

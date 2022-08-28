@@ -7,29 +7,6 @@ from lib.foundation import *
 from config import *
 import random, time
 
-class TestCharVanila(arcade.Sprite):
-    def __init__(self, filename: str = None, scale: float = 1):
-        super().__init__(filename, scale)
-
-class TestCharActor(Actor2D):
-    def __init__(self, **kwargs) -> None:
-        self.filename = None
-        super().__init__(**kwargs)
-        self.set_body(Sprite(filename=self.filename))
-    
-    def spawn(self, actor_list:arcade.SpriteList, lifetime=0) -> None:
-        actor_list.append(self.body)
-        return super().spawn(lifetime)
-    
-class TestCircleActor(Actor2D):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.set_body(SpriteCircle(32, soft=False))
-    
-    def spawn(self, actor_list:arcade.SpriteList, lifetime=3.0) -> None:
-        actor_list.append(self.body)
-        return super().spawn(lifetime)
-
 
 class MyWindow(arcade.Window):
     run_counter:int = 0
@@ -123,11 +100,11 @@ class MyGame(arcade.View):
     
     def setup(self):
         print(f'setup-view[{self.window.get_run_counter()}]')
-        self.actor_list = arcade.SpriteList()
-        self.player_sprite = arcade.Sprite(self.image_source, 1)
-        self.player_sprite.center_x = 64
-        self.player_sprite.center_y = 128
-        self.actor_list.append(self.player_sprite)
+        # self.actor_list = arcade.SpriteList()
+        # self.player_sprite = arcade.Sprite(self.image_source, 1)
+        # self.player_sprite.center_x = 64
+        # self.player_sprite.center_y = 128
+        # self.actor_list.append(self.player_sprite)
         # print(f'setup[{self.get_run_counter()}]')
         self._setup = True
         self._pause = False
@@ -135,12 +112,13 @@ class MyGame(arcade.View):
     def test_spawn_character(self):
         # new_char = TestCharVanila(self.image_source, 1)
         # new_actor = TestCharActor(filename = self.image_source)
-        new_actor = TestCircleActor()
-        new_char = new_actor.body
-        new_char.center_x = random.randint(0, default_settings.screen_size.x)
-        new_char.center_y = random.randint(0, default_settings.screen_size.y)
+        # new_actor = TestCircleActor()
+        # new_char = new_actor.body
+        # new_char.center_x = random.randint(0, default_settings.screen_size.x)
+        # new_char.center_y = random.randint(0, default_settings.screen_size.y)
         # self.actor_list.append(new_char)
-        new_actor.spawn(self.actor_list)
+        # new_actor.spawn(self.actor_list)
+        print('spawn_something')
     
     def on_draw(self):
         self.clear()
@@ -149,7 +127,7 @@ class MyGame(arcade.View):
                          arcade.color.WHITE, 
                          font_size=20, 
                          anchor_x='center')
-        self.actor_list.draw()
+        # self.actor_list.draw()
         print(f'draw-view[{self.window.get_run_counter()}]')
         self.check_prev_key('draw-view')
         

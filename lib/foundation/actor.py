@@ -48,10 +48,11 @@ class Projectile(DynamicBody):
     def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
         return super().spawn(spawn_to, position, angle)
 
+
 class AIController(ActorComponent):
     
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.move_path = None
     
     def tick(self, delta_time: float) -> bool:
@@ -67,14 +68,14 @@ class InteractionHandler(ActorComponent):
     '''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.others:list[Actor2D] = []
+        self.others:list[BaseActor] = []
         
-    def begin_overlap(self, other:Actor2D):
+    def begin_overlap(self, other:BaseActor):
         self.others.append(other)
     
-    def end_overlap(self, other:Actor2D):
+    def end_overlap(self, other:BaseActor):
         self.others.remove(other)
-      
+    
 
 class CameraHandler(ActorComponent):
     '''handling actor camera
@@ -398,220 +399,6 @@ class PhysicsMovement(ActorComponent):
         self.turn(angle)
     
 
-class Actor2D(MObject):
-    ''' top-down based actor object which has body, position, rotation, collision '''
-    def __init__(self, 
-                 body:Sprite = None, 
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.body:Sprite = None
-        self.body_movement:Sprite = None
-        ''' actual body to be rendered. (i.e. pygame.Surface, arcade.Sprite, ...) '''
-        # self.attachments:list[Sprite] = []
-        self.size = get_from_dict(kwargs, 'size', DEFAULT_TILE_SIZE)
-        
-        self.set_body(body)
-        self.visibility = get_from_dict(kwargs, 'visibility', True)
-        ''' diameter '''
-        self.tick_group = []
-        ''' tick group '''
-    
-    def set_body(self, body:Sprite = None, body_movement:Sprite = None) -> None:
-        if self.body: self.remove_body()
-        self.body = body or SpriteCircle(self.size // 2)
-        self.body_movement = self.get_physics_body()
-        
-        self.body.owner = self
-    
-    def get_physics_body(self) -> Sprite:
-        '''
-        could be override without super()
-        
-        like, return Capsule(self.size // 2)
-        '''
-        return None
-        
-    def spawn(self, 
-              position:Vector = Vector(), 
-              angle:float = None, 
-              draw_layer:ObjectLayer = None, 
-              movable_layer:ObjectLayer = None,
-              lifetime=0) -> None:
-        '''
-        set position, rotation, register body and component
-        '''
-        self.position = position
-        self.angle = angle
-        # if sprite_list:
-        self.register_body(draw_layer, movable_layer)
-        self.register_components()
-        return super().spawn(lifetime)
-    
-    def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = ENV.delta_time
-        if not super().tick(delta_time): return False
-        if self.tick_group:
-            for ticker in self.tick_group:
-                ticker.tick(delta_time)
-                # print('character_tick', delta_time)
-        return True
-    
-    def destroy(self) -> bool:
-        if self.body:
-            self.remove_body()
-            self.body = None
-        return super().destroy()
-    
-    # def add_attachment(self, )
-    
-    def _get_position(self) -> Vector:
-        if not self.body: return False
-        # if self.body_movement:
-        #     return Vector(self.body_movement.position)
-        return Vector(self.body.position)
-    
-    def _set_position(self, new_position:Vector = Vector(0., 0.)) -> bool:
-        if not self.body: return False
-        if self.body_movement:
-            self.body_movement.position = new_position
-            self.body.position = new_position
-        else:
-            self.body.position = new_position
-        return True
-    
-    # @classmethod
-    def check_body(f):
-        @functools.wraps(f)
-        def wrapper(self, *args, **kwargs):
-            if not self.body: return False
-            return f(self, *args, **kwargs)
-        return wrapper
-
-    
-    @check_body
-    def _get_rotation(self) -> float:
-        if self.body_movement:
-            return self.body_movement.angle
-        return self.body.angle
-    
-    @check_body
-    def _set_rotation(self, rotation:float = 0.0) -> bool:
-        if self.body_movement:
-            self.body_movement.angle = rotation
-            self.body.angle = self.body_movement.angle
-        else:
-            self.body.angle = rotation
-        return True
-    
-    @check_body
-    def _get_visibility(self) -> bool:
-        return self.body.visible
-    
-    @check_body
-    def _set_visibility(self, switch:bool = None):
-        if switch is None: switch = not switch
-        self.body.visible = switch
-        
-    # @check_body
-    def _get_velocity(self) -> Vector:
-        if self.body_movement:
-            return Vector(self.body_movement.velocity)
-        return Vector(self.body.velocity)
-    
-    # @check_body
-    def _set_velocity(self, velocity:Vector = Vector()):
-        if self.body_movement:
-            self.body_movement.velocity = list(velocity)
-            # self.body.velocity = list(velocity)
-            # self.body.velocity = self.body_movement.velocity
-            self.body.position = self.body_movement.position    # 좋지 않음. 별도의 바디 컴포넌트를 만들어 붙여야겠음.
-            # print(self.body.velocity)
-        else:
-            self.body.velocity = list(velocity)
-        
-    def register_components(self):
-        for k in self.__dict__:
-            if isinstance(self.__dict__[k], (ActorComponent, )): 
-                if isinstance(self.__dict__[k], ActorComponent):
-                    self.__dict__[k].owner = self
-                    ''' for components that have owner '''
-                if hasattr(self.__dict__[k], 'tick'):
-                    self.tick_group.append(self.__dict__[k])
-                    ''' for components that have tick '''
-    
-    @check_body
-    def register_body(self, sprite_list:ObjectLayer, movable_list:ObjectLayer):
-        self.body.collides_with_radius = True
-        if self.body_movement is None:
-            movable_list.append(self.body)
-        else:
-            movable_list.append(self.body_movement)
-        return sprite_list.append(self.body)
-    
-    @check_body
-    def remove_body(self):
-        if self.body_movement:
-            self.body_movement.remove_from_sprite_lists()
-        return self.body.remove_from_sprite_lists()
-    
-    visibility:bool = property(_get_visibility, _set_visibility)
-    position:Vector = property(_get_position, _set_position)
-    angle:float = property(_get_rotation, _set_rotation)
-    velocity:Vector = property(_get_velocity, _set_velocity)
-    
-    @property
-    @check_body
-    def forward_vector(self):
-        return Vector.directional(self.angle)
-    
-    @property
-    def rel_position(self) -> Vector:
-        ''' relative position in viewport '''
-        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
-
-
-class Character2D(Actor2D):
-    
-    def __init__(self, body: Sprite = None, hp: float = 100, **kwargs) -> None:
-        super().__init__(body, **kwargs)
-        self.hp = hp
-        self.movement = CharacterMovement()
-        self.camera = CameraHandler()
-        self.action = None
-        self.controller = None
-        
-        self.constructor()
-    
-    def constructor(self):
-        pass
-    
-    def get_physics_body(self) -> Sprite:
-        return Capsule(self.size // 2)
-    
-    def tick(self, delta_time: float = None) -> bool:
-        if not super().tick(delta_time): return False
-        direction = ENV.direction_input
-        if direction: self.movement.turn_toward(direction)
-        self.movement.move(ENV.move_input)
-        
-    def apply_damage(self, damage:float):
-        self.hp -= damage
-    
-    @property
-    def is_alive(self) -> bool:
-        if self.hp <= 0: return False
-        return super().is_alive
-
-
-class NPC(Character2D):
-    
-    def constructor(self):
-        self.controller = AIController()
-        
-    def get_physics_body(self) -> Sprite:
-        return None
-
-
 class Pawn(DynamicObject):
     
     def __init__(self, 
@@ -648,4 +435,5 @@ class Character(Pawn):
         if direction: self.movement.turn_toward(direction)
         self.movement.move(ENV.move_input)
         ENV.debug_text['player_speed'] = round(self.speed, 1)
+        return True
         
