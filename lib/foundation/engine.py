@@ -236,6 +236,8 @@ class Environment(metaclass = SingletonType):
 
 
 class MObject(object):
+    __slots__ = ('id', '_alive', '_lifetime', '_update_tick', '_spawned', )
+    
     def __init__(self, **kwargs) -> None:
         self.id:str = self.get_id()
         """set id by id()"""
@@ -314,6 +316,8 @@ class MObject(object):
 
 class ActorComponent(MObject):
     '''component base class'''
+    __slots__ = ('_owner', )
+    
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._owner:BaseActor = None
@@ -340,10 +344,7 @@ class ActorComponent(MObject):
     
     def on_destroy(self):
         pass
-    
-    def __del__(self):
-        print('goodbye from actorcomponent')
-    
+
     def _get_owner(self):
         return self._owner or self
     
@@ -355,6 +356,7 @@ class ActorComponent(MObject):
 
 class BaseActor(MObject):
     ''' can have actor components '''
+    __slots__ = ('tick_components', )
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.tick_components:list[ActorComponent] = []
@@ -398,9 +400,6 @@ class BaseActor(MObject):
         self.tick_components = []
         return super().destroy()
     
-    def __del__(self):
-        print('goodbye from actor')
-
 
 class TestComponent(ActorComponent):
     
@@ -424,6 +423,7 @@ class TestComponent(ActorComponent):
     
 
 class TestActor(BaseActor):
+    __slots__ = ()
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.component = TestComponent()
@@ -535,6 +535,9 @@ class Actor(BaseActor):
 
 
 class BodyComponent(ActorComponent):
+    __slots__ = ('sprite', 
+                 '_hidden', 
+                 )
     
     def __init__(self, 
                  sprite:Sprite,
@@ -551,8 +554,8 @@ class BodyComponent(ActorComponent):
     def get_ref(self):
         return self.sprite
     
-    def __del__(self):
-        print('goodbye from body')
+    # def __del__(self):
+        # print('goodbye from body')
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         
@@ -629,6 +632,7 @@ class BodyComponent(ActorComponent):
 
 class SpriteBody(BodyComponent):
     
+    __slots__ = ()
     def __init__(self, 
                  sprite:Sprite,
                  position:Vector = None,
@@ -643,6 +647,8 @@ class SpriteBody(BodyComponent):
 
 
 class StaticBody(BodyComponent):
+    
+    __slots__ = ('physics', )
     def __init__(self, 
                  sprite:Sprite,
                  position:Vector = None,
@@ -754,6 +760,7 @@ class StaticBody(BodyComponent):
 
 class DynamicBody(StaticBody):
 
+    __slots__ = ()
     def __init__(self, 
                  sprite: Sprite, 
                  position: Vector = None, 
@@ -762,7 +769,7 @@ class DynamicBody(StaticBody):
                  mass:float = 1.0,
                  moment = None,
                  body_type:int = physics_types.dynamic,
-                 collision_type:int = None,
+                 collision_type:int = collision.default,
                  elasticity: float = None,
                  friction: float = 1,
                  shape_edge_radius: float = 0,
@@ -849,6 +856,7 @@ class DynamicBody(StaticBody):
 
 class StaticObject(MObject):
     ''' Actor with simple sprite '''
+    __slots__ = ('body', )
     
     def __init__(self, body:StaticBody, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -884,6 +892,7 @@ class StaticObject(MObject):
 
 class DynamicObject(BaseActor):
     
+    __slots__ = ('body', )
     def __init__(self, 
                  body:DynamicBody,
                  **kwargs) -> None:
@@ -1329,6 +1338,10 @@ class View(arcade.View):
 
 
 class Sprite(arcade.Sprite):
+    
+    __slots__ = ('owner',
+                 'collide_with_radius',
+                 )
     def __init__(self, 
                  filename: str = None, 
                  scale: float = 1, 
