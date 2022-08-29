@@ -354,7 +354,7 @@ class ActorComponent(MObject):
     owner = property(_get_owner, _set_owner)
 
 
-class BaseActor(MObject):
+class Actor(MObject):
     ''' can have actor components '''
     __slots__ = ('tick_components', )
     def __init__(self, **kwargs) -> None:
@@ -400,41 +400,6 @@ class BaseActor(MObject):
         self.tick_components = []
         return super().destroy()
     
-
-class TestComponent(ActorComponent):
-    
-    p1:str = 'property 1'
-    
-    def _get_p2(self):
-        return 'property 2'
-    
-    def _set_p2(self, content):
-        self.p1 = content
-    
-    p2 = property(_get_p2, _set_p2)
-    
-    @property
-    def p3(self):
-        return 'property 3'
-    
-    def on_register(self):
-        print('test component spawnned')
-        self.owner.p1 = self.p1
-    
-
-class TestActor(BaseActor):
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.component = TestComponent()
-
-
-class ActionComponent(ActorComponent):
-    '''
-    Action : custom functions for owner
-    '''
-    pass
-
 
 class BodyComponent(ActorComponent):
     __slots__ = ('sprite', 
@@ -548,335 +513,6 @@ class BodyComponent(ActorComponent):
         ''' Layers(ObjectLayer list) where this body is '''
         return self.sprite.sprite_lists
 
-
-class SpriteBody(BodyComponent):
-    
-    __slots__ = ()
-    def __init__(self, 
-                 sprite:Sprite,
-                 position:Vector = None,
-                 angle:float = None,
-                 spawn_to:ObjectLayer = None,
-                 **kwargs) -> None:
-        super().__init__(sprite, position, angle, **kwargs)
-        
-        if spawn_to is not None:
-            ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
-            self.spawn(spawn_to, position, angle)
-
-
-class StaticBody(BodyComponent):
-    
-    __slots__ = ('physics', )
-    def __init__(self, 
-                 sprite:Sprite,
-                 position:Vector = None,
-                 angle:float = None,
-                 spawn_to:ObjectLayer = None,
-                 mass = 0,
-                 moment = None,
-                 body_type = physics_types.static,
-                 collision_type = collision.wall,
-                 elasticity:float = None,
-                 friction:float = 1.0,
-                 shape_edge_radius:float = 0.0,
-                 physics_shape:Union[physics_types.shape, type] = physics_types.poly,
-                 offset_circle:Vector = vectors.zero,
-                 max_speed:float = None,
-                 custom_gravity:Vector = None,
-                 custom_damping:float = None,
-                 **kwargs) -> None:
-
-        self.physics:PhysicsObject = None
-        super().__init__(sprite, position, angle, **kwargs)
-        
-        self.physics = setup_physics_object(sprite=sprite,
-                                            mass=mass,
-                                            moment=moment,
-                                            friction=friction,
-                                            elasticity=elasticity,
-                                            body_type=body_type,
-                                            collision_type=collision_type,
-                                            physics_shape=physics_shape,
-                                            shape_edge_radius=shape_edge_radius,
-                                            offset_circle=offset_circle,
-                                            max_speed=max_speed,
-                                            custom_gravity=custom_gravity,
-                                            custom_damping=custom_damping,
-                                            )
-        
-        ### not working...
-        # if body_type == physics_types.static:
-        #     self._set_position = self.cannot_move
-        #     self._set_angle = self.cannot_move
-        
-        if spawn_to is not None:
-            ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
-            self.spawn(spawn_to)
-    
-    def get_ref(self):
-        return self.physics or self.sprite
-    
-    def cannot_move(self, *args, **kwargs):
-        raise PhysicsException('CAN NOT OVERRIDING POSITION, ANGLE')
-    
-    def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
-        ### need to sync sprite position when _ref_body is physics
-        if position is not None:
-            self.sprite.position = position
-        if angle is not None:
-            self.sprite.angle = angle
-        
-        return super().spawn(spawn_to, position, angle)
-
-    def draw(self, *args, **kwargs):
-        super().draw(*args, **kwargs)
-        if CONFIG.debug_draw:
-            self.physics.draw()
-    
-    def _set_position(self, position) -> None:
-        if not self.physics: self.sprite.position = position
-        else: raise PhysicsException(f'Can\'t move static object by overriding position = {position}. Set position with StaticActor.')
-        
-    position:Vector = property(BodyComponent._get_position, _set_position)  
-    
-    def _set_velocity(self, velocity):
-        if not self.physics: self.sprite.velocity = velocity
-        else: raise PhysicsException(f'Can\'t move static object by overriding velocity = {velocity}. Set position with StaticActor.')
-
-    velocity: Vector = property(BodyComponent._get_veloticy, _set_velocity)
-    
-    def _set_angle(self, angle: float):
-        if not self.physics: self.sprite.angle = angle
-        else: raise PhysicsException(f'Can\'t rotate static object by set angle = {angle}. Set angle with StaticActor.')
-
-    angle:float = property(BodyComponent._get_angle, _set_angle)
-    
-    def _get_mass(self):
-        return self.physics.mass
-    
-    def _set_mass(self, mass:float):
-        self.physics.mass = mass
-    
-    mass:float = property(_get_mass, _set_mass)
-    
-    def _get_elasticity(self):
-        return self.physics.elasticity
-    
-    def _set_elasticity(self, elasticity:float):
-        self.physics.elasticity = elasticity
-    
-    elasticity:float = property(_get_elasticity, _set_elasticity)
-    
-    def _get_friction(self):
-        return self.physics.friction
-    
-    def _set_friction(self, friction:float):
-        self.physics.friction = friction
-    
-    friction:float = property(_get_friction, _set_friction)
-
-
-class DynamicBody(StaticBody):
-
-    __slots__ = ()
-    def __init__(self, 
-                 sprite: Sprite, 
-                 position: Vector = None, 
-                 angle: float = None,
-                 spawn_to: ObjectLayer = None,
-                 mass:float = 1.0,
-                 moment = None,
-                 body_type:int = physics_types.dynamic,
-                 collision_type:int = collision.default,
-                 elasticity: float = None,
-                 friction: float = 1,
-                 shape_edge_radius: float = 0,
-                 physics_shape: Union[physics_types.shape, type] = physics_types.circle,
-                 offset_circle: Vector = vectors.zero,
-                 max_speed:float = None,
-                 custom_gravity:Vector = None,
-                 custom_damping:float = None,
-                 **kwargs) -> None:
-        
-        super().__init__(sprite=sprite,
-                         position=position,
-                         angle=angle,
-                         spawn_to=spawn_to,
-                         mass=mass,
-                         moment=moment,
-                         body_type=body_type,
-                         collision_type=collision_type,
-                         elasticity=elasticity,
-                         friction=friction,
-                         shape_edge_radius=shape_edge_radius,
-                         physics_shape=physics_shape,
-                         offset_circle=offset_circle,
-                         max_speed=max_speed,
-                         custom_gravity=custom_gravity,
-                         custom_damping=custom_damping,
-                         **kwargs)
-
-    def apply_force_local(self, force:Vector = vectors.zero):
-        return self.physics.body.apply_force_at_local_point(force)
-    
-    def apply_impulse_local(self, impulse:Vector = vectors.zero):
-        return self.physics.body.apply_impulse_at_local_point(impulse)
-    
-    def apply_force_world(self, force:Vector = vectors.zero):
-        return self.physics.body.apply_force_at_world_point(force, self.position)
-    
-    def apply_impulse_world(self, impulse:Vector = vectors.zero):
-        return self.physics.body.apply_impulse_at_world_point(impulse, self.position)
-    
-    def apply_acceleration_world(self, acceleration:Vector):
-        self.apply_force_world(acceleration * self.mass)
-    
-    def _set_position(self, position) -> None:
-        if self.physics:
-            self.physics.body.position = position
-        self.sprite.position = position
-    
-    position:Vector = property(BodyComponent._get_position, _set_position)    
-    
-    def _set_angle(self, angle:float = 0.0):
-        if self.physics:
-            self.physics.body.angle = math.radians(angle)
-        self.sprite.angle = angle
-
-    angle:float = property(BodyComponent._get_angle, _set_angle)
-    
-    velocity: Vector = property(BodyComponent._get_veloticy, BodyComponent._set_velocity)
-    
-    def _get_gravity(self):
-        return self.sprite.pymunk.gravity
-    
-    def _set_gravity(self, gravity:Vector):
-        self.sprite.pymunk.gravity = gravity
-    
-    gravity:float = property(_get_gravity, _set_gravity)
-    
-    def _get_damping(self):
-        return self.sprite.pymunk.damping
-    
-    def _set_damping(self, damping:float):
-        self.sprite.pymunk.damping = damping
-    
-    damping:float = property(_get_damping, _set_damping)
-    
-    def _get_max_speed(self):
-        return self.sprite.pymunk.max_velocity
-    
-    def _set_max_speed(self, max_speed:int):
-        self.sprite.pymunk.max_velocity = max_speed
-    
-    max_speed:int = property(_get_max_speed, _set_max_speed)
-
-
-class StaticObject(MObject):
-    ''' Actor with simple sprite '''
-    __slots__ = ('body', )
-    
-    def __init__(self, body:StaticBody, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.body:StaticBody = body
-    
-    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
-        self.body.spawn(spawn_to, position, angle)
-        return super().spawn()
-    
-    def draw(self):
-        self.body.draw()
-    
-    def _get_position(self) -> Vector:
-        return self.body.position
-    
-    def _set_position(self, position) -> None:
-        self.body.sprite.position = position
-        self.body.physics.position = position
-        self.body.physics.space.reindex_static()
-        
-    position:Vector = property(_get_position, _set_position)
-    
-    def _get_angle(self) -> float:
-        return self.body.angle
-    
-    def _set_angle(self, angle:float = 0.0):
-        self.body.sprite.angle = angle
-        self.body.physics.angle = angle
-        self.body.physics.space.reindex_static()
-    
-    angle:float = property(_get_angle, _set_angle)
-
-
-class DynamicObject(BaseActor):
-    
-    __slots__ = ('body', )
-    def __init__(self, 
-                 body:DynamicBody,
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.body:DynamicBody = body
-    
-    def spawn(self, 
-              spawn_to:ObjectLayer, 
-              position:Vector,
-              angle:float = None,
-              initial_impulse:Vector = None,
-              lifetime: float = None) -> None:
-        self.body.spawn(spawn_to, position, angle)
-        if initial_impulse:
-            self.body.apply_impulse_world(initial_impulse)
-        return super().spawn(lifetime)
-    
-    def draw(self):
-        self.body.draw()
-    
-    def _get_visibility(self) -> bool:
-        return self.body.visibility
-    
-    def _set_visibility(self, switch:bool):
-        self.body.visibility = switch
-    
-    visibility:bool = property(_get_visibility, _set_visibility)
-    
-    def _get_position(self) -> Vector:
-        return self.body.position
-    
-    def _set_position(self, position) -> None:
-        self.body.position = position
-    
-    position:Vector = property(_get_position, _set_position)
-    
-    def _get_angle(self) -> float:
-        return self.body.angle
-    
-    def _set_angle(self, angle:float):
-        self.body.angle = angle
-    
-    angle:float = property(_get_angle, _set_angle)
-    
-    def _get_velocity(self) -> Vector:
-        return self.body.velocity
-    
-    def _set_velocity(self, velocity):
-        self.body.velocity = velocity
-    
-    velocity:Vector = property(_get_velocity, _set_velocity)
-    
-    @property
-    def screen_position(self) -> Vector:
-        ''' relative position in viewport '''
-        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
-    
-    @property
-    def forward_vector(self) -> Vector:
-        return self.body.forward_vector
-
-    @property
-    def speed(self) -> float:
-        return self.body.speed
-        
 
 class App(arcade.Window):
     
@@ -1068,10 +704,10 @@ class ObjectLayer(arcade.SpriteList):
         super().__init__(use_spatial_hash, spatial_hash_cell_size, is_static, atlas, capacity, lazy, visible)
         self.physics_instance = physics_instance
         
-    def add(self, obj:Union[BaseActor, BodyComponent, Sprite, SpriteCircle]):
+    def add(self, obj:Union[Actor, BodyComponent, Sprite, SpriteCircle]):
         sprite:Sprite = None
         body:BodyComponent = None
-        if isinstance(obj, BaseActor):
+        if isinstance(obj, Actor):
             sprite = obj.body.sprite
             body = obj.body
         elif isinstance(obj, (BodyComponent, )):
@@ -1090,10 +726,10 @@ class ObjectLayer(arcade.SpriteList):
                     self.physics_instance.add_object(sprite, body.physics.body, body.physics.shape)
                     self.physics_instance.add_to_space(sprite)
                     
-    def remove(self, obj:Union[BaseActor, BodyComponent, Sprite, SpriteCircle]):
+    def remove(self, obj:Union[Actor, BodyComponent, Sprite, SpriteCircle]):
         sprite:Sprite = None
         # body:SimpleBody = None
-        if isinstance(obj, BaseActor):
+        if isinstance(obj, Actor):
             sprite = obj.body.sprite
             # body = obj.body
         elif isinstance(obj, BodyComponent):

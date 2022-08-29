@@ -1,13 +1,120 @@
+"""
+Base actors, aka game objects
+
+"""
 from __future__ import annotations
 
 import math, functools
 from config.engine import *
 
-from lib.foundation.base import *
-from lib.foundation.clock import *
 from lib.foundation.engine import *
-from lib.foundation.physics import *
+from lib.foundation.component import *
 
+
+class StaticObject(MObject):
+    ''' Actor with simple sprite '''
+    __slots__ = ('body', )
+    
+    def __init__(self, body:StaticBody, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:StaticBody = body
+    
+    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        self.body.spawn(spawn_to, position, angle)
+        return super().spawn()
+    
+    def draw(self):
+        self.body.draw()
+    
+    def _get_position(self) -> Vector:
+        return self.body.position
+    
+    def _set_position(self, position) -> None:
+        self.body.sprite.position = position
+        self.body.physics.position = position
+        self.body.physics.space.reindex_static()
+        
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        return self.body.angle
+    
+    def _set_angle(self, angle:float = 0.0):
+        self.body.sprite.angle = angle
+        self.body.physics.angle = angle
+        self.body.physics.space.reindex_static()
+    
+    angle:float = property(_get_angle, _set_angle)
+
+
+class DynamicObject(Actor):
+    
+    __slots__ = ('body', )
+    def __init__(self, 
+                 body:DynamicBody,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:DynamicBody = body
+    
+    def spawn(self, 
+              spawn_to:ObjectLayer, 
+              position:Vector,
+              angle:float = None,
+              initial_impulse:Vector = None,
+              lifetime: float = None) -> None:
+        self.body.spawn(spawn_to, position, angle)
+        if initial_impulse:
+            self.body.apply_impulse_world(initial_impulse)
+        return super().spawn(lifetime)
+    
+    def draw(self):
+        self.body.draw()
+    
+    def _get_visibility(self) -> bool:
+        return self.body.visibility
+    
+    def _set_visibility(self, switch:bool):
+        self.body.visibility = switch
+    
+    visibility:bool = property(_get_visibility, _set_visibility)
+    
+    def _get_position(self) -> Vector:
+        return self.body.position
+    
+    def _set_position(self, position) -> None:
+        self.body.position = position
+    
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        return self.body.angle
+    
+    def _set_angle(self, angle:float):
+        self.body.angle = angle
+    
+    angle:float = property(_get_angle, _set_angle)
+    
+    def _get_velocity(self) -> Vector:
+        return self.body.velocity
+    
+    def _set_velocity(self, velocity):
+        self.body.velocity = velocity
+    
+    velocity:Vector = property(_get_velocity, _set_velocity)
+    
+    @property
+    def screen_position(self) -> Vector:
+        ''' relative position in viewport '''
+        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+    
+    @property
+    def forward_vector(self) -> Vector:
+        return self.body.forward_vector
+
+    @property
+    def speed(self) -> float:
+        return self.body.speed
+        
 
 class Projectile(DynamicBody):
     
@@ -68,12 +175,12 @@ class InteractionHandler(ActorComponent):
     '''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.others:list[BaseActor] = []
+        self.others:list[Actor] = []
         
-    def begin_overlap(self, other:BaseActor):
+    def begin_overlap(self, other:Actor):
         self.others.append(other)
     
-    def end_overlap(self, other:BaseActor):
+    def end_overlap(self, other:Actor):
         self.others.remove(other)
     
 
@@ -142,263 +249,6 @@ class CameraHandler(ActorComponent):
         return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 
-class SpriteMovement(ActorComponent):
-    '''movement component for character'''
-    def __init__(self, 
-                 capsule_radius = 16, 
-                 max_speed_run = 250, 
-                 max_speed_walk = 70, 
-                 acceleration = 25, 
-                 braking = 20, 
-                 max_rotation_speed = 1080, 
-                 rotation_interp_speed = 3, 
-                 ) -> None:
-        super().__init__()
-        self.size = capsule_radius
-        
-        self.max_speed_run = max_speed_run
-        ''' pixel per sec '''
-        self.max_speed_walk = max_speed_walk
-        ''' pixel per sec '''
-        self.max_rotation_speed = max_rotation_speed
-        ''' degree per sec '''
-        self.rotation_interp_speed = rotation_interp_speed
-        
-        self.acceleration = acceleration
-        ''' speed per sec^2 '''
-        self._braking = braking if braking is not None else acceleration
-        ''' default braking friction. if set to 0, no braking '''
-        self._last_tick_speed = 0.0
-        self.move_input:Vector = Vector()
-        self.desired_rotation:float = 0.0
-        
-        self._speed_debug_val = avg_generator(0, 60)
-        next(self._speed_debug_val)
-        self._debug_speedq = []
-        self._debug_braking_time = 0
-        
-    def tick(self, delta_time:float = None) -> bool:
-        if not delta_time: return False
-        if not super().tick(delta_time): return False
-        
-        self._set_movement(delta_time)
-        self._set_heading(delta_time)
-        
-        ENV.debug_text['player_speed'] = self.speed_avg // delta_time
-        # ENV.debug_text['player_heading'] = self.rotation
-    
-    def _set_movement(self, delta_time:float):
-        ''' set movement of tick by user input '''
-        # self._debug_check_speed(delta_time)
-        # print(self.speed_avg)
-        if self.move_input is None: return False
-        if self.move_input.near_zero():
-            ''' stop / braking '''
-            if self.velocity.is_zero: return False
-            # if not self._braking_start_speed:
-            #     self._braking_start_speed = self.velocity.length
-            
-            # if not self.velocity.near_zero(0.01):
-            if not math.isclose(self._last_tick_speed, 0, abs_tol=0.01):
-                # self.velocity += -1 * self.velocity.unit * min(self.braking * delta_time, self.speed)
-                braking_ratio = clamp((1 - self.braking * delta_time / self._last_tick_speed), 0.0, 1.0)
-                # print(round(self._debug_braking_time,1) ,braking_ratio)
-                self.velocity *= braking_ratio
-                # self.velocity = self.velocity - self.velocity.unit * self.braking * delta_time
-                self._debug_braking_time += delta_time
-                # print(self.speed, round(self.sec_counter, 1))
-                return True
-            else:
-                self.velocity = Vector()
-                return False
-        
-        accel = self.acceleration
-        
-        max_speed = map_range_attenuation(self.move_input.length, 0.7, 1, 0, self.max_speed_walk, self.max_speed_run)
-        max_speed *= self._get_directional_speed_multiplier()
-        ''' apply directional speed limit '''
-        self.velocity = (self.velocity + self.move_input.unit * accel * delta_time).clamp_length(max_speed * delta_time)
-        self._last_tick_speed = self.velocity.length
-        self._debug_braking_time = 0.0
-        
-        ### debug start
-        # a = max_speed * delta_time
-        # b = self.velocity.length
-        # if abs(a - b) > 0.001:
-        #     if b > 150:
-        #         print('missing something')
-        ### debug end
-        
-        return True
-        
-    def _debug_check_speed(self, delta_time):
-        if len(self._debug_speedq) > 10: self._debug_speedq.pop(0)
-        self._debug_speedq.append(self.velocity.length / delta_time)
-        print(round(self._debug_braking_time, 1), sum(self._debug_speedq) // len(self._debug_speedq))
-    
-    @property
-    def speed_avg(self):
-        return self._speed_debug_val.send(self.velocity.length)
-    
-    def _set_heading(self, delta_time:float):
-        ''' set player rotation per tick '''
-        if self.rotation == self.desired_rotation: return False
-        if math.isclose(self.rotation, self.desired_rotation):
-            self.rotation = self.desired_rotation
-            return False
-
-        rot = rinterp_to(self.rotation, self.desired_rotation, delta_time, self.rotation_interp_speed)
-        # rot = self.desired_rotation
-        self.rotation = get_positive_angle(rot)
-        return True
-    
-    def _get_directional_speed_multiplier(self):
-        angle = abs(get_shortest_angle(self.rotation, self.velocity.argument()))
-        return get_curve_value(angle, CONFIG.directional_speed)
-    
-    def move(self, input:Vector = Vector()):
-        self.move_input = input
-        # if not self.desired_velocity.almost_there(input * self.max_speed):
-        # if self.velocity.almost_there(self.desired_velocity): return False
-        
-        # if velocity.is_zero: accel = self.braking
-        # else: accel = self.acceleration
-    
-    def turn_toward(self, abs_position:Vector = Vector()):
-        ''' turn character to an absolute position '''
-        # print(f'player position {self.owner.position}, mouse position {abs_position}')
-        angle = (abs_position - self.owner.position).argument()
-        self.turn(angle)
-    
-    def turn_toward_rel(self, rel_position:Vector = Vector()):
-        angle = ()
-    
-    def turn_angle(self, angle:float = 0.0):
-        if not angle: return False
-        self.desired_rotation += angle
-    
-    def turn_left(self, angle:float = 0.0):
-        ''' turn counter clockwise '''
-        return self.turn_angle(angle)
-    
-    def turn_right(self, angle:float = 0.0):
-        ''' turn clockwise '''
-        return self.turn_angle(-angle)
-    
-    def turn(self, rotation:float = 0.0):
-        self.desired_rotation = rotation
-    
-    def stop(self):
-        self.move()
-    
-    # def move_forward(self, speed):
-    #     self.owner.body.forward(speed)
-    
-    def _get_velocity(self) -> Vector:
-        return self.owner.velocity
-    
-    def _set_velocity(self, velocity:Vector = Vector()):
-        self.owner.velocity = velocity
-    
-    velocity:Vector = property(_get_velocity, _set_velocity)
-    
-    def _get_rotation(self):
-        return get_positive_angle(self.owner.angle)
-    
-    def _set_rotation(self, rotation:float):
-        self.owner.angle = get_positive_angle(rotation)
-    
-    rotation:float = property(_get_rotation, _set_rotation)
-    angle:float = property(_get_rotation, _set_rotation)
-    
-    @property
-    def speed(self) -> float:
-        ''' speed per sec '''
-        return self.speed_tick / ENV.delta_time   # need to be removed
-    
-    @property
-    def speed_tick(self) -> float:
-        ''' speed per tick '''
-        return self.owner.velocity.length
-    
-    @property
-    def braking(self) -> float:
-        if hasattr(self.owner, 'braking_friction'):
-            return self._braking * self.owner.braking_friction
-        else: return self._braking
-    
-
-class PhysicsMovement(ActorComponent):
-    ''' movement handler for actor based on pymunk physics engine '''
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.move_direction:Vector = None
-        self.desired_angle:float = 0.0
-        self.rotation_interp_speed = 3.0
-        self.stopped = True
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        self._set_movement(delta_time)
-        self._set_heading(delta_time)
-    
-    def _set_movement(self, delta_time:float):
-        if not self.move_direction: return False
-        if self.move_direction.near_zero():
-            ''' stop '''
-            if self.owner.velocity.is_zero: return False
-            if self.owner.velocity.near_zero():
-                self.stopped = True
-                self.owner.velocity = vectors.zero
-        else:
-            # self.owner.velocity = self.move_direction * 250
-            angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.argument()))
-            # speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
-            speed = 60 ### damping 0, force 10000 => max_spd 166.6 (1/60)
-            '''
-            위의 속도는 초당 픽셀. 프레임당 픽셀은 speed / fps
-            1초간 감소하는 속도의 양은 1 - damping
-            물리 계산하기 귀찮은데 선형 회귀를 써야하나;;;
-            speed / (1 - damping)
-            '''
-            # desired_force = speed / (1- ENV.physics_engine.damping)
-            # print(desired_force)
-            
-            if self.stopped:
-                ''' 정지 상태에서 가속 '''
-                schedule_once(self._foo_print, 1)
-            
-            self.owner.body.apply_force_world(self.move_direction * 1000)
-            self.stopped = False
-    
-    def _foo_print(self, t):
-        print(self.owner.speed)
-    
-    def _set_heading(self, delta_time:float):
-        ''' set player rotation per tick '''
-        if self.owner.angle == self.desired_angle: return False
-        if math.isclose(self.owner.angle, self.desired_angle):
-            self.owner.angle = self.desired_angle
-            return False
-
-        rot = rinterp_to(self.owner.angle, self.desired_angle, delta_time, self.rotation_interp_speed)
-        # rot = self.desired_rotation
-        self.owner.angle = get_positive_angle(rot)
-        return True
-    
-    def move(self, direction:Vector = vectors.zero):
-        self.move_direction = direction
-    
-    def turn(self, angle:float = 0.0):
-        self.desired_angle = angle
-    
-    def turn_toward(self, abs_position:Vector = Vector()):
-        ''' turn character to an absolute position '''
-        # print(f'player position {self.owner.position}, mouse position {abs_position}')
-        angle = (abs_position - self.owner.position).argument()
-        self.turn(angle)
-    
-
 class Pawn(DynamicObject):
     
     def __init__(self, 
@@ -436,4 +286,17 @@ class Character(Pawn):
         self.movement.move(ENV.move_input)
         ENV.debug_text['player_speed'] = round(self.speed, 1)
         return True
-        
+
+
+class PlayerController(ActorComponent):
+    ### WIP
+    '''  '''
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        direction = ENV.direction_input
+        if direction: self.owner.movement.turn_toward(direction)
+        self.movement.move(ENV.move_input)
+        ENV.debug_text['player_speed'] = round(self.speed, 1)
