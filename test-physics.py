@@ -16,15 +16,6 @@ class PhysicsTestView(View):
     def __init__(self, window: App = None):
         super().__init__(window)
         
-        # self.test_physics_engine = []
-        # self.test_physics_layers = []
-        # for _ in range(1000):
-        #     pe = PhysicsEngine((0, -980), 0.0)
-        #     pl = ObjectLayer(pe)
-            
-        #     self.test_physics_engine.append(pe)
-        #     self.test_physics_layers.append(pl)
-        
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(ENV.physics_engine)
         self.debris_layer = ObjectLayer(ENV.physics_engine)
@@ -45,36 +36,19 @@ class PhysicsTestView(View):
         
         ENV.physics_engine.damping = 0.01
         
-        # self.player = Player(ENV.physics_engine)
-        # self.player.spawn(Vector(100, 100))
         self.player = EscapePlayer()
         self.player.spawn(self.character_layer, Vector(100, 100))
         
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
         # self.player.body.physics.shape.friction = 1.0
-        self.player.body.mass = 1
         # self.player.body.sprite.pymunk.gravity = (0,980)
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
         
         self._setup_field(self.field_layer)
         
-        # self._setup_walls(self.wall_layer)
-        # ENV.physics_engine.add_sprite_list(self.wall_layer, 
-        #                                    friction = 0.5, 
-        #                                    elasticity = 0.0,
-        #                                    collision_type=collision.wall, 
-        #                                    body_type=physics_types.static)
         self._setup_walls_onecue(self.wall_layer)
         
-        # self._setup_debris(self.debris_layer)
-        # for debri in self.debris_layer:
-        #     ENV.physics_engine.add_sprite(debri, mass = 0.5, damping = 0.25, elasticity = 0.2, friction=1.0,
-        #                                   collision_type = collision.debris,
-        #                                   shape = pymunk.Circle(body = None, radius=PHYSICS_TEST_DEBRIS_RADIUS),
-        #                                   spawn = False)
-        #     ENV.physics_engine.add_to_space(debri)
-
         self._setup_debris_onecue(self.debris_layer)
         
         ### test new method!
@@ -87,21 +61,8 @@ class PhysicsTestView(View):
         # test_simplebody.position = vectors.zero
         test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
         # test_simpleactor.position = vectors.zero
-        
-        
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
-        
-        # box = Sprite(":resources:images/tiles/grassCenter.png", 1.5)
-        # box.pymunk.max_velocity = CONFIG.terminal_speed
-        # box.center_x = CONFIG.screen_size.x // 2
-        # box.center_y = CONFIG.screen_size.y // 2
-        # self.debris_layer.add(box)
-        # ENV.physics_engine.add_sprite(box, 
-        #                                mass=10, 
-        #                                friction = 1.0,
-        #                                collision_type=collision.debris,
-        #                                body_type=physics_types.dynamic)
         
         ### DynamicObject.spawn test
         box_body = DynamicBody(Sprite(":resources:images/tiles/grassCenter.png", 1.5),
