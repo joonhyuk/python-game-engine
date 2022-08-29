@@ -91,7 +91,7 @@ class PhysicsTestView(View):
         #                                           separate_handler=seperate_player_hit_wall,
         #                                           post_handler=post_player_hit_wall)
 
-        print(f'INITIAL LOADING TIME : {round(CLOCK.get_perf() - start_loading_time, 2)} sec')
+        print(f'INITIAL LOADING TIME : {round(CLOCK.perf - start_loading_time, 2)} sec')
         
     def _setup_debris_onecue(self, layer:ObjectLayer):
         ### DynamicBody only test
@@ -165,7 +165,7 @@ class PhysicsTestView(View):
         self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
         if self._tmp: 
-            unschedule(self._tmp.delay_destroy)
+            delay_cancel(self._tmp.destroy)
         # if self._tmp: CLOCK.reserve_cancel(self._tmp.destroy) # works well
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):

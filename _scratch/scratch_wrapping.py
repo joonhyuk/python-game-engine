@@ -17,6 +17,8 @@ def unschedule(func):
     else:
         print(func, 'not found')
 
+delayed_stuffs = {}
+
 def delay_run(delay:float, func:Callable, *args, **kwargs):
     ''' my wrapper for add an argument(dt) to func '''
     if not isinstance(delay, (float, int)): return False
@@ -24,10 +26,17 @@ def delay_run(delay:float, func:Callable, *args, **kwargs):
     
     @functools.wraps(func)
     def _wrapper(dt, func, *args, **kwargs):
-        print(dt)
         return func(*args, **kwargs)
     
+    delayed_stuffs[func] = _wrapper
+    
     return schedule_once(_wrapper, delay, *args, **kwargs)
+
+def delay_cancel(func:Callable):
+    
+    unschedule(delayed_stuffs[func])
+    delayed_stuffs.pop(func)
+    
 
 def add_dt(func):
     @functools.wraps(func)
@@ -43,6 +52,11 @@ class Foo:
         print('destroy ', self)
 
 
+import sys
+
 f = Foo()
 delay_run(1, f.destroy)
-unschedule(f.destroy)
+# unschedule(f.destroy)
+print(delayed_stuffs, sys.getsizeof(delayed_stuffs))
+delay_cancel(f.destroy)
+print(delayed_stuffs, sys.getsizeof(delayed_stuffs))

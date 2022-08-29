@@ -258,6 +258,8 @@ class PhysicsObject:
     '''
     physics object that holds pymunk body and shape for a sprite
     think usecase only!
+    
+    completely decoupled with private codes
     '''
     __slots__ = ('body',
                  'shape',
