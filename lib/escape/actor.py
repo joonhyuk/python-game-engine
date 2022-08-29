@@ -21,9 +21,9 @@ class BallProjectile(Ball):
     
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
-        # schedule_once(self.hide, 1)
         # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=pymunk.ShapeFilter.ALL_MASKS())
-    
+        self.body.physics.shape.filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)
+        print(self.body.physics.shape.filter)
     def __del__(self):
         print('goodbye from ballprojectile actor')
     
@@ -81,8 +81,8 @@ class EscapePlayer(Character):
         origin = self.position
         if not target_direction: target_direction = Vector.directional(self.angle)
         end = target_direction * distance + origin
-        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
-        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
+        # self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
         
         query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         

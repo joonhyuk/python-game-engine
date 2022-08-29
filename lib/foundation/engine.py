@@ -396,7 +396,7 @@ class BaseActor(MObject):
     def destroy(self) -> bool:
         for component in self.tick_components:
             component.destroy()
-            # self.components.remove(component)
+        
         self.tick_components = []
         return super().destroy()
     
@@ -453,7 +453,6 @@ class BodyComponent(ActorComponent):
         
         if position: self.position = position
         if angle: self.angle = angle
-        # self.get_ref() = self.sprite
     
     # def on_register(self):
     #     print('body component set',self)
@@ -479,6 +478,7 @@ class BodyComponent(ActorComponent):
         self.sprite.draw(*args, **kwargs)
     
     def hide(self, switch:bool = None):
+        ### WIP
         ''' hide sprite and physics body '''
         if switch is None: switch = not self._hidden
         self.visibility = switch
