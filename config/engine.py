@@ -38,12 +38,21 @@ class default_settings:
 class vectors:
     ''' prepare basic vectors '''
     zero = Vector()
+    
     right = Vector(1,0)
     left = Vector(-1,0)
     up = Vector(0,1)
     down = Vector(0,-1)
     
-    upright = (up + right).unit
+    forward = right
+    backward = left
+    rightside = down
+    leftside = up
+    
+    upperright = (up + right).unit
+    lowerright = (down + right).unit
+    upperleft = (up + left).unit
+    lowerleft = (down + left).unit
 
 # class direction(EnumVector):
 #     zero = Vector()

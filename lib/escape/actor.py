@@ -40,7 +40,7 @@ class EscapePlayer(Character):
                                collision_type = collision.character,
                                physics_shape = physics_types.circle(None, 16))
         self.body = body
-        body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
+        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
     
     def tick(self, delta_time: float = None) -> bool:

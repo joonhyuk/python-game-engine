@@ -423,7 +423,7 @@ class TestComponent(ActorComponent):
     
 
 class TestActor(BaseActor):
-    __slots__ = ()
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.component = TestComponent()

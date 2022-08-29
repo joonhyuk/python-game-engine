@@ -16,14 +16,14 @@ class PhysicsTestView(View):
     def __init__(self, window: App = None):
         super().__init__(window)
         
-        self.test_physics_engine = []
-        self.test_physics_layers = []
-        for _ in range(1000):
-            pe = PhysicsEngine((0, -980), 0.0)
-            pl = ObjectLayer(pe)
+        # self.test_physics_engine = []
+        # self.test_physics_layers = []
+        # for _ in range(1000):
+        #     pe = PhysicsEngine((0, -980), 0.0)
+        #     pl = ObjectLayer(pe)
             
-            self.test_physics_engine.append(pe)
-            self.test_physics_layers.append(pl)
+        #     self.test_physics_engine.append(pe)
+        #     self.test_physics_layers.append(pl)
         
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(ENV.physics_engine)

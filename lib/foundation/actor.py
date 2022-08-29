@@ -142,7 +142,7 @@ class CameraHandler(ActorComponent):
         return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 
-class CharacterMovement(ActorComponent):
+class SpriteMovement(ActorComponent):
     '''movement component for character'''
     def __init__(self, 
                  capsule_radius = 16, 
