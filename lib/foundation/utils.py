@@ -72,6 +72,8 @@ def add_sprite_timeout(sprite:arcade.Sprite, location:Vector, layer:arcade.Sprit
     
     schedule_once(sprite.scheduled_remove_from_sprite_lists, timeout)
 
+delayed_functions = {}
+
 def delay_run(delay:float, func, *args, **kwargs):
     if not isinstance(delay, (float, int)): return False
     if delay <= 0: return func(*args, **kwargs)
@@ -81,8 +83,10 @@ def delay_run(delay:float, func, *args, **kwargs):
     def _wrapper(dt, func=func, *args, **kwargs):
         return func(*args, **kwargs)
     
+    delayed_functions[func] = _wrapper
+    
     return schedule_once(_wrapper, delay, *args, **kwargs)
 
 def delay_cancel(func):
-    
-    unschedule(func)
+    unschedule(delayed_functions[func])
+    delayed_functions.pop(func)
