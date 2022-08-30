@@ -437,14 +437,32 @@ class SpriteMovement(ActorComponent):
     
 
 class MovementHandler(ActorComponent):
-    ### WIP
+    #WIP
     ''' need body component to move '''
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, 
+                 max_speed_run:float = 250,
+                 max_speed_walk:float = 100,
+                 rotation_interp_speed:float = 3.0,
+                 acceleration:float = 4,
+                 **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:BodyComponent = None
         
+        self.move_direction:Vector = None
+        self.desired_angle:float = 0.0
     
+    def update(self, delta_time: float) -> bool:
+        
+        return True
     
+    def move(self):
+        pass
+    
+    def rotate(self, angle):
+        pass
+    
+    def warp(self, position):
+        pass
     
     def _set_owner(self, owner):
         if hasattr(self.owner, 'body'):

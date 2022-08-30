@@ -529,6 +529,76 @@ class BodyComponent(ActorComponent):
         return self.sprite.sprite_lists
 
 
+
+class ControllerComponent(ActorComponent):
+    #WIP
+    """
+    액터 컴포넌트로 만들지 않아도 되지 않을까.
+    어차피 컨트롤러니까 앱 혹은 ENV에 등록해두고... 즉, 액터의 owner가 되는거지.
+    
+    입력(조작) 혹은 명령(조건에 따른)에 의해 액터의 의지인양 움직이는 것.
+    (리액션은 컨트롤러가 책임지지 않음.)
+    
+    PlayerController(조작에 의한 직접 행동제어)
+    AIController(조건에 의한 자동 행동제어)
+    ObjectController(조작에 의한 간접 행동제어)
+    
+    행동의 주체가 되는 Actor는 '행동'을 가져야 한다.
+    '행동'은 이동과 액션, 인터렉션으로 구분된다.
+    이동은 MovementHandler를 통하거나 직접 스프라이트를 setpos하는 것.
+    액션은 다양.
+    
+    view의 on_input에 app의 player_controller의 on_input이 함께 실행되어 필요한 것 들을 한다.
+    매 업데이트 틱(캐릭터 틱)에 tick이 실행되어 부가적인 작업들을 한다?
+    
+    
+    """
+    ''' actor component which control actor.
+    get env.inputs, set movement, action
+    movement <- body
+    action <- actor, body
+    
+    - handles inputs maybe.
+    '''
+    
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        return True
+    
+    def possess(self, actor:Actor):
+        # if actor is not valid: return False
+        self.owner = actor
+    
+    def on_key_press(self, key: int, modifiers: int):
+        pass
+    
+    def on_key_release(self, key: int, modifiers: int):
+        pass
+    
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        pass
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        pass
+    
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        pass
+    
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        pass
+    
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
+        pass
+    
+    @property
+    def is_alive(self):
+        if not self.owner: return False
+        return self.owner.is_alive
+
+
 class App(arcade.Window):
     
     ### class variables : are they needed?
@@ -539,7 +609,6 @@ class App(arcade.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ENV.physics_engine = PhysicsEngine()
-        
     
     def on_show(self):
         # print('window_show')
