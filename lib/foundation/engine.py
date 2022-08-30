@@ -236,7 +236,7 @@ class Environment(metaclass = SingletonType):
 
 
 class MObject(object):
-    __slots__ = ('id', '_alive', '_lifetime', '_update_tick', '_spawned', )
+    __slots__ = ('id', '_alive', '_lifetime', '_update_tick', '_spawned', 'movable')
     
     def __init__(self, **kwargs) -> None:
         self.id:str = self.get_id()
@@ -247,6 +247,8 @@ class MObject(object):
         self._update_tick:bool = True
         self._spawned = False
         """tick optimization"""
+        self.movable = False
+        ''' can move physically '''
         if kwargs:
             for k in kwargs:
                 # setattr(self, k, kwargs[k])
@@ -382,7 +384,9 @@ class Actor(MObject):
         if components:
             for component in components:
                 if hasattr(component, 'owner'): component.owner = self  ### set owner
-                if hasattr(component, 'tick'): self.tick_components.append(component)
+                if hasattr(component, 'tick'): 
+                    if component.tick: self.tick_components.append(component)
+                    ''' to disable component tick, put `self.tick = None` into __init__() '''
                 if hasattr(component, 'on_register'): component.on_register()
     
     def tick(self, delta_time: float) -> bool:
@@ -399,7 +403,7 @@ class Actor(MObject):
         
         self.tick_components = []
         return super().destroy()
-    
+
 
 class BodyComponent(ActorComponent):
     __slots__ = ('sprite', 
@@ -456,6 +460,7 @@ class BodyComponent(ActorComponent):
         self._hidden = self._hide(switch)
     
     hidden:bool = property(_get_hidden, _set_hidden)
+    
     
     def destroy(self) -> bool:
         self.sprite.remove_from_sprite_lists()

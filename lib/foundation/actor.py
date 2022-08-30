@@ -55,6 +55,7 @@ class DynamicObject(Actor):
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:DynamicBody = body
+        self.movable = True
     
     def spawn(self, 
               spawn_to:ObjectLayer, 
@@ -69,6 +70,12 @@ class DynamicObject(Actor):
     
     def draw(self):
         self.body.draw()
+    
+    def apply_force(self, force:Vector):
+        self.body.apply_force_world(force)
+    
+    def apply_impulse(self, impulse:Vector):
+        self.body.apply_impulse_world(impulse)
     
     def _get_visibility(self) -> bool:
         return self.body.visibility
@@ -257,6 +264,7 @@ class Pawn(DynamicObject):
                  **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.hp = hp
+        self.movement = PhysicsMovement()
     
     def apply_damage(self, damage:float):
         self.hp -= damage
@@ -276,7 +284,6 @@ class Character(Pawn):
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)
         
-        self.movement = PhysicsMovement()
         self.camera = CameraHandler()
         
     def tick(self, delta_time: float = None) -> bool:
@@ -288,8 +295,8 @@ class Character(Pawn):
         return True
 
 
-class PlayerController(ActorComponent):
-    ### WIP
+class PlayerController(ControllerComponent):
+    #WIP
     '''  '''
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

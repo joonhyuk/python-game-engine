@@ -183,7 +183,11 @@ class DynamicBody(StaticBody):
                          custom_gravity=custom_gravity,
                          custom_damping=custom_damping,
                          **kwargs)
+        self.movable = True
 
+    def on_register(self):
+        self.owner.movable = True
+    
     def apply_force_local(self, force:Vector = vectors.zero):
         return self.physics.body.apply_force_at_local_point(force)
     
@@ -198,6 +202,12 @@ class DynamicBody(StaticBody):
     
     def apply_acceleration_world(self, acceleration:Vector):
         self.apply_force_world(acceleration * self.mass)
+    
+    def apply_force(self, force:Vector):
+        self.apply_force_world(force)
+    
+    def apply_impulse(self, impulse:Vector):
+        self.apply_impulse_world(impulse)
     
     def _set_position(self, position) -> None:
         if self.physics:
