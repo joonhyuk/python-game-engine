@@ -94,6 +94,13 @@ class StaticBody(BodyComponent):
         if CONFIG.debug_draw:
             self.physics.draw()
     
+    def _hide(self, switch: bool = None) -> bool:
+        #WIP : should revisit filter control
+        switch = super()._hide(switch)
+        self.physics.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        print('hide me!',switch)
+        return switch
+    
     def _set_position(self, position) -> None:
         if not self.physics: self.sprite.position = position
         else: raise PhysicsException(f'Can\'t move static object by overriding position = {position}. Set position with StaticActor.')

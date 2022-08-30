@@ -442,12 +442,20 @@ class BodyComponent(ActorComponent):
     def draw(self, *args, **kwargs):
         self.sprite.draw(*args, **kwargs)
     
-    def hide(self, switch:bool = None):
-        ### WIP
+    def _hide(self, switch:bool = None) -> bool:
+        ''' hide sprite and physics if exist and return switch '''
+        if switch is None: switch = not self.hidden
+        self.visibility = not switch
+        return switch
+    
+    def _get_hidden(self) -> bool:
+        return self._hidden
+    
+    def _set_hidden(self, switch:bool = None):
         ''' hide sprite and physics body '''
-        if switch is None: switch = not self._hidden
-        self.visibility = switch
-        pass
+        self._hidden = self._hide(switch)
+    
+    hidden:bool = property(_get_hidden, _set_hidden)
     
     def destroy(self) -> bool:
         self.sprite.remove_from_sprite_lists()
@@ -462,10 +470,12 @@ class BodyComponent(ActorComponent):
     def _get_visibility(self) -> bool:
         return self.sprite.visible
     
-    def _set_visibility(self, switch:bool):
+    def _set_visibility(self, switch:bool = None):
+        if switch is None: switch = not self.sprite.visible
         self.sprite.visible = switch
     
     visibility:bool = property(_get_visibility, _set_visibility)
+    ''' set None to toggle visibility '''
     
     def _get_position(self):
         return self.get_ref().position

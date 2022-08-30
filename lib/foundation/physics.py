@@ -144,6 +144,9 @@ class physics_types:
     infinite:float = float('inf')
     allmask:int = pymunk.ShapeFilter.ALL_MASKS()
     allcategories:int = pymunk.ShapeFilter.ALL_CATEGORIES()
+    filter_nomask = pymunk.ShapeFilter(mask = 0)
+    filter_allmask = pymunk.ShapeFilter(mask = allmask)
+    filter_allcategories = pymunk.ShapeFilter(mask = allcategories)
 
 
 def setup_physics_object(sprite:Sprite, 
