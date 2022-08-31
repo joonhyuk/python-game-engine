@@ -151,6 +151,8 @@ class PhysicsTestView(View):
         if key == keys.RIGHT and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
         
+        if key == keys.H: self.player.hidden = None
+        
         return super().on_key_press(key, modifiers)
     
     def on_key_release(self, key: int, modifiers: int):

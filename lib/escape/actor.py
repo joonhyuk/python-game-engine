@@ -30,19 +30,57 @@ class BallProjectile(Ball):
     def hide(self, dt):
         self.visibility = False
 
+def find_name_in_mro(cls, name, default):
+    "Emulate _PyType_Lookup() in Objects/typeobject.c"
+    for base in cls.__mro__:
+        if name in vars(base):
+            return vars(base)[name]
+    return default
+
+class TrasferProperty:
+    
+    def __init__(self, target:property):
+        print(target.__getattribute__())
+        self.fget = target.fget
+        self.fset = target.fset
+        self._name = ''
+        
+    def __set_name__(self, owner, name):
+        self._name = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        if self.fget is None:
+            raise AttributeError(f'unreadable attribute {self._name}')
+        return self.fget(obj)
+
+    def __set__(self, obj, value):
+        if self.fset is None:
+            raise AttributeError(f"can't set attribute {self._name}")
+        self.fset(obj, value)
+
 
 class EscapePlayer(Character):
     
+    __slots__ = ('_fire_counter', 'movement', 'camera')
+    
     def __init__(self, hp: float = 100, body: DynamicBody = None, **kwargs) -> None:
-        super().__init__(body, hp, **kwargs)
         if not body:
             body = DynamicBody(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'),
                                collision_type = collision.character,
                                physics_shape = physics_types.circle(None, 16))
-        self.body = body
+        super().__init__(body, hp, **kwargs)
         self.body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
+        
+        # self.hidden = TrasferProperty(self.body.hidden)
+    
     hidden = PropertyFrom('body')
+    position = PropertyFrom('body')
+    angle = PropertyFrom('body')
+    velocity = PropertyFrom('body')
+    visibility = PropertyFrom('body')
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
