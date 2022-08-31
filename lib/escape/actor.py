@@ -42,6 +42,7 @@ class EscapePlayer(Character):
         self.body = body
         self.body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
+    hidden = PropertyFrom('body')
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False

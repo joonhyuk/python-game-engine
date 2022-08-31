@@ -119,29 +119,32 @@ class StaticBody(BodyComponent):
 
     angle:float = property(BodyComponent._get_angle, _set_angle)
     
-    def _get_mass(self):
-        return self.physics.mass
+    # def _get_mass(self):
+    #     return self.physics.mass
     
-    def _set_mass(self, mass:float):
-        self.physics.mass = mass
+    # def _set_mass(self, mass:float):
+    #     self.physics.mass = mass
     
-    mass:float = property(_get_mass, _set_mass)
+    # mass:float = property(_get_mass, _set_mass)
+    mass:float = PropertyFrom('physics')
     
-    def _get_elasticity(self):
-        return self.physics.elasticity
+    # def _get_elasticity(self):
+    #     return self.physics.elasticity
     
-    def _set_elasticity(self, elasticity:float):
-        self.physics.elasticity = elasticity
+    # def _set_elasticity(self, elasticity:float):
+    #     self.physics.elasticity = elasticity
     
-    elasticity:float = property(_get_elasticity, _set_elasticity)
+    # elasticity:float = property(_get_elasticity, _set_elasticity)
+    elasticity:float = PropertyFrom('physics')
+
+    # def _get_friction(self):
+    #     return self.physics.friction
     
-    def _get_friction(self):
-        return self.physics.friction
+    # def _set_friction(self, friction:float):
+    #     self.physics.friction = friction
     
-    def _set_friction(self, friction:float):
-        self.physics.friction = friction
-    
-    friction:float = property(_get_friction, _set_friction)
+    # friction:float = property(_get_friction, _set_friction)
+    friction:float = PropertyFrom('physics')
 
 
 class DynamicBody(StaticBody):

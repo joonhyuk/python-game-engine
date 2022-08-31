@@ -30,6 +30,25 @@ class SingletonType(type):
             return cls.__instance
 
 
+class PropertyFrom:
+    
+    def __init__(self, proxied) -> None:
+        self.proxied = proxied
+    
+    def __set_name__(self, owner, name):
+        if not hasattr(owner, self.proxied):
+            raise AttributeError(f"'{owner}' has no attribute '{self.proxied}'")
+        # if not hasattr(getattr(owner, self.proxied), name):
+        #     raise AttributeError(f"'{getattr(owner, self.proxied)}' has no attribute '{name}'")
+        self.name = name
+    
+    def __get__(self, owner, objtype):
+        return getattr(getattr(owner, self.proxied), self.name, None)
+    
+    def __set__(self, owner, value):
+        setattr(getattr(owner, self.proxied), self.name, value)
+
+
 class Version(metaclass=SingletonType):
     '''planned to convert into singleton class'''
     def __init__(self, major:int = None, minor:int = None, patch:int = None, is_production = False, file = 'version.json', run_count_up = True) -> None:
