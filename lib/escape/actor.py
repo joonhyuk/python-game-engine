@@ -28,8 +28,8 @@ class BallProjectile(Ball):
 class ShrinkingBall(BallProjectile):
     
     def __init__(self, 
-                 shrinking_start = 3.0,
-                 shrinking_delay = 3.0,
+                 shrinking_start = 30.0,
+                 shrinking_delay = 15.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -57,8 +57,9 @@ class BigBox(DynamicObject):
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.shrinking_start = 5
-        self.shrinking_delay = 10
+        self.shrinking_delay = 3
         self.alpha = 1.0
+        self._temp_multiplier = -1
         
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
         super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
@@ -68,67 +69,19 @@ class BigBox(DynamicObject):
         schedule(self._shrink)
     
     def _shrink(self, dt):
-        self.alpha -= dt / self.shrinking_delay
+        self.alpha = self.alpha + self._temp_multiplier * dt / self.shrinking_delay
         if self.alpha <= 0:
-            self.destroy()
+            self.alpha = 0
+            # self.destroy()
+            self._temp_multiplier = 1
             return
-        alpha = clamp(self.alpha, 0.1, 1)
+        if self.alpha > 1:
+            self.alpha = 1
+            self._temp_multiplier = -1
+            return
+        alpha = clamp(self.alpha, 0.3, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha
-    
-
-class TrasferProperty:
-    
-    def __init__(self, target:property):
-        print(target.__getattribute__())
-        self.fget = target.fget
-        self.fset = target.fset
-        self._name = ''
-        
-    def __set_name__(self, owner, name):
-        self._name = name
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        if self.fget is None:
-            raise AttributeError(f'unreadable attribute {self._name}')
-        return self.fget(obj)
-
-    def __set__(self, obj, value):
-        if self.fset is None:
-            raise AttributeError(f"can't set attribute {self._name}")
-        self.fset(obj, value)
-
-def find_name_in_mro(cls, name, default):
-    "Emulate _PyType_Lookup() in Objects/typeobject.c"
-    for base in cls.__mro__:
-        if name in vars(base):
-            return vars(base)[name]
-    return default
-
-class TrasferProperty:
-    
-    def __init__(self, target:property):
-        print(target.__getattribute__())
-        self.fget = target.fget
-        self.fset = target.fset
-        self._name = ''
-        
-    def __set_name__(self, owner, name):
-        self._name = name
-
-    def __get__(self, obj, objtype=None):
-        if obj is None:
-            return self
-        if self.fget is None:
-            raise AttributeError(f'unreadable attribute {self._name}')
-        return self.fget(obj)
-
-    def __set__(self, obj, value):
-        if self.fset is None:
-            raise AttributeError(f"can't set attribute {self._name}")
-        self.fset(obj, value)
 
 
 class EscapePlayer(Character):
@@ -155,7 +108,7 @@ class EscapePlayer(Character):
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
         if self._fire_counter % 6 == 0:
-            # self.test_projectile(1000)
+            self.test_projectile(1000)
             self._fire_counter = 0
         self._fire_counter += 1
         '''
