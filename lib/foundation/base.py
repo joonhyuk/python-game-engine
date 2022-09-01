@@ -32,6 +32,8 @@ class SingletonType(type):
 
 class PropertyFrom:
     
+    __slots__ = ['proxied', 'name']
+    
     def __init__(self, proxied) -> None:
         self.proxied = proxied
     

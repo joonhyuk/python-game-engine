@@ -24,7 +24,8 @@ class StaticObject(MObject):
         return super().spawn()
     
     def draw(self):
-        self.body.draw()
+        # self.body.draw()
+        pass    ### delegate draw to body. 
     
     def _get_position(self) -> Vector:
         return self.body.position
@@ -49,7 +50,7 @@ class StaticObject(MObject):
 
 class DynamicObject(Actor):
     
-    __slots__ = ('body', 'apply_force', 'apply_impulse')
+    # __slots__ = ('body', 'apply_force', 'apply_impulse')
     def __init__(self, 
                  body:DynamicBody,
                  **kwargs) -> None:
@@ -70,8 +71,9 @@ class DynamicObject(Actor):
             self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
     
-    def draw(self):
-        self.body.draw()
+    # def draw(self):
+    #     # self.body.draw()
+    #     pass    ### delegate draw to body. 
     
     mass:float = PropertyFrom('body')
     friction:float = PropertyFrom('body')
@@ -262,7 +264,7 @@ class CameraHandler(ActorComponent):
 
 class Pawn(DynamicObject):
     
-    __slots__ = ('hp', 'movement')
+    # __slots__ = ('hp', 'movement', )
     
     def __init__(self, 
                  body: DynamicBody, 
@@ -287,7 +289,7 @@ class Pawn(DynamicObject):
 
 class Character(Pawn):
     
-    __slots__ = ('camera', )
+    # __slots__ = ('camera', )
     
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)
@@ -303,15 +305,4 @@ class Character(Pawn):
         return True
 
 
-class PlayerController(ControllerComponent):
-    #WIP
-    '''  '''
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        direction = ENV.direction_input
-        if direction: self.owner.movement.turn_toward(direction)
-        self.movement.move(ENV.move_input)
-        ENV.debug_text['player_speed'] = round(self.speed, 1)
+

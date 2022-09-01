@@ -190,6 +190,7 @@ class DynamicBody(StaticBody):
 
     def on_register(self):
         self.owner.movable = True
+        return super().on_register()
     
     def apply_force_local(self, force:Vector = vectors.zero):
         return self.physics.body.apply_force_at_local_point(force)
@@ -449,7 +450,6 @@ class MovementHandler(ActorComponent):
                  acceleration:float = 4,
                  **kwargs) -> None:
         super().__init__(**kwargs)
-        self.body:BodyComponent = None
         
         self.move_direction:Vector = None
         self.desired_angle:float = 0.0
@@ -467,13 +467,6 @@ class MovementHandler(ActorComponent):
     def warp(self, position):
         pass
     
-    def _set_owner(self, owner):
-        if hasattr(self.owner, 'body'):
-            self.body = self.owner.body
-        return super()._set_owner(owner)
-    
-    owner = property(ActorComponent._get_owner, _set_owner)
-
 
 class PhysicsMovement(ActorComponent):
     ''' movement handler for actor based on pymunk physics engine '''
@@ -546,3 +539,37 @@ class PhysicsMovement(ActorComponent):
         self.turn(angle)
     
 
+class PlayerController(Controller):
+    #WIP
+    '''  '''
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        direction = ENV.direction_input
+        if direction: self.owner.movement.turn_toward(direction)
+        self.movement.move(ENV.move_input)
+        ENV.debug_text['player_speed'] = round(self.speed, 1)
+    
+    def on_key_press(self, key: int, modifiers: int):
+        pass
+    
+    def on_key_release(self, key: int, modifiers: int):
+        pass
+    
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        pass
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        pass
+    
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        pass
+    
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        pass
+    
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
+        pass
+    
