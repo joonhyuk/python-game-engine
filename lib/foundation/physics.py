@@ -266,11 +266,11 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling')
+    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
-                 hitbox: pymunk.Shape = None,
+                 hitbox: physics_types.poly = None,
                  mass_scaling:bool = True,
                  ):
         
@@ -278,12 +278,13 @@ class PhysicsObject:
         ''' actual body which has mass, position, velocity, rotation '''
         self.shape: Optional[pymunk.Shape] = shape
         ''' main collision '''
-        self.hitbox: Optional[pymunk.Shape] = hitbox
+        self.hitbox: physics_types.poly = hitbox
         ''' custom hitbox collision if needed '''
         self._scale = 1.0
         self._initial_size:Union(float, Vector) = self._get_size()
         ''' no need to be set when poly '''
         self._initial_mass = body.mass
+        if hitbox: self._original_poly = self.hitbox.get_vertices()
         self._mass_scaling = mass_scaling
 
     def _get_size(self):
@@ -327,7 +328,7 @@ class PhysicsObject:
             # self.shape.update(pymunk.Transform.scaling(scale))
             if not self.hitbox: return False
             st = pymunk.Transform.scaling(scale)
-            self.shape.unsafe_set_vertices(self.hitbox.get_vertices(), st)
+            self.shape.unsafe_set_vertices(self._original_poly, st)
             if self._mass_scaling: self.mass = self._initial_mass * scale
     
     scale:float = property(_get_scale, _set_scale)

@@ -48,7 +48,7 @@ class ShrinkingBall(BallProjectile):
         
     def start_shrink(self):
         delay_cancel(self.start_shrink)
-        schedule(self._shrink)
+        schedule_interval(self._shrink, 1/60)
     
     def _shrink(self, dt):
         self.alpha -= dt / self.shrinking_delay
@@ -76,7 +76,9 @@ class BigBox(DynamicObject):
         schedule_once(self.start_shrink, self.shrinking_start)
     
     def start_shrink(self, dt):
-        schedule(self._shrink)
+        unschedule(self.start_shrink)
+        schedule_interval(self._shrink, 1/60)
+        print('box dancing start!')
     
     def _shrink(self, dt):
         if not CONFIG.debug_f_keys[4] :return False
