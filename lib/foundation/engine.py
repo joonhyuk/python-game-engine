@@ -24,6 +24,8 @@ from lib.foundation.utils import *
 
 from config.engine import *
 
+import psutil
+PROCESS = psutil.Process(os.getpid())
 
 class DebugTextLayer(dict, metaclass=SingletonType):
     '''
@@ -287,7 +289,7 @@ class MObject(object):
     def destroy(self) -> bool:
         self._alive = False
         CLOCK.timer_remove(self.id)
-        self.on_destroy()
+        # self.on_destroy()
         # del self    # ????? do we need it?
         # SOUND.beep()
         return self.on_destroy()
@@ -411,6 +413,9 @@ class Actor(MObject):
         
         self.tick_components = []
         return super().destroy()
+    
+    def __del__(self):
+        print(self, 'actor removed. ciao!')
 
 
 class BodyComponent(ActorComponent):
@@ -437,8 +442,8 @@ class BodyComponent(ActorComponent):
     def get_ref(self):
         return self.sprite
     
-    # def __del__(self):
-        # print('goodbye from body')
+    def __del__(self):
+        print(self, 'body component removed. Ciao!')
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         self.sprite.owner = self.owner
@@ -523,7 +528,7 @@ class BodyComponent(ActorComponent):
     
     @property
     def speed(self) -> float :
-        ''' different from physics or sprite 
+        ''' different according to physics or sprite 
         
         :physics = per sec
         :sprite = per tick
@@ -642,6 +647,7 @@ class App(arcade.Window):
         
         CLOCK.fps_current = 1 / delta_time
         ENV.debug_text['fps'] = CLOCK.fps_average
+        ENV.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024)))+" MB"
 
         ENV.debug_text.perf_check('update_physics')
         ENV.physics_engine.step()
@@ -743,6 +749,9 @@ class Sprite(arcade.Sprite):
     relative_scale = property(_get_relative_scale, _set_relative_scale)
 
 class SpriteCircle(arcade.SpriteCircle, Sprite):
+    
+    __slots__ = ('owner', )
+    
     def __init__(self, 
                  radius: int = 16, 
                  color: colors = colors.ALLOY_ORANGE, 

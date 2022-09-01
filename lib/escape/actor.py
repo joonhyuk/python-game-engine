@@ -2,6 +2,8 @@ from lib.foundation import *
 
 class Ball(Pawn):
     
+    __slots__ = ()
+    
     def __init__(self, 
                  radius = 16, 
                  color = colors.OUTRAGEOUS_ORANGE,
@@ -19,6 +21,8 @@ class Ball(Pawn):
 
 class BallProjectile(Ball):
     
+    __slots__ = ()
+
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
         # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=pymunk.ShapeFilter.ALL_MASKS())
@@ -27,9 +31,11 @@ class BallProjectile(Ball):
 
 class ShrinkingBall(BallProjectile):
     
+    __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
+
     def __init__(self, 
-                 shrinking_start = 30.0,
-                 shrinking_delay = 15.0,
+                 shrinking_start = 3.0,
+                 shrinking_delay = 2.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -46,11 +52,13 @@ class ShrinkingBall(BallProjectile):
     def _shrink(self, dt):
         self.alpha -= dt / self.shrinking_delay
         if self.alpha <= 0:
+            unschedule(self._shrink)
             self.destroy()
             return
         alpha = clamp(self.alpha, 0.1, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha
+        
 
 class BigBox(DynamicObject):
     
@@ -63,9 +71,10 @@ class BigBox(DynamicObject):
         
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
         super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
-        delay_run(self.shrinking_start, self.start_shrink)
+        # delay_run(self.shrinking_start, self.start_shrink)
+        schedule_once(self.start_shrink, self.shrinking_start)
     
-    def start_shrink(self):
+    def start_shrink(self, dt):
         schedule(self._shrink)
     
     def _shrink(self, dt):
@@ -108,7 +117,7 @@ class EscapePlayer(Character):
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
         if self._fire_counter % 6 == 0:
-            self.test_projectile(1000)
+            if CONFIG.debug_draw: self.test_projectile(1000)
             self._fire_counter = 0
         self._fire_counter += 1
         '''
@@ -151,7 +160,7 @@ class EscapePlayer(Character):
         if query:
             first_hit = query[0]
             sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
-            sprite_first_hit.color = colors.RED
+            # sprite_first_hit.color = colors.RED
             print(sprite_first_hit.owner)
 
 

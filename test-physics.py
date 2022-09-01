@@ -2,12 +2,13 @@
 from lib.escape import *
 from config import *
 
+
 VERSION = Version()
 
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
 PLAYER_ATTACK_RANGE = 500
-PHYSICS_TEST_DEBRIS_NUM = 5
+PHYSICS_TEST_DEBRIS_NUM = 200
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 
@@ -232,7 +233,7 @@ class PhysicsTestView(View):
         self.fx_layer.draw()
         
         self.test_layer.draw()
-        
+        debug_draw_segment(self.player.position, self.player.position + self.player.body.velocity, color = colors.AERO_BLUE)
         debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         # self.test_layer.__getitem__(0).draw()
         # 

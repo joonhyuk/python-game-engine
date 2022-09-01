@@ -421,7 +421,7 @@ class PhysicsEngine:
         self.space.damping = damping    # ratio of speed(scalar) which is kept to next tick
         
         self.space.sleep_time_threshold = 5.0
-        self.space.idle_speed_threshold = 100
+        self.space.idle_speed_threshold = 10
         # self.space.collision_slop = 0.0
         
         # self.collision_types: list[str] = list(t.name for t in collision.__dict__())
