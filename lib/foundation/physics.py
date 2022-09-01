@@ -254,7 +254,9 @@ def setup_physics_object(sprite:Sprite,
     if body_type == physics_types.dynamic:
         body.velocity_func = velocity_callback
     
-    return PhysicsObject(body, shape)
+    hitbox = physics_types.poly(body, sprite.get_hit_box(), pymunk.Transform.scaling(sprite.scale))
+    
+    return PhysicsObject(body, shape, hitbox)
 
 
 class PhysicsObject:

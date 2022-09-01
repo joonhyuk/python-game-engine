@@ -359,6 +359,7 @@ class ActorComponent(MObject):
 class Actor(MObject):
     ''' can have actor components '''
     __slots__ = ('tick_components', )
+    
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.tick_components:list[ActorComponent] = []
@@ -367,8 +368,16 @@ class Actor(MObject):
         self.register_components()
         return super().spawn(lifetime)
     
+    def get_components(self, *types:ActorComponent):
+        if not types: types = ActorComponent
+        components:list[ActorComponent] = []    ### type hinting
+        if hasattr(self, '__dict__'):    ### for those have only __slots__
+            components.extend([c for c in self.__dict__.values() if isinstance(c, types)])
+        if hasattr(self, '__slots__'):
+            components.extend([getattr(self, c) for c in self.__slots__ if isinstance(getattr(self, c), types)])
+        return components
+    
     def register_components(self):
-        
         candidate = (ActorComponent, )
         components:list[ActorComponent] = []    ### type hinting
         
@@ -377,7 +386,6 @@ class Actor(MObject):
         
         if hasattr(self, '__dict__'):    ### for those have only __slots__
             components.extend([c for c in self.__dict__.values() if check_component(c)])
-        
         if hasattr(self, '__slots__'):
             components.extend([getattr(self, c) for c in self.__slots__ if check_component(getattr(self, c))])
         
@@ -422,8 +430,9 @@ class BodyComponent(ActorComponent):
         if position: self.position = position
         if angle: self.angle = angle
     
-    # def on_register(self):
-    #     print('body component set',self)
+    def on_register(self):
+        # print('body component set',self)
+        setattr(self.owner, 'draw', self.draw)
     
     def get_ref(self):
         return self.sprite
@@ -459,7 +468,6 @@ class BodyComponent(ActorComponent):
         self._hidden = self._hide(switch)
     
     hidden:bool = property(_get_hidden, _set_hidden)
-    
     
     def destroy(self) -> bool:
         self.sprite.remove_from_sprite_lists()
@@ -529,7 +537,7 @@ class BodyComponent(ActorComponent):
 
 
 
-class ControllerComponent(ActorComponent):
+class Controller(ActorComponent):
     #WIP
     """
     액터 컴포넌트로 만들지 않아도 되지 않을까.
@@ -570,27 +578,6 @@ class ControllerComponent(ActorComponent):
     def possess(self, actor:Actor):
         # if actor is not valid: return False
         self.owner = actor
-    
-    def on_key_press(self, key: int, modifiers: int):
-        pass
-    
-    def on_key_release(self, key: int, modifiers: int):
-        pass
-    
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        pass
-    
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        pass
-    
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-        pass
     
     @property
     def is_alive(self):
@@ -841,6 +828,8 @@ class Camera(arcade.Camera):
     def __init__(self, viewport_width: int = 0, viewport_height: int = 0, window: Optional["arcade.Window"] = None, 
                  max_lag_distance:float = None,
                  ):
+        if not viewport_width or not viewport_height:
+            viewport_width, viewport_height = CONFIG.screen_size.x, CONFIG.screen_size.y
         super().__init__(viewport_width, viewport_height, window)
         self.max_lag_distance:float = max_lag_distance
     
