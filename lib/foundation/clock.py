@@ -13,6 +13,9 @@ class Clock:
     import time as pytime
     get_time = pytime.time
     get_perf = pytime.perf_counter
+    strftime = pytime.strftime
+    gmtime = pytime.gmtime
+    start_perf:float = get_perf()
     
     def __init__(self, fps = 60, use_engine_tick = False) -> None:
         self.use_engine_tick = use_engine_tick
@@ -195,6 +198,10 @@ class Clock:
     @property
     def perf(self) -> float:
         return self.get_perf()
+    
+    @property
+    def uptime(self) -> str:
+        return self.strftime('%X', self.gmtime(self.perf - self.start_perf))
     
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

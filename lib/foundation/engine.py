@@ -616,7 +616,10 @@ class App(arcade.Window):
         # self.get_input_device()
         if ENV.gamepad: self.set_mouse_visible(False)
         ENV.debug_text = DebugTextLayer()
-        ENV.debug_text['fps'] = 0
+        ENV.debug_text['FPS'] = 0
+        ENV.debug_text['MEMORY_USAGE'] = ""
+        ENV.debug_text['UPTIME'] = ""
+        
         
     def on_key_press(self, key: int, modifiers: int):
         # ENV.key_inputs.append(key)
@@ -646,9 +649,9 @@ class App(arcade.Window):
         ENV.delta_time = delta_time
         
         CLOCK.fps_current = 1 / delta_time
-        ENV.debug_text['fps'] = CLOCK.fps_average
-        ENV.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024)))+" MB"
-
+        ENV.debug_text['FPS'] = CLOCK.fps_average
+        ENV.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
+        ENV.debug_text['UPTIME'] = CLOCK.uptime
         ENV.debug_text.perf_check('update_physics')
         ENV.physics_engine.step()
         ENV.debug_text.perf_check('update_physics')

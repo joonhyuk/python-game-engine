@@ -170,7 +170,7 @@ class PhysicsTestView(View):
         
         self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
-        if self._tmp: CLOCK.reserve_cancel(self._tmp.destroy) # works well
+        if self._tmp: self._tmp.destroy() # works well
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time

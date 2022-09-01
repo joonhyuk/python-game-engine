@@ -34,8 +34,8 @@ class ShrinkingBall(BallProjectile):
     __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
 
     def __init__(self, 
-                 shrinking_start = 3.0,
-                 shrinking_delay = 2.0,
+                 shrinking_start = 30.0,
+                 shrinking_delay = 20.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -47,6 +47,7 @@ class ShrinkingBall(BallProjectile):
         delay_run(self.shrinking_start, self.start_shrink)
         
     def start_shrink(self):
+        delay_cancel(self.start_shrink)
         schedule(self._shrink)
     
     def _shrink(self, dt):
