@@ -406,9 +406,8 @@ class Actor(MObject):
 
 
 class BodyComponent(ActorComponent):
-    __slots__ = ('sprite', 
-                 '_hidden', 
-                 )
+    
+    __slots__ = ('sprite', '_hidden', )
     
     def __init__(self, 
                  sprite:Sprite,
@@ -717,9 +716,8 @@ class View(arcade.View):
 
 class Sprite(arcade.Sprite):
     
-    __slots__ = ('owner',
-                 'collide_with_radius',
-                 )
+    __slots__ = ('owner', 'collide_with_radius', )
+    
     def __init__(self, 
                  filename: str = None, 
                  scale: float = 1, 
