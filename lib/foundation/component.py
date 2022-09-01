@@ -65,6 +65,7 @@ class StaticBody(BodyComponent):
                                             custom_damping=custom_damping,
                                             )
         
+        self.physics._scale = self.sprite.scale
         ### not working...
         # if body_type == physics_types.static:
         #     self._set_position = self.cannot_move
@@ -100,6 +101,15 @@ class StaticBody(BodyComponent):
         self.physics.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
         print('hide me!',switch)
         return switch
+    
+    def _get_scale(self) -> float:
+        return self.physics._scale
+    
+    def _set_scale(self, scale: float):
+        self.physics.scale = scale
+        return super()._set_scale(scale)
+    
+    scale = property(_get_scale, _set_scale)
     
     def _set_position(self, position) -> None:
         if not self.physics: self.sprite.position = position
@@ -145,6 +155,13 @@ class StaticBody(BodyComponent):
     
     # friction:float = property(_get_friction, _set_friction)
     friction:float = PropertyFrom('physics')
+    
+    def _get_scale(self) -> float:
+        return super()._get_scale()
+    
+    def _set_scale(self, scale: float):
+        # self.physics.shape.
+        return super()._set_scale(scale)
 
 
 class DynamicBody(StaticBody):

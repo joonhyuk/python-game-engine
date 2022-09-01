@@ -20,6 +20,8 @@ class PhysicsTestView(View):
         self.wall_layer = ObjectLayer(ENV.physics_engine)
         self.debris_layer = ObjectLayer(ENV.physics_engine)
         self.character_layer = ObjectLayer(ENV.physics_engine)
+        self.fx_layer = ObjectLayer(ENV.physics_engine)
+        
         self.test_layer = ObjectLayer(ENV.physics_engine)
         
         self.player:EscapePlayer = None
@@ -70,7 +72,8 @@ class PhysicsTestView(View):
                                collision_type=collision.debris,
                                physics_shape=physics_types.box,
                                )
-        box = DynamicObject(box_body)
+        # box = DynamicObject(box_body)
+        box = BigBox(box_body)
         box.spawn(self.debris_layer, CONFIG.screen_size / 2)
         ### DynamicObject.spawn test
         
@@ -135,20 +138,20 @@ class PhysicsTestView(View):
                 ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
                 ground.position = x, y
                 ground.color = (30, 30, 30)
-                layer.append(ground)
+                layer.add(ground)
     
     def on_key_press(self, key: int, modifiers: int):
         # print(modifiers, keys.MOD_OPTION)
         if key == keys.G: 
             self.change_gravity(vectors.zero)
         
-        if key == keys.UP and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.UP and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.up)
-        if key == keys.DOWN and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.DOWN and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.down)
-        if key == keys.LEFT and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.LEFT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.left)
-        if key == keys.RIGHT and modifiers in (keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.RIGHT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
         
         if key == keys.H: self.player.hidden = None
@@ -166,9 +169,7 @@ class PhysicsTestView(View):
         
         self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
-        if self._tmp: 
-            delay_cancel(self._tmp.destroy)
-        # if self._tmp: CLOCK.reserve_cancel(self._tmp.destroy) # works well
+        if self._tmp: CLOCK.reserve_cancel(self._tmp.destroy) # works well
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
@@ -227,10 +228,11 @@ class PhysicsTestView(View):
         self.wall_layer.draw()
         self.debris_layer.draw()
         
+        self.character_layer.draw()
+        self.fx_layer.draw()
+        
         self.test_layer.draw()
         
-        # self.player.draw()
-        self.character_layer.draw()
         debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         # self.test_layer.__getitem__(0).draw()
         # 

@@ -22,13 +22,83 @@ class BallProjectile(Ball):
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
         # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=pymunk.ShapeFilter.ALL_MASKS())
-        self.body.physics.shape.filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)
-        print(self.body.physics.shape.filter)
-    def __del__(self):
-        print('goodbye from ballprojectile actor')
+        # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)
+        # print(self.body.physics.shape.filter)
+
+class ShrinkingBall(BallProjectile):
     
-    def hide(self, dt):
-        self.visibility = False
+    def __init__(self, 
+                 shrinking_start = 3.0,
+                 shrinking_delay = 3.0,
+                 ) -> None:
+        super().__init__()
+        self.shrinking_start = shrinking_start
+        self.shrinking_delay = shrinking_delay
+        self.alpha = 1.0
+    
+    def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
+        super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
+        delay_run(self.shrinking_start, self.start_shrink)
+        
+    def start_shrink(self):
+        schedule(self._shrink)
+    
+    def _shrink(self, dt):
+        self.alpha -= dt / self.shrinking_delay
+        if self.alpha <= 0:
+            self.destroy()
+            return
+        alpha = clamp(self.alpha, 0.1, 1)
+        self.body.sprite.color = (255, 0, 255, 255 * alpha)
+        self.body.scale = alpha
+
+class BigBox(DynamicObject):
+    
+    def __init__(self, body: DynamicBody, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+        self.shrinking_start = 5
+        self.shrinking_delay = 10
+        self.alpha = 1.0
+        
+    def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
+        super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
+        delay_run(self.shrinking_start, self.start_shrink)
+    
+    def start_shrink(self):
+        schedule(self._shrink)
+    
+    def _shrink(self, dt):
+        self.alpha -= dt / self.shrinking_delay
+        if self.alpha <= 0:
+            self.destroy()
+            return
+        alpha = clamp(self.alpha, 0.1, 1)
+        self.body.sprite.color = (255, 0, 255, 255 * alpha)
+        self.body.scale = alpha
+    
+
+class TrasferProperty:
+    
+    def __init__(self, target:property):
+        print(target.__getattribute__())
+        self.fget = target.fget
+        self.fset = target.fset
+        self._name = ''
+        
+    def __set_name__(self, owner, name):
+        self._name = name
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        if self.fget is None:
+            raise AttributeError(f'unreadable attribute {self._name}')
+        return self.fget(obj)
+
+    def __set__(self, obj, value):
+        if self.fset is None:
+            raise AttributeError(f"can't set attribute {self._name}")
+        self.fset(obj, value)
 
 def find_name_in_mro(cls, name, default):
     "Emulate _PyType_Lookup() in Objects/typeobject.c"
@@ -99,7 +169,7 @@ class EscapePlayer(Character):
         '''
     
     def test_projectile(self, impulse:float = 10000):
-        proj = BallProjectile()
+        proj = ShrinkingBall()
         # delay_run(2, proj.destroy)
         # proj2 = BallProjectile()
         proj.body.damping = 1.0

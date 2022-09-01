@@ -513,6 +513,14 @@ class BodyComponent(ActorComponent):
     
     velocity:Vector = property(_get_veloticy, _set_velocity)
     
+    def _get_scale(self) -> float:
+        return self.sprite.relative_scale
+    
+    def _set_scale(self, scale:float):
+        self.sprite.relative_scale = scale
+    
+    scale = property(_get_scale, _set_scale)
+    
     @property
     def speed(self) -> float :
         ''' different from physics or sprite 
@@ -703,7 +711,7 @@ class View(arcade.View):
 
 class Sprite(arcade.Sprite):
     
-    __slots__ = ('owner', 'collide_with_radius', )
+    __slots__ = ('owner', 'collide_with_radius', '_initial_scale', '_relative_scale')
     
     def __init__(self, 
                  filename: str = None, 
@@ -716,15 +724,25 @@ class Sprite(arcade.Sprite):
                  texture: arcade.Texture = None, 
                  angle: float = 0):
         self.owner = None
+        self._initial_scale = scale
+        self._relative_scale = 1.0
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.collides_with_radius = False
 
     def scheduled_remove_from_sprite_lists(self, dt):
         # print('REMOVING!')
         return super().remove_from_sprite_lists()
+    
+    def _get_relative_scale(self) -> float:
+        return self._relative_scale
+    
+    def _set_relative_scale(self, scale:float):
+        self._relative_scale = scale
+        self.scale = self._initial_scale * self._relative_scale
+    
+    relative_scale = property(_get_relative_scale, _set_relative_scale)
 
-
-class SpriteCircle(arcade.SpriteCircle):
+class SpriteCircle(arcade.SpriteCircle, Sprite):
     def __init__(self, 
                  radius: int = 16, 
                  color: colors = colors.ALLOY_ORANGE, 

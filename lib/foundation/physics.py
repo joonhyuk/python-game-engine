@@ -266,20 +266,34 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body',
-                 'shape',
-                 'hitbox')
+    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
-                 hitbox: pymunk.Shape = None):
+                 hitbox: pymunk.Shape = None,
+                 mass_scaling:bool = True,
+                 ):
         
         self.body: Optional[pymunk.Body] = body
         ''' actual body which has mass, position, velocity, rotation '''
         self.shape: Optional[pymunk.Shape] = shape
         ''' main collision '''
-        self.hitbox: Optional[pymunk.Shape] = hitbox or shape
+        self.hitbox: Optional[pymunk.Shape] = hitbox
         ''' custom hitbox collision if needed '''
+        self._scale = 1.0
+        self._initial_size:Union(float, Vector) = self._get_size()
+        ''' no need to be set when poly '''
+        self._initial_mass = body.mass
+        self._mass_scaling = mass_scaling
+
+    def _get_size(self):
+        if not self.shape: return 0
+        if isinstance(self.shape, physics_types.circle):
+            return self.shape.radius
+        if isinstance(self.shape, physics_types.segment):
+            return (self.shape.a - self.shape.b).length
+        return None
+        
         
     def draw(self):
         if not CONFIG.debug_draw: return False
@@ -297,6 +311,26 @@ class PhysicsObject:
     def __del__(self):
         # print(self.__name__, 'deleted just now')
         pass
+    
+    def _get_scale(self):
+        return self._scale
+    
+    def _set_scale(self, scale:float):
+        ''' unsafe for real physics '''
+        # if scale <= 0: raise PhysicsException     ## need something
+        self._scale = scale
+        
+        if isinstance(self.shape, physics_types.circle):
+            self.shape.unsafe_set_radius(self._initial_size * scale)
+        else:
+            ### totally unsafe...
+            # self.shape.update(pymunk.Transform.scaling(scale))
+            if not self.hitbox: return False
+            st = pymunk.Transform.scaling(scale)
+            self.shape.unsafe_set_vertices(self.hitbox.get_vertices(), st)
+            if self._mass_scaling: self.mass = self._initial_mass * scale
+    
+    scale:float = property(_get_scale, _set_scale)
     
     def _get_mass(self):
         return self.body.mass
