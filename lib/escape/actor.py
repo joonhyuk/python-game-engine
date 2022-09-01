@@ -34,8 +34,8 @@ class ShrinkingBall(BallProjectile):
     __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
 
     def __init__(self, 
-                 shrinking_start = 30.0,
-                 shrinking_delay = 20.0,
+                 shrinking_start = 20.0,
+                 shrinking_delay = 30.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start

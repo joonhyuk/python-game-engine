@@ -309,10 +309,6 @@ class PhysicsObject:
                     shape.append(point.rotated(angle))
                 debug_draw_poly(self.body.position, shape, (255,255,255,255))
     
-    def __del__(self):
-        # print(self.__name__, 'deleted just now')
-        pass
-    
     def _get_scale(self):
         return self._scale
     

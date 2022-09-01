@@ -418,8 +418,8 @@ class Actor(MObject):
         self.tick_components = []
         return super().destroy()
     
-    def __del__(self):
-        print(self, 'actor removed. ciao!')
+    # def __del__(self):
+    #     print(self, 'actor removed. ciao!')
 
 
 class BodyComponent(ActorComponent):
