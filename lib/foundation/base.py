@@ -30,6 +30,32 @@ class SingletonType(type):
             return cls.__instance
 
 
+class PropertyFrom:
+    
+    __slots__ = ['proxied', 'name']
+    
+    def __init__(self, proxied) -> None:
+        self.proxied = proxied
+    
+    def __set_name__(self, owner, name):
+        ### 디스크립터는 클래스 정의 과정에서 실행되기 때문에 
+        ### __dict__, __slots__서 찾을 수 없는 시점에 체크하게 된다. 
+        ### __slots__를 미리 정의해두면 문제가 없지만 늘 그럴 수는 없으므로 삭제
+        ### get 과정에서 체크하면 성능에서 손해.
+        
+        # if not hasattr(owner, self.proxied):
+        #     raise AttributeError(f"'{owner}' has no attribute '{self.proxied}'")
+        # if not hasattr(getattr(owner, self.proxied), name):
+        #     raise AttributeError(f"'{getattr(owner, self.proxied)}' has no attribute '{name}'")
+        self.name = name
+    
+    def __get__(self, owner, objtype):
+        return getattr(getattr(owner, self.proxied), self.name, None)
+    
+    def __set__(self, owner, value):
+        setattr(getattr(owner, self.proxied), self.name, value)
+
+
 class Version(metaclass=SingletonType):
     '''planned to convert into singleton class'''
     def __init__(self, major:int = None, minor:int = None, patch:int = None, is_production = False, file = 'version.json', run_count_up = True) -> None:

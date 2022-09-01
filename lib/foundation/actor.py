@@ -24,7 +24,8 @@ class StaticObject(MObject):
         return super().spawn()
     
     def draw(self):
-        self.body.draw()
+        # self.body.draw()
+        pass    ### delegate draw to body. 
     
     def _get_position(self) -> Vector:
         return self.body.position
@@ -49,13 +50,15 @@ class StaticObject(MObject):
 
 class DynamicObject(Actor):
     
-    __slots__ = ('body', )
+    # __slots__ = ('body', 'apply_force', 'apply_impulse')
     def __init__(self, 
                  body:DynamicBody,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:DynamicBody = body
         self.movable = True
+        self.apply_force = self.body.apply_force_world
+        self.apply_impulse = self.body.apply_impulse_world
     
     def spawn(self, 
               spawn_to:ObjectLayer, 
@@ -68,46 +71,49 @@ class DynamicObject(Actor):
             self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
     
-    def draw(self):
-        self.body.draw()
+    # def draw(self):
+    #     # self.body.draw()
+    #     pass    ### delegate draw to body. 
     
-    def apply_force(self, force:Vector):
-        self.body.apply_force_world(force)
+    mass:float = PropertyFrom('body')
+    friction:float = PropertyFrom('body')
+    elasticity:float = PropertyFrom('body')
     
-    def apply_impulse(self, impulse:Vector):
-        self.body.apply_impulse_world(impulse)
+    # def _get_visibility(self) -> bool:
+    #     return self.body.visibility
     
-    def _get_visibility(self) -> bool:
-        return self.body.visibility
+    # def _set_visibility(self, switch:bool):
+    #     self.body.visibility = switch
     
-    def _set_visibility(self, switch:bool):
-        self.body.visibility = switch
+    # visibility:bool = property(_get_visibility, _set_visibility)
+    visibility:bool = PropertyFrom('body')
     
-    visibility:bool = property(_get_visibility, _set_visibility)
+    # def _get_position(self) -> Vector:
+    #     return self.body.position
     
-    def _get_position(self) -> Vector:
-        return self.body.position
+    # def _set_position(self, position) -> None:
+    #     self.body.position = position
     
-    def _set_position(self, position) -> None:
-        self.body.position = position
+    # position:Vector = property(_get_position, _set_position)
+    position:Vector = PropertyFrom('body')
     
-    position:Vector = property(_get_position, _set_position)
+    # def _get_angle(self) -> float:
+    #     return self.body.angle
     
-    def _get_angle(self) -> float:
-        return self.body.angle
+    # def _set_angle(self, angle:float):
+    #     self.body.angle = angle
     
-    def _set_angle(self, angle:float):
-        self.body.angle = angle
+    # angle:float = property(_get_angle, _set_angle)
+    angle:float = PropertyFrom('body')
     
-    angle:float = property(_get_angle, _set_angle)
+    # def _get_velocity(self) -> Vector:
+    #     return self.body.velocity
     
-    def _get_velocity(self) -> Vector:
-        return self.body.velocity
+    # def _set_velocity(self, velocity):
+    #     self.body.velocity = velocity
     
-    def _set_velocity(self, velocity):
-        self.body.velocity = velocity
-    
-    velocity:Vector = property(_get_velocity, _set_velocity)
+    # velocity:Vector = property(_get_velocity, _set_velocity)
+    velocity:Vector = PropertyFrom('body')
     
     @property
     def screen_position(self) -> Vector:
@@ -258,6 +264,8 @@ class CameraHandler(ActorComponent):
 
 class Pawn(DynamicObject):
     
+    # __slots__ = ('hp', 'movement', )
+    
     def __init__(self, 
                  body: DynamicBody, 
                  hp:float = 100,
@@ -281,6 +289,8 @@ class Pawn(DynamicObject):
 
 class Character(Pawn):
     
+    # __slots__ = ('camera', )
+    
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)
         
@@ -295,15 +305,4 @@ class Character(Pawn):
         return True
 
 
-class PlayerController(ControllerComponent):
-    #WIP
-    '''  '''
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        direction = ENV.direction_input
-        if direction: self.owner.movement.turn_toward(direction)
-        self.movement.move(ENV.move_input)
-        ENV.debug_text['player_speed'] = round(self.speed, 1)
+
