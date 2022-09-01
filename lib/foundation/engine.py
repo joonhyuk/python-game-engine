@@ -658,10 +658,17 @@ class App(arcade.Window):
     def on_update(self, delta_time: float):
         ENV.delta_time = delta_time
         
+        scheduler_count = pyglet_clock._schedule_interval_items.__len__()
+        
         CLOCK.fps_current = 1 / delta_time
         ENV.debug_text['FPS'] = CLOCK.fps_average
         ENV.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
         ENV.debug_text['UPTIME'] = CLOCK.uptime
+        ENV.debug_text['SCHEDULER'] = scheduler_count
+        # if scheduler_count > 600:
+            # print(f'WARNING : scheduler count {scheduler_count}')
+        if CLOCK.fps_average < 30:
+            print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
         ENV.debug_text.perf_check('update_physics')
         ENV.physics_engine.step()
         ENV.debug_text.perf_check('update_physics')

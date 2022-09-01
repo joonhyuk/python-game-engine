@@ -34,8 +34,8 @@ class ShrinkingBall(BallProjectile):
     __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
 
     def __init__(self, 
-                 shrinking_start = 20.0,
-                 shrinking_delay = 30.0,
+                 shrinking_start = 23.0,
+                 shrinking_delay = 37.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -120,7 +120,7 @@ class EscapePlayer(Character):
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
-        if self._fire_counter % 6 == 0:
+        if self._fire_counter % 5 == 0:
             if CONFIG.debug_f_keys[3]: self.test_projectile(1000)
             self._fire_counter = 0
         self._fire_counter += 1

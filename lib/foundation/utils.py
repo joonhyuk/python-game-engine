@@ -9,6 +9,7 @@ from arcade.experimental import Shadertoy, lights
 from lib.foundation.base import *
 from config.engine import *
 from pyglet.clock import schedule, schedule_once, schedule_interval, schedule_interval_soft, unschedule
+from pyglet.clock import _default as pyglet_clock
 
 
 def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade.Texture]):

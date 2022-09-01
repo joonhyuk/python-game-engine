@@ -264,7 +264,10 @@ class PhysicsTestView(View):
         ENV.debug_text.show_timer('mouse_lb_hold')
         ENV.debug_text.perf_check('update_game')
         
-        ENV.debug_text['BODY CREATED/REMOVED(GC)'] = f'{BodyComponent.counter_created}/{BodyComponent.counter_removed} ({BodyComponent.counter_gced})'
+        
+        ENV.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{BodyComponent.counter_created - BodyComponent.counter_removed}/\
+            {BodyComponent.counter_removed - BodyComponent.counter_gced}/\
+                {BodyComponent.counter_gced}'
         
         
 def main():
