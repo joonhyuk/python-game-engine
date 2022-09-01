@@ -299,7 +299,7 @@ class MObject(object):
         return self.on_destroy()
     
     def delay_destroy(self, dt):
-        print(dt)
+        # print(dt)
         return self.destroy()
     
     def on_destroy(self):

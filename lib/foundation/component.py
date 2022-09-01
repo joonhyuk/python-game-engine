@@ -523,13 +523,11 @@ class PhysicsMovement(ActorComponent):
             
             if self.stopped:
                 ''' 정지 상태에서 가속 '''
-                schedule_once(self._foo_print, 1)
+                # schedule_once(self._foo_print, 1)
+                pass
             
             self.owner.body.apply_force_world(self.move_direction * 1000)
             self.stopped = False
-    
-    def _foo_print(self, t):
-        print(self.owner.speed)
     
     def _set_heading(self, delta_time:float):
         ''' set player rotation per tick '''
