@@ -79,6 +79,7 @@ class BigBox(DynamicObject):
         schedule(self._shrink)
     
     def _shrink(self, dt):
+        if not CONFIG.debug_f_keys[4] :return False
         self.alpha = self.alpha + self._temp_multiplier * dt / self.shrinking_delay
         if self.alpha <= 0:
             self.alpha = 0
@@ -118,7 +119,7 @@ class EscapePlayer(Character):
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
         if self._fire_counter % 6 == 0:
-            if CONFIG.debug_draw: self.test_projectile(1000)
+            if CONFIG.debug_f_keys[3]: self.test_projectile(1000)
             self._fire_counter = 0
         self._fire_counter += 1
         '''

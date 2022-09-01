@@ -170,7 +170,7 @@ class PhysicsTestView(View):
         
         self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
-        if self._tmp: self._tmp.destroy() # works well
+        # if self._tmp: self._tmp.destroy() # works well
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
@@ -263,6 +263,8 @@ class PhysicsTestView(View):
         # ENV.debug_text.perf_check('update_empty_physics')
         ENV.debug_text.show_timer('mouse_lb_hold')
         ENV.debug_text.perf_check('update_game')
+        
+        ENV.debug_text['BODY CREATED/REMOVED(GC)'] = f'{BodyComponent.counter_created}/{BodyComponent.counter_removed} ({BodyComponent.counter_gced})'
         
         
 def main():

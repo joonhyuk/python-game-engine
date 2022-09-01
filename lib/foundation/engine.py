@@ -180,6 +180,10 @@ class Environment(metaclass = SingletonType):
     
     def on_key_press(self, key:int, modifiers:int):
         self.key_inputs.append(key)
+        if key == keys.GRAVE: CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
+        for i in range(13):
+            if key == keys.__dict__[f'F{i+1}']: CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
+        
         # self.key_inputs.append(modifiers)
     
     def on_key_release(self, key:int, modifiers:int):
@@ -420,6 +424,9 @@ class Actor(MObject):
 
 class BodyComponent(ActorComponent):
     
+    counter_created = 0 ### for debug
+    counter_removed = 0 ### for debug
+    counter_gced = 0 ### for debug
     __slots__ = ('sprite', '_hidden', )
     
     def __init__(self, 
@@ -428,6 +435,7 @@ class BodyComponent(ActorComponent):
                  angle:float = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
+        BodyComponent.counter_created += 1 ### for debug
         
         self.sprite:Sprite = sprite
         self._hidden:bool = False
@@ -443,7 +451,8 @@ class BodyComponent(ActorComponent):
         return self.sprite
     
     def __del__(self):
-        print(self, 'body component removed. Ciao!')
+        BodyComponent.counter_gced += 1
+        # print(self, 'body component removed. Ciao!')
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         self.sprite.owner = self.owner
@@ -475,6 +484,7 @@ class BodyComponent(ActorComponent):
     hidden:bool = property(_get_hidden, _set_hidden)
     
     def destroy(self) -> bool:
+        BodyComponent.counter_removed += 1
         self.sprite.remove_from_sprite_lists()
         return super().destroy()
     

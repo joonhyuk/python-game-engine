@@ -33,6 +33,9 @@ class default_settings:
     debug_draw = True
     directional_speed = {0:1.0, 30:1.0, 90:0.75, 120:0.75, 180:0.5}
     ''' directional speed multiplier '''
+    
+    debug_f_keys = [False] * 13
+    ''' 0: tilde, 1 ~ 12: F1 ~ F12 '''
 
 
 @dataclass
