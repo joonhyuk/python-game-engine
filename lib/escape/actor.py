@@ -63,7 +63,7 @@ class TrasferProperty:
 
 class EscapePlayer(Character):
     
-    __slots__ = ('_fire_counter', 'movement', 'camera')
+    # __slots__ = ('_fire_counter', 'movement', 'camera')
     
     def __init__(self, hp: float = 100, body: DynamicBody = None, **kwargs) -> None:
         if not body:
