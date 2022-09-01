@@ -370,7 +370,7 @@ class PhysicsObject:
     def _set_velocity(self, velocity:tuple[float, float]):
         self.body.velocity = velocity
     
-    velocity:Vector = property(_get_position, _set_position)
+    velocity:Vector = property(_get_velocity, _set_velocity)
     
     def _get_angle(self):
         return math.degrees(self.body.angle)
