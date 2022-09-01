@@ -34,6 +34,7 @@ class default_settings:
     directional_speed = {0:1.0, 30:1.0, 90:0.75, 120:0.75, 180:0.5}
     ''' directional speed multiplier '''
 
+
 @dataclass
 class vectors:
     ''' prepare basic vectors '''
@@ -54,18 +55,9 @@ class vectors:
     upperleft = (up + left).unit
     lowerleft = (down + left).unit
 
-# class direction(EnumVector):
-#     zero = Vector()
-#     up = Vector(0, 1)
-#     down = Vector(0, -1)
-#     left = Vector(1, 0)
-#     right = Vector(-1, 0)
-#     upleft = (up + left).normalize()
-#     upright = (up + right).normalize()
-#     downleft = (down + left).normalize()
-#     downright = (down + right).normalize()
 
 CONFIG = default_settings()
+
 
 class collision(IntFlag):
     ''' collision types '''
