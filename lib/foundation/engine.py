@@ -37,7 +37,7 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     def __init__(self, 
                  font_name = 'Kenney Mini Square', 
                  font_size = 10, 
-                 color = (255,255,255,128),
+                 color = (255,255,255,192),
                  bgcolor = None, 
                  topleft_position:Vector = Vector.diagonal(10) 
                  ):
@@ -667,8 +667,8 @@ class App(arcade.Window):
         ENV.debug_text['SCHEDULER'] = scheduler_count
         # if scheduler_count > 600:
             # print(f'WARNING : scheduler count {scheduler_count}')
-        if CLOCK.fps_average < 30:
-            print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
+        # if CLOCK.fps_average < 30:
+        #     print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
         ENV.debug_text.perf_check('update_physics')
         ENV.physics_engine.step()
         ENV.debug_text.perf_check('update_physics')

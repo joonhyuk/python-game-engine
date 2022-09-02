@@ -6,6 +6,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from lib.foundation import *
 from config import *
+import gc
+
+print(gc.get_stats())
 
 class MyProperty:
     "Emulate PyProperty_Type() in Objects/descrobject.c"
