@@ -183,13 +183,9 @@ class Environment(metaclass = SingletonType):
         if key == keys.GRAVE: CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
         for i in range(13):
             if key == keys.__dict__[f'F{i+1}']: CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
-        
-        # self.key_inputs.append(modifiers)
     
     def on_key_release(self, key:int, modifiers:int):
         self.key_inputs.remove(key)
-        # self.key_inputs.remove(modifiers)
-    
     
     @property
     def lstick(self) -> Vector:
@@ -248,11 +244,13 @@ class MObject(object):
         self.id:str = self.get_id()
         """set id by id()"""
         self._alive:bool = True
-        """object alive state. if not, should be destroyed"""
+        """ Object alive state. if not, should be destroyed. 
+        Implementation varies by class """
         self._lifetime:float = None
         self._update_tick:bool = True
+        """ 틱 활성화 여부 """
         self._spawned = False
-        """tick optimization"""
+        """ 스폰되었는지 여부. False시 tick을 실행하지 않는다. """
         self.movable = False
         ''' can move physically '''
         if kwargs:
@@ -613,17 +611,13 @@ class App(arcade.Window):
     ### class variables : are they needed?
     lshift_applied = False
     lctrl_applied = False
-    current_camera:arcade.Camera = None
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ENV.physics_engine = PhysicsEngine()
     
     def on_show(self):
-        # print('window_show')
         ENV.set_screen(self)
-        # self.direction_input = Vector()
-        # self.get_input_device()
         if ENV.gamepad: self.set_mouse_visible(False)
         ENV.debug_text = DebugTextLayer()
         ENV.debug_text['FPS'] = 0
@@ -692,14 +686,6 @@ class App(arcade.Window):
     def run(self):
         arcade.run()
     
-    @property
-    def render_ratio(self):
-        return self.get_framebuffer_size()[0] / self.get_size()[0]
-    
-    @property
-    def cursor_position(self) -> Vector:
-        return ENV.mouse_screen_position * ENV.render_scale
-
 
 class View(arcade.View):
     

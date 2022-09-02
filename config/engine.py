@@ -22,7 +22,7 @@ SFX_PATH = RESOURCE_PATH + 'sfx/'
 class default_settings:
     ''' default setting of mutable config variables '''
     screen_size = Vector(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
-    '''  '''
+    ''' current app resolution '''
     fog_of_war = True
     ''' draw shadow switch '''
     terminal_speed = 60000 // DEFAULT_FPS
@@ -59,9 +59,6 @@ class vectors:
     lowerleft = (down + left).unit
 
 
-CONFIG = default_settings()
-
-
 class collision(IntFlag):
     ''' collision types '''
     none = 0
@@ -73,4 +70,5 @@ class collision(IntFlag):
     projectile = auto()
     test = wall | character
     
-    
+
+CONFIG = default_settings()
