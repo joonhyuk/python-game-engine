@@ -9,7 +9,7 @@ class ActionComponent(ActorComponent):
     pass
 
 
-class SpriteBody(BodyComponent):
+class SpriteBody(Body):
     
     __slots__ = ()
     def __init__(self, 
@@ -25,7 +25,7 @@ class SpriteBody(BodyComponent):
             self.spawn(spawn_to, position, angle)
 
 
-class StaticBody(BodyComponent):
+class StaticBody(Body):
     
     __slots__ = ('physics', )
     def __init__(self, 
@@ -115,19 +115,19 @@ class StaticBody(BodyComponent):
         if not self.physics: self.sprite.position = position
         else: raise PhysicsException(f'Can\'t move static object by overriding position = {position}. Set position with StaticActor.')
         
-    position:Vector = property(BodyComponent._get_position, _set_position)  
+    position:Vector = property(Body._get_position, _set_position)  
     
     def _set_velocity(self, velocity):
         if not self.physics: self.sprite.velocity = velocity
         else: raise PhysicsException(f'Can\'t move static object by overriding velocity = {velocity}. Set position with StaticActor.')
 
-    velocity: Vector = property(BodyComponent._get_veloticy, _set_velocity)
+    velocity: Vector = property(Body._get_veloticy, _set_velocity)
     
     def _set_angle(self, angle: float):
         if not self.physics: self.sprite.angle = angle
         else: raise PhysicsException(f'Can\'t rotate static object by set angle = {angle}. Set angle with StaticActor.')
 
-    angle:float = property(BodyComponent._get_angle, _set_angle)
+    angle:float = property(Body._get_angle, _set_angle)
     
     # def _get_mass(self):
     #     return self.physics.mass
@@ -235,16 +235,16 @@ class DynamicBody(StaticBody):
             self.physics.body.position = position
         self.sprite.position = position
     
-    position:Vector = property(BodyComponent._get_position, _set_position)    
+    position:Vector = property(Body._get_position, _set_position)    
     
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
             self.physics.body.angle = math.radians(angle)
         self.sprite.angle = angle
 
-    angle:float = property(BodyComponent._get_angle, _set_angle)
+    angle:float = property(Body._get_angle, _set_angle)
     
-    velocity: Vector = property(BodyComponent._get_veloticy, BodyComponent._set_velocity)
+    velocity: Vector = property(Body._get_veloticy, Body._set_velocity)
     
     def _get_gravity(self):
         return self.sprite.pymunk.gravity

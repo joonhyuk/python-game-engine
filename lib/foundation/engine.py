@@ -337,15 +337,13 @@ class ActorComponent(MObject):
         ''' setup additional parameters '''
         pass
     
-    def tick(self, delta_time:float) -> bool:
-        return super().tick(delta_time)
-    
     def on_register(self):
         pass
     
     def destroy(self) -> bool:
         self._spawned = False
         # self._owner.components.remove(self)
+        self.on_destroy()
         return super().destroy()
     
     def on_destroy(self):
@@ -420,7 +418,7 @@ class Actor(MObject):
     #     print(self, 'actor removed. ciao!')
 
 
-class BodyComponent(ActorComponent):
+class Body(ActorComponent):
     
     counter_created = 0 ### for debug
     counter_removed = 0 ### for debug
@@ -433,7 +431,7 @@ class BodyComponent(ActorComponent):
                  angle:float = None,
                  **kwargs) -> None:
         super().__init__(**kwargs)
-        BodyComponent.counter_created += 1 ### for debug
+        Body.counter_created += 1 ### for debug
         
         self.sprite:Sprite = sprite
         self._hidden:bool = False
@@ -449,7 +447,7 @@ class BodyComponent(ActorComponent):
         return self.sprite
     
     def __del__(self):
-        BodyComponent.counter_gced += 1
+        Body.counter_gced += 1
         # print(self, 'body component removed. Ciao!')
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
@@ -482,7 +480,7 @@ class BodyComponent(ActorComponent):
     hidden:bool = property(_get_hidden, _set_hidden)
     
     def destroy(self) -> bool:
-        BodyComponent.counter_removed += 1
+        Body.counter_removed += 1
         self.sprite.remove_from_sprite_lists()
         return super().destroy()
     
@@ -806,13 +804,13 @@ class ObjectLayer(arcade.SpriteList):
         super().__init__(use_spatial_hash, spatial_hash_cell_size, is_static, atlas, capacity, lazy, visible)
         self.physics_instance = physics_instance
         
-    def add(self, obj:Union[Actor, BodyComponent, Sprite, SpriteCircle]):
+    def add(self, obj:Union[Actor, Body, Sprite, SpriteCircle]):
         sprite:Sprite = None
-        body:BodyComponent = None
+        body:Body = None
         if isinstance(obj, Actor):
             sprite = obj.body.sprite
             body = obj.body
-        elif isinstance(obj, (BodyComponent, )):
+        elif isinstance(obj, (Body, )):
             sprite = obj.sprite
             body = obj
         elif isinstance(obj, (Sprite, SpriteCircle)):
@@ -828,13 +826,13 @@ class ObjectLayer(arcade.SpriteList):
                     self.physics_instance.add_object(sprite, body.physics.body, body.physics.shape)
                     self.physics_instance.add_to_space(sprite)
                     
-    def remove(self, obj:Union[Actor, BodyComponent, Sprite, SpriteCircle]):
+    def remove(self, obj:Union[Actor, Body, Sprite, SpriteCircle]):
         sprite:Sprite = None
         # body:SimpleBody = None
         if isinstance(obj, Actor):
             sprite = obj.body.sprite
             # body = obj.body
-        elif isinstance(obj, BodyComponent):
+        elif isinstance(obj, Body):
             sprite = obj.sprite
             # body = obj
         elif isinstance(obj, (Sprite, SpriteCircle)):

@@ -63,7 +63,7 @@ class Foo(Actor):
         super().__init__(**kwargs)
         self.movement = PhysicsMovement()
         self.action = ActionComponent()
-        self.body = BodyComponent(SpriteCircle())
+        self.body = Body(SpriteCircle())
         
 
 f = Foo()
@@ -81,5 +81,10 @@ class BFoo(AFoo):
         if hasattr(self, '__slots__'): self.__slots__.extend(super().__slots__)
         self.b = 2
         
-b = BFoo()
-print(b.__slots__)
+
+'''
+테스트용 뷰 클래스:
+
+창 열고 기본 루프만 도는...
+
+'''
