@@ -2,6 +2,7 @@
 from lib.escape import *
 from config import *
 from tqdm import tqdm
+import gc
 
 VERSION = Version()
 
@@ -147,6 +148,7 @@ class PhysicsTestView(View):
         # print(modifiers, keys.MOD_OPTION)
         if key == keys.G: 
             self.change_gravity(vectors.zero)
+            gc.collect()    ### garbage collect manually
         
         if key == keys.UP and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.up)
