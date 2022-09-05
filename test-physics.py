@@ -1,7 +1,7 @@
 # from lib.foundation import *
 from lib.escape import *
 from config import *
-
+from tqdm import tqdm
 
 VERSION = Version()
 
@@ -99,7 +99,8 @@ class PhysicsTestView(View):
         
     def _setup_debris_onecue(self, layer:ObjectLayer):
         ### DynamicBody only test
-        for _ in range(PHYSICS_TEST_DEBRIS_NUM):
+        print('setup debris')
+        for _ in tqdm(range(PHYSICS_TEST_DEBRIS_NUM)):
             debri = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96)),
                                              mass = 0.5, elasticity = 0.2, friction=1.0,
                                              collision_type = collision.debris)
@@ -133,8 +134,9 @@ class PhysicsTestView(View):
                               spawn_to = layer)
         
     def _setup_field(self, layer:ObjectLayer):
+        print('setup field floor')
         field_size = 6400
-        for x in range(-field_size, field_size, 64):
+        for x in tqdm(range(-field_size, field_size, 64)):
             for y in range(-field_size, field_size, 64):
                 ground = Sprite(':resources:images/tiles/brickTextureWhite.png', 0.5)
                 ground.position = x, y
@@ -265,9 +267,7 @@ class PhysicsTestView(View):
         ENV.debug_text.perf_check('update_game')
         
         
-        ENV.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/\
-            {Body.counter_removed - Body.counter_gced}/\
-                {Body.counter_gced}'
+        ENV.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
         
         
 def main():
