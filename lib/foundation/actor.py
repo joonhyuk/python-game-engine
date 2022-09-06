@@ -258,7 +258,7 @@ class CameraHandler(ActorComponent):
         
         in_min = ENV.window_shortside // 5
         in_max = ENV.window_shortside // 1.2
-        ''' 최적화 필요 '''
+        ''' 최적화 필요 need optimization '''
         return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 
@@ -295,6 +295,7 @@ class Character(Pawn):
         super().__init__(body, hp, **kwargs)
         
         self.camera = CameraHandler()
+        self.controller:PawnController = None
         
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False

@@ -1,9 +1,9 @@
+from __future__ import annotations
 """
 framework wrapper for audio / video / control
 might be coupled with base framwork(i.e. arcade, pygame, ...)
 joonhyuk@me.com
 """
-from __future__ import annotations
 
 import os
 import PIL.Image
@@ -326,7 +326,7 @@ class ActorComponent(MObject):
     
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._owner = self
+        self._owner:Union[Actor, ActorComponent] = self
         # spawn = getattr(self, 'spawn', None)
         # if callable(spawn):
         #     print('spawn existence check ', spawn)
@@ -349,13 +349,14 @@ class ActorComponent(MObject):
     def on_destroy(self):
         pass
 
-    def _get_owner(self):
+    def _get_owner(self) -> Union[Actor, ActorComponent]:
         return self._owner or self
     
-    def _set_owner(self, owner):
+    def _set_owner(self, owner:Union[Actor, ActorComponent]):
         self._owner = owner
+        self._owner.movable = self.movable
     
-    owner = property(_get_owner, _set_owner)
+    owner:Union[Actor, ActorComponent] = property(_get_owner, _set_owner)
 
 
 class Actor(MObject):
@@ -420,9 +421,13 @@ class Actor(MObject):
 
 class Body(ActorComponent):
     
-    counter_created = 0 ### for debug
-    counter_removed = 0 ### for debug
-    counter_gced = 0 ### for debug
+    """
+    Base class of 'body'. Combined with transform component/
+    """
+    
+    counter_created = 0 ### for debug. total created
+    counter_removed = 0 ### for debug. total destroyed
+    counter_gced = 0 ### for debug. total garbage collected
     __slots__ = ('sprite', '_hidden', )
     
     def __init__(self, 
@@ -555,12 +560,130 @@ class Body(ActorComponent):
         return self.sprite.sprite_lists
 
 
+class MovementHandler(ActorComponent):
+    #WIP
+    ''' need body component to move '''
+    '''
+    목표 지점으로 이동
+    방향과 속도로 이동
+    워프?
+    '''
+    def __init__(self, 
+                 max_speed_run:float = 250,
+                 max_speed_walk:float = 100,
+                 rotation_interp_speed:float = 3.0,
+                 acceleration:float = 4,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:Body = None
 
-class Controller(ActorComponent):
+        self.move_direction:Vector = None
+        ''' direction unit vector for movement '''
+        self.desired_angle:float = None
+        self.rotation_interp_speed = rotation_interp_speed
+    
+    def on_register(self):
+        body:list[Body] = self.owner.get_components(Body)
+        if not body or len(body) > 1:
+            raise Exception('MovementHandler needs only one Body')
+        elif not body[0].movable:
+            raise Exception('Body should be movable')
+        self.body = body[0]
+        self.desired_angle = self.body.angle
+        # self.owner.move = self.move
+        """
+        이동에 필요한 것이 없으면 비활성화 시켜야 함.
+        """
+    
+    def tick(self, delta_time:float):
+        if not super().tick(delta_time): return False
+        self._set_heading(delta_time)
+        self._set_movement(delta_time)
+    
+    def _set_movement(self, delta_time:float):
+        if not self.move_direction: return False
+        if self.move_direction.near_zero():
+            ''' stop '''
+            if self.body.velocity.is_zero: return False
+            if self.body.velocity.near_zero():
+                self.body.velocity = vectors.zero
+                return False
+        
+        return self.set_movement(delta_time)
+    
+    def _set_heading(self, delta_time:float):
+        if self.body.angle == self.desired_angle: return False
+        if math.isclose(self.body.angle, self.desired_angle):
+            self.body.angle = self.desired_angle
+            return False
+        
+        return self.set_heading(delta_time)
+    
+    def set_movement(self, delta_time:float):
+        ''' overridable method for movement setting '''
+        return True
+    
+    def set_heading(self, delta_time:float):
+        ''' overridable or inheritable method for rotation setting '''
+        self.body.angle = get_positive_angle(rinterp_to(self.body.angle,
+                                                        self.desired_angle,
+                                                        delta_time,
+                                                        self.rotation_interp_speed
+                                                        ))
+        return True
+    
+    def update(self, delta_time: float) -> bool:
+        
+        return True
+    
+    def move_to_position(self, destination:Vector):
+        #WIP
+        ''' move to position '''
+        cur_move_vec = destination - self.body.position
+        self.move(cur_move_vec)
+    
+    def move_toward(self, direction:Vector, speed:float):
+        pass
+    
+    def move(self, force:Vector):
+        self.owner.apply_force(force)
+        pass
+    
+    def move_forward(self, angle:float = 0.0):
+        # if not angle: self.body.apply
+        pass
+    
+    def turn(self, angle:float = 0.0):
+        self.desired_angle = angle
+    
+    def turn_by(self, angle_diff:float = 0.0):
+        self.desired_angle += angle_diff
+    
+    def turn_toward(self, direction:Vector = None):
+        if not direction: return False
+        self.desired_angle = direction.argument()
+    
+    def turn_to_position(self, destination:Vector = None):
+        if not destination: return False
+        angle = (destination - self.body.position).argument()
+        self.turn(angle)
+        
+    def move_toward(self, destination:Vector):
+        self.move_to_position(destination)
+        self.turn_to_position(destination)
+    
+    def warp(self, position:Vector, angle:float):
+        pass
+    
+
+class PawnController(ActorComponent):
     #WIP
     """
     액터 컴포넌트로 만들지 않아도 되지 않을까.
     어차피 컨트롤러니까 앱 혹은 ENV에 등록해두고... 즉, 액터의 owner가 되는거지.
+    액션을 수행할 body와 움직임을 제어할 movement는 있어야 하므로 pawn부터 붙을 수 있음.
+    즉, 게임에서 ai를 가질 수 있는 것은 pawn부터.
+    pawn에 controller를 붙이면 character가 된다.
     
     입력(조작) 혹은 명령(조건에 따른)에 의해 액터의 의지인양 움직이는 것.
     (리액션은 컨트롤러가 책임지지 않음.)
@@ -589,6 +712,16 @@ class Controller(ActorComponent):
     
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
+        self.body:Body = None
+        self.movement:MovementHandler = None
+    
+    def on_register(self):
+        
+        self.body = self.owner.get_components(Body)
+        self.movement = self.owner.get_components(MovementHandler)
+        
+        if not self.body or not self.movement:
+            raise Exception('Controller needs Body and Movement')
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -598,10 +731,8 @@ class Controller(ActorComponent):
         # if actor is not valid: return False
         self.owner = actor
     
-    @property
-    def is_alive(self):
-        if not self.owner: return False
-        return self.owner.is_alive
+    def testing(self):
+        self.owner.move(vectors.up)
 
 
 class App(arcade.Window):
@@ -662,8 +793,13 @@ class App(arcade.Window):
         # if CLOCK.fps_average < 30:
         #     print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
         ENV.debug_text.perf_check('update_physics')
-        ENV.physics_engine.step()
+        ENV.physics_engine.step(resync_objects=False)
         ENV.debug_text.perf_check('update_physics')
+        
+        ENV.debug_text.perf_check('resync_objects')
+        ENV.physics_engine.resync_objects()
+        ENV.debug_text.perf_check('resync_objects')
+        
         
     def on_draw(self):
         # print('window_draw')
@@ -751,6 +887,7 @@ class Sprite(arcade.Sprite):
         self.scale = self._initial_scale * self._relative_scale
     
     relative_scale = property(_get_relative_scale, _set_relative_scale)
+
 
 class SpriteCircle(arcade.SpriteCircle, Sprite):
     

@@ -9,7 +9,7 @@ VERSION = Version()
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
 PLAYER_ATTACK_RANGE = 500
-PHYSICS_TEST_DEBRIS_NUM = 200
+PHYSICS_TEST_DEBRIS_NUM = 50
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 
@@ -42,7 +42,6 @@ class PhysicsTestView(View):
         
         self.player = EscapePlayer()
         self.player.spawn(self.character_layer, Vector(100, 100))
-        
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
         # self.player.body.physics.shape.friction = 1.0
         # self.player.body.sprite.pymunk.gravity = (0,980)
@@ -56,7 +55,7 @@ class PhysicsTestView(View):
         self._setup_debris_onecue(self.debris_layer)
         
         ### test new method!
-        test_simplebody = StaticBody(SpriteCircle(32), 
+        test_simplebody = StaticBody(SpriteCircle(32, colors.GREEN), 
                                      physics_shape = physics_types.circle,
                                      position=Vector(300,300),
                                      collision_type=collision.none,
@@ -158,6 +157,8 @@ class PhysicsTestView(View):
             self.change_gravity(vectors.left)
         if key == keys.RIGHT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
+        
+        if key == keys.SPACE: self.player.test_boost(500)
         
         if key == keys.H: self.player.hidden = None
         

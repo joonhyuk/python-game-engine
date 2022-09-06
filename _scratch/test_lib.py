@@ -8,7 +8,7 @@ from lib.foundation import *
 from config import *
 import gc
 
-print(gc.get_stats())
+# print(gc.get_stats())
 
 class MyProperty:
     "Emulate PyProperty_Type() in Objects/descrobject.c"
@@ -68,19 +68,61 @@ class Foo(Actor):
 
 f = Foo()
 
-class AFoo:
-    __slots__ = ['a',]
-    def __init__(self) -> None:
-        self.a = 1
 
-
-class BFoo(AFoo):
-    __slots__ = ['b',]
-    def __init__(self) -> None:
-        super().__init__()
-        if hasattr(self, '__slots__'): self.__slots__.extend(super().__slots__)
-        self.b = 2
+class PropertySet:
+    
+    def __init__(self, proxied) -> None:
+        self.proxied = proxied
+        self.name = None
         
+    def __set_name__(self, owner, name):
+        print(owner, name)
+        self.name = name
+    
+    def __get__(self, owner, objtype = None):
+        return getattr(owner, self.name, None)
+
+
+class CComponent(ActorComponent):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._aa = 0
+    
+    def _get_aa(self):
+        print('get_aa')
+        return self._aa
+    
+    def _set_aa(self, aa):
+        print('set_aa')
+        self._aa = aa
+    
+    aa = property(_get_aa, _set_aa)
+    
+    def on_register(self):
+        setattr(self.owner, 'aa', self.aa)
+        # setattr(self.owner, 'aa', PropertySet())
+        
+
+
+class AActor(Actor):
+    
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.cc = CComponent()
+    
+    aa = PropertyFrom('cc')
+
+
+a = AActor()
+a.spawn()
+# print(a.aa)
+# a.aa = 3
+
+b = StaticBody(SpriteCircle())
+d = DynamicBody(SpriteCircle())
+
+print(b.is_movable_physics)
+print(d.is_movable_physics)
 
 '''
 테스트용 뷰 클래스:

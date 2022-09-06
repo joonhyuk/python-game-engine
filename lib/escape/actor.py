@@ -35,7 +35,7 @@ class ShrinkingBall(BallProjectile):
 
     def __init__(self, 
                  shrinking_start = 23.0,
-                 shrinking_delay = 37.0,
+                 shrinking_delay = 27.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -109,14 +109,16 @@ class EscapePlayer(Character):
         super().__init__(body, hp, **kwargs)
         self.body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
+        self.max_energy = 100
+        self.energy = self.max_energy
         
         # self.hidden = TrasferProperty(self.body.hidden)
     
-    hidden = PropertyFrom('body')
-    position = PropertyFrom('body')
-    angle = PropertyFrom('body')
-    velocity = PropertyFrom('body')
-    visibility = PropertyFrom('body')
+    # hidden = PropertyFrom('body')
+    # position = PropertyFrom('body')
+    # angle = PropertyFrom('body')
+    # velocity = PropertyFrom('body')
+    # visibility = PropertyFrom('body')
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
@@ -133,6 +135,8 @@ class EscapePlayer(Character):
         Failed condition: !space->locked
         Source:Chipmunk2D/src/cpSpace.c:527
         '''
+    def test_boost(self, power:float = 1000):
+        self.apply_impulse(self.forward_vector * power)
     
     def test_projectile(self, impulse:float = 10000):
         proj = ShrinkingBall()

@@ -162,6 +162,10 @@ class StaticBody(Body):
     def _set_scale(self, scale: float):
         # self.physics.shape.
         return super()._set_scale(scale)
+    
+    @property
+    def is_movable_physics(self) -> bool:
+        return self.movable and True if self.physics else False
 
 
 class DynamicBody(StaticBody):
@@ -457,38 +461,11 @@ class SpriteMovement(ActorComponent):
         else: return self._braking
     
 
-class MovementHandler(ActorComponent):
-    #WIP
-    ''' need body component to move '''
-    def __init__(self, 
-                 max_speed_run:float = 250,
-                 max_speed_walk:float = 100,
-                 rotation_interp_speed:float = 3.0,
-                 acceleration:float = 4,
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        
-        self.move_direction:Vector = None
-        self.desired_angle:float = 0.0
-    
-    def update(self, delta_time: float) -> bool:
-        
-        return True
-    
-    def move(self):
-        pass
-    
-    def rotate(self, angle):
-        pass
-    
-    def warp(self, position):
-        pass
-    
-
 class PhysicsMovement(ActorComponent):
     ''' movement handler for actor based on pymunk physics engine '''
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, acceleration:float = 10,**kwargs) -> None:
         super().__init__(**kwargs)
+        self.acceleration = acceleration
         self.move_direction:Vector = None
         self.desired_angle:float = 0.0
         self.rotation_interp_speed = 3.0
@@ -526,7 +503,8 @@ class PhysicsMovement(ActorComponent):
                 # schedule_once(self._foo_print, 1)
                 pass
             
-            self.owner.body.apply_force_world(self.move_direction * 1000)
+            self.owner.body.apply_force_world(self._get_force(self.move_direction, 250))
+            # self.owner.velocity = self.move_direction * 250
             self.stopped = False
     
     def _set_heading(self, delta_time:float):
@@ -541,6 +519,10 @@ class PhysicsMovement(ActorComponent):
         self.owner.angle = get_positive_angle(rot)
         return True
     
+    def _get_force(direction:Vector, speed:float):
+        damping = pow(ENV.physics_engine.damping, 1/60)
+        return direction * speed * (1 - damping) * 60
+    
     def move(self, direction:Vector = vectors.zero):
         self.move_direction = direction
     
@@ -554,7 +536,18 @@ class PhysicsMovement(ActorComponent):
         self.turn(angle)
     
 
-class PlayerController(Controller):
+class NewSpriteMovement(MovementHandler):
+    
+    pass
+
+
+class NewPhysicsMovement(MovementHandler):
+    
+    def _set_movement(self, delta_time: float):
+        return super()._set_movement(delta_time)
+
+
+class PlayerController(PawnController):
     #WIP
     '''  '''
     def __init__(self, **kwargs) -> None:
