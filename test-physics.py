@@ -160,7 +160,8 @@ class PhysicsTestView(View):
         
         if key == keys.SPACE: self.player.test_boost(500)
         
-        if key == keys.H: self.player.hidden = None
+        if key == keys.H:
+            self.player.body.physics.hidden = None
         
         if key == keys.I: self._setup_debris_onecue(self.debris_layer)
         

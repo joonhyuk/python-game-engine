@@ -266,7 +266,7 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly')
+    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
@@ -286,6 +286,8 @@ class PhysicsObject:
         self._initial_mass = body.mass
         if hitbox: self._original_poly = self.hitbox.get_vertices()
         self._mass_scaling = mass_scaling
+        
+        self._hidden = False
 
     def _get_size(self):
         if not self.shape: return 0
@@ -295,6 +297,11 @@ class PhysicsObject:
             return (self.shape.a - self.shape.b).length
         return None
 
+    def _hide(self, switch:bool = None):
+        if switch is None: switch = not self._hidden
+        self.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        return switch
+    
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
@@ -384,6 +391,14 @@ class PhysicsObject:
         self.shape.collision_type = collision_type
     
     collision_type = property(_get_collision_type, _set_collision_type)
+    
+    def _get_hidden(self):
+        return self._hidden
+    
+    def _set_hidden(self, switch:bool = None):
+        self._hidden = self._hide(switch)
+        
+    hidden:bool = property(_get_hidden, _set_hidden)
     
     @property
     def speed(self):

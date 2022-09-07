@@ -98,7 +98,8 @@ class StaticBody(Body):
     def _hide(self, switch: bool = None) -> bool:
         #WIP : should revisit filter control
         switch = super()._hide(switch)
-        self.physics.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        # self.physics.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        self.physics.hidden = switch
         print('hide me!',switch)
         return switch
     

@@ -896,6 +896,15 @@ class Sprite(arcade.Sprite):
         self.scale = self._initial_scale * self._relative_scale
     
     relative_scale = property(_get_relative_scale, _set_relative_scale)
+    
+    def _get_hidden(self):
+        return not self.visible
+    
+    def _set_hidden(self, switch:bool = None):
+        if switch is None: switch = self.visible
+        self.visible = not switch
+    
+    hidden:bool = property(_get_hidden, _set_hidden)
 
 
 class SpriteCircle(arcade.SpriteCircle, Sprite):
