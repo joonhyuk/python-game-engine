@@ -48,6 +48,35 @@ class StaticObject(MObject):
     angle:float = property(_get_angle, _set_angle)
 
 
+class SimpleObject(Actor):
+    def __init__(self, 
+                 body:Body,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:Body = body
+        self.movable = True
+    
+    def spawn(self, 
+              spawn_to:ObjectLayer, 
+              position:Vector = None,
+              angle:float = None,
+              initial_impulse:Vector = None,
+              lifetime: float = None) -> None:
+        
+        self.body.spawn(spawn_to, position, angle)
+        if initial_impulse:
+            self.body.apply_impulse_world(initial_impulse)
+        return super().spawn(lifetime)
+
+    def register_components(self):
+        self.body.owner = self
+        self.tick_components.append(self.body.tick)
+        self.body.on_register()
+        # return super().register_components()
+    
+    position:Vector = PropertyFrom('body')
+    
+    
 class DynamicObject(Actor):
     
     # __slots__ = ('body', 'apply_force', 'apply_impulse')
@@ -62,10 +91,13 @@ class DynamicObject(Actor):
     
     def spawn(self, 
               spawn_to:ObjectLayer, 
-              position:Vector,
+              position:Vector = None,
               angle:float = None,
               initial_impulse:Vector = None,
               lifetime: float = None) -> None:
+        if not position:
+            position = self.body.position
+        
         self.body.spawn(spawn_to, position, angle)
         if initial_impulse:
             self.body.apply_impulse_world(initial_impulse)

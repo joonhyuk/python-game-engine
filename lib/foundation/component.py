@@ -38,7 +38,7 @@ class StaticBody(Body):
                  body_type = physics_types.static,
                  collision_type = collision.wall,
                  elasticity:float = None,
-                 friction:float = 1.0,
+                 friction:float = 0.7,
                  shape_edge_radius:float = 0.0,
                  physics_shape:Union[physics_types.shape, type] = physics_types.poly,
                  offset_circle:Vector = vectors.zero,
@@ -181,7 +181,7 @@ class DynamicBody(StaticBody):
                  body_type:int = physics_types.dynamic,
                  collision_type:int = collision.default,
                  elasticity: float = None,
-                 friction: float = 1,
+                 friction: float = 0.5,
                  shape_edge_radius: float = 0,
                  physics_shape: Union[physics_types.shape, type] = physics_types.circle,
                  offset_circle: Vector = vectors.zero,
@@ -519,9 +519,9 @@ class PhysicsMovement(ActorComponent):
         self.owner.angle = get_positive_angle(rot)
         return True
     
-    def _get_force(direction:Vector, speed:float):
+    def _get_force(self, direction:Vector, speed:float):
         damping = pow(ENV.physics_engine.damping, 1/60)
-        return direction * speed * (1 - damping) * 60
+        return direction * speed * (1 - damping) * 60 * self.owner.body.mass
     
     def move(self, direction:Vector = vectors.zero):
         self.move_direction = direction
@@ -580,4 +580,6 @@ class PlayerController(PawnController):
     
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         pass
-    
+
+class LifeTime(ActorComponent):
+    pass

@@ -9,7 +9,7 @@ VERSION = Version()
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
 PLAYER_ATTACK_RANGE = 500
-PHYSICS_TEST_DEBRIS_NUM = 50
+PHYSICS_TEST_DEBRIS_NUM = 1000
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 
@@ -52,10 +52,10 @@ class PhysicsTestView(View):
         
         self._setup_walls_onecue(self.wall_layer)
         
-        self._setup_debris_onecue(self.debris_layer)
+        # self._setup_debris_onecue(self.debris_layer)
         
         ### test new method!
-        test_simplebody = StaticBody(SpriteCircle(32, colors.GREEN), 
+        test_simplebody = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
                                      physics_shape = physics_types.circle,
                                      position=Vector(300,300),
                                      collision_type=collision.none,
@@ -161,6 +161,8 @@ class PhysicsTestView(View):
         if key == keys.SPACE: self.player.test_boost(500)
         
         if key == keys.H: self.player.hidden = None
+        
+        if key == keys.I: self._setup_debris_onecue(self.debris_layer)
         
         return super().on_key_press(key, modifiers)
     

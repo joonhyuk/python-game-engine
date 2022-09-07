@@ -257,6 +257,11 @@ class MObject(object):
             for k in kwargs:
                 # setattr(self, k, kwargs[k])
                 self.__setattr__(k, kwargs[k])
+        self.on_init()
+    
+    def on_init(self) -> None:
+        ''' override me if needed '''
+        pass
         
     def get_id(self) -> str:
         return str(id(self))
@@ -270,7 +275,12 @@ class MObject(object):
             CLOCK.timer_start(self.id)
         
         self._spawned = True
+        self.on_spawn()
         return self
+    
+    def on_spawn(self) -> None:
+        ''' override me if needed '''
+        pass
     
     def tick(self, delta_time:float) -> bool:
         """alive, ticking check\n
@@ -342,7 +352,7 @@ class ActorComponent(MObject):
     
     def destroy(self) -> bool:
         self._spawned = False
-        # self._owner.components.remove(self)
+        # self._owner.__dict__.popitem(self)    #optimization-memory
         self.on_destroy()
         return super().destroy()
     
@@ -445,19 +455,18 @@ class Body(ActorComponent):
         if angle: self.angle = angle
     
     def on_register(self):
-        # print('body component set',self)
-        setattr(self.owner, 'draw', self.draw)
+        if isinstance(self.owner, Actor):
+            setattr(self.owner, 'draw', self.draw)
     
     def get_ref(self):
         return self.sprite
     
     def __del__(self):
         Body.counter_gced += 1
-        # print(self, 'body component removed. Ciao!')
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         self.sprite.owner = self.owner
-        
+        print(self.owner)
         if position is not None: 
             self.position = position
         if angle is not None:
@@ -899,10 +908,6 @@ class SpriteCircle(arcade.SpriteCircle, Sprite):
                  soft: bool = False):
         self.owner = None
         super().__init__(radius, color, soft)
-
-    def scheduled_remove_from_sprite_lists(self, dt):
-        # print('REMOVING!')
-        return super().remove_from_sprite_lists()
 
 
 class Capsule(Sprite):
