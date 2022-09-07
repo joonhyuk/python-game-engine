@@ -294,8 +294,7 @@ class PhysicsObject:
         if isinstance(self.shape, physics_types.segment):
             return (self.shape.a - self.shape.b).length
         return None
-        
-        
+
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
@@ -634,8 +633,8 @@ class PhysicsEngine:
     
     def get_object_from_shape(self, shape: Optional[pymunk.Shape]) -> Optional[Sprite]:
         """ Given a shape, what sprite is associated with it? """
-        for sprite in self.objects:
-            if self.objects[sprite].shape is shape:
+        for sprite, physics in self.objects.items():
+            if physics.shape is shape:
                 return sprite
         return None
     
@@ -645,6 +644,10 @@ class PhysicsEngine:
         sprite1 = self.get_object_from_shape(shape1)
         sprite2 = self.get_object_from_shape(shape2)
         return sprite1, sprite2
+    
+    def get_owner(self, shape:Optional[pymunk.Shape]):
+        print('HIT SPRITE ', self.get_object_from_shape(shape))
+        return self.get_object_from_shape(shape).owner
     
     def is_on_ground(self, sprite: Sprite) -> bool:
         """ Return true of sprite is on top of something. """
