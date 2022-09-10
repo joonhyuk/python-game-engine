@@ -212,14 +212,14 @@ class Environment(metaclass = SingletonType):
     move_input:Vector = property(_get_move_input)
     ''' returns movement direction vector (-1, -1) ~ (1, 1) '''
     
-    def _get_direction_input(self):
+    def _get_target_point(self):
         if self.gamepad:
             if self.rstick.length > 0.5:
                 return (self.rstick.unit * CONFIG.screen_size.y / 2 + self.abs_screen_center) * self.render_scale
         else:
             return self.abs_cursor_position
     
-    direction_input:Vector = property(_get_direction_input)
+    target_point:Vector = property(_get_target_point)
     ''' returns relative target point '''
     
     def _get_cursor_position(self) -> Vector:
@@ -333,7 +333,7 @@ class MObject(object):
 
 class ActorComponent(MObject):
     '''component base class'''
-    __slots__ = ('_owner', )
+    __slots__ = ('_owner', 'priority')
     
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -342,6 +342,8 @@ class ActorComponent(MObject):
         # if callable(spawn):
         #     print('spawn existence check ', spawn)
         self._spawned = True
+        self.priority:int = 0
+        ''' tick priority : the higher the earlier  '''
     
     def on_register(self):
         pass
@@ -396,6 +398,8 @@ class Actor(MObject):
                     if component.tick: self.tick_components.append(component)
                     ''' to disable component tick, put `self.tick = None` into __init__() '''
                 if hasattr(component, 'on_register'): component.on_register()
+        
+        self.tick_components.sort(key = lambda tc:tc.priority, reverse = True)
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
@@ -590,6 +594,7 @@ class MovementHandler(ActorComponent):
         if not super().tick(delta_time): return False
         self._set_heading(delta_time)
         self._set_movement(delta_time)
+        return True
     
     def _set_movement(self, delta_time:float):
         if not self.move_direction: return False
@@ -612,6 +617,7 @@ class MovementHandler(ActorComponent):
     
     def set_movement(self, delta_time:float):
         ''' overridable method for movement setting '''
+        self.body.apply_force(self.move_direction * 1000)
         return True
     
     def set_heading(self, delta_time:float):
@@ -705,18 +711,15 @@ class PawnController(ActorComponent):
         super().__init__(**kwargs)
         self.body:Body = None
         self.movement:MovementHandler = None
+        self.priority = 9
     
     def on_register(self):
         
-        self.body = self.owner.get_components(Body)
-        self.movement = self.owner.get_components(MovementHandler)
+        self.body = self.owner.get_components(Body)[0]
+        self.movement = self.owner.get_components(MovementHandler)[0]
         
         if not self.body or not self.movement:
             raise Exception('Controller needs Body and Movement')
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        return True
     
     def possess(self, actor:Actor):
         # if actor is not valid: return False
@@ -725,6 +728,18 @@ class PawnController(ActorComponent):
     def testing(self):
         self.owner.move(vectors.up)
 
+
+class PlayerController(PawnController):
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        
+        self.movement.turn_to_position(ENV.target_point)
+        # self.movement.move(ENV.move_input)
+        self.movement.move_direction = ENV.move_input
+        ENV.debug_text['player_speed'] = round(self.body.speed, 1)
+        
+        return True
 
 class App(arcade.Window):
     

@@ -11,61 +11,20 @@ from lib.foundation.engine import *
 from lib.foundation.component import *
 
 
-class StaticObject(MObject):
-    ''' Actor with simple sprite '''
-    __slots__ = ('body', )
-    
-    def __init__(self, body:StaticBody, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.body:StaticBody = body
-    
-    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
-        self.body.spawn(spawn_to, position, angle)
-        return super().spawn()
-    
-    def draw(self):
-        # self.body.draw()
-        pass    ### delegate draw to body. 
-    
-    def _get_position(self) -> Vector:
-        return self.body.position
-    
-    def _set_position(self, position) -> None:
-        self.body.sprite.position = position
-        self.body.physics.position = position
-        self.body.physics.space.reindex_static()
-        
-    position:Vector = property(_get_position, _set_position)
-    
-    def _get_angle(self) -> float:
-        return self.body.angle
-    
-    def _set_angle(self, angle:float = 0.0):
-        self.body.sprite.angle = angle
-        self.body.physics.angle = angle
-        self.body.physics.space.reindex_static()
-    
-    angle:float = property(_get_angle, _set_angle)
-
-
-class SimpleObject(Actor):
+class BodyObject(Actor):
     def __init__(self, 
                  body:Body,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:Body = body
-        self.movable = True
     
     def spawn(self, 
               spawn_to:ObjectLayer, 
               position:Vector = None,
               angle:float = None,
-              initial_impulse:Vector = None,
               lifetime: float = None) -> None:
         
         self.body.spawn(spawn_to, position, angle)
-        if initial_impulse:
-            self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
 
     def register_components(self):
@@ -75,8 +34,48 @@ class SimpleObject(Actor):
         # return super().register_components()
     
     position:Vector = PropertyFrom('body')
+    angle:float = PropertyFrom('body')
+
+
+class StaticObject(Actor):
+    ''' Actor with simple sprite '''
+    __slots__ = ('body', )
     
+    def __init__(self, body:StaticBody, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:StaticBody = body
     
+    def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
+        self.body.owner = self
+        if position is not None: self.position = position
+        if angle is not None: self.angle = angle
+        self.body.spawn(spawn_to)
+        return super().spawn()
+
+    def draw(self):
+        self.body.draw()
+    
+    def _get_position(self) -> Vector:
+        return self.body.position
+    
+    def _set_position(self, position) -> None:
+        self.body.sprite.position = position
+        self.body.physics.position = position
+        if self._spawned: self.body.physics.space.reindex_static()    #BUG : when spawn, not yet added to space
+        
+    position:Vector = property(_get_position, _set_position)
+    
+    def _get_angle(self) -> float:
+        return self.body.angle
+    
+    def _set_angle(self, angle:float = 0.0):
+        self.body.sprite.angle = angle
+        self.body.physics.angle = angle
+        if self._spawned: self.body.physics.space.reindex_static()    #BUG : when spawn, not yet added to space
+    
+    angle:float = property(_get_angle, _set_angle)
+
+
 class DynamicObject(Actor):
     
     # __slots__ = ('body', 'apply_force', 'apply_impulse')
@@ -329,12 +328,12 @@ class Character(Pawn):
         self.camera = CameraHandler()
         self.controller:PawnController = None
         
-    def tick(self, delta_time: float = None) -> bool:
-        if not super().tick(delta_time): return False
-        direction = ENV.direction_input
-        if direction: self.movement.turn_toward(direction)
-        self.movement.move(ENV.move_input)
-        ENV.debug_text['player_speed'] = round(self.speed, 1)
-        return True
+    # def tick(self, delta_time: float = None) -> bool:
+    #     if not super().tick(delta_time): return False
+    #     direction = ENV.direction_input
+    #     if direction: self.movement.turn_toward(direction)
+    #     self.movement.move(ENV.move_input)
+    #     ENV.debug_text['player_speed'] = round(self.speed, 1)
+    #     return True
 
 

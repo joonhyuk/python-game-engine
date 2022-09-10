@@ -3,6 +3,7 @@ from lib.foundation import *
 class Ball(Pawn):
     
     __slots__ = ()
+    recycling_bin = []
     
     def __init__(self, 
                  radius = 16, 
@@ -11,12 +12,23 @@ class Ball(Pawn):
                  mass: float = 1.0,
                  elasticity: float = 0.75, 
                  **kwargs) -> None:
+        # if self.recycling_bin:
+        #     print('body from',Ball.recycling_bin)
+        #     body = Ball.recycling_bin.pop(0)
+        #     body.hidden = False
+        # else:
         body = DynamicBody(SpriteCircle(radius, color),
-                           mass=mass,
-                           collision_type=collision.projectile,
-                           elasticity=elasticity,
-                           physics_shape=physics_types.circle) 
+                            mass=mass,
+                            collision_type=collision.projectile,
+                            elasticity=elasticity,
+                            physics_shape=physics_types.circle) 
         super().__init__(body, hp, **kwargs)
+    
+    # def destroy(self) -> bool:
+    #     Ball.recycling_bin.append(self.body)
+    #     print('body to',Ball.recycling_bin)
+    #     self.body.hidden = True
+    #     # return super().destroy()
 
 
 class BallProjectile(Ball):
@@ -34,8 +46,8 @@ class ShrinkingBall(BallProjectile):
     __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
 
     def __init__(self, 
-                 shrinking_start = 23.0,
-                 shrinking_delay = 27.0,
+                 shrinking_start = 3.0,
+                 shrinking_delay = 1.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -59,7 +71,7 @@ class ShrinkingBall(BallProjectile):
         alpha = clamp(self.alpha, 0.1, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha
-        
+
 
 class BigBox(DynamicObject):
     
@@ -111,6 +123,8 @@ class EscapePlayer(Character):
         self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
+        self.controller = PlayerController()
+        self.movement = MovementHandler()
         
         # self.hidden = TrasferProperty(self.body.hidden)
     
