@@ -299,6 +299,7 @@ class MObject(object):
         self._update_tick = switch
     
     def destroy(self) -> bool:
+        self._spawned = False
         self._alive = False
         CLOCK.timer_remove(self.id)
         # self.on_destroy()
@@ -341,24 +342,10 @@ class ActorComponent(MObject):
         # if callable(spawn):
         #     print('spawn existence check ', spawn)
         self._spawned = True
-        self.on_init()
-    
-    def on_init(self):
-        ''' setup additional parameters '''
-        pass
     
     def on_register(self):
         pass
     
-    def destroy(self) -> bool:
-        self._spawned = False
-        # self._owner.__dict__.popitem(self)    #optimization-memory
-        self.on_destroy()
-        return super().destroy()
-    
-    def on_destroy(self):
-        pass
-
     def _get_owner(self) -> Union[Actor, ActorComponent]:
         return self._owner or self
     
@@ -454,10 +441,6 @@ class Body(ActorComponent):
         if position: self.position = position
         if angle: self.angle = angle
     
-    def on_register(self):
-        if isinstance(self.owner, Actor):
-            setattr(self.owner, 'draw', self.draw)
-    
     def get_ref(self):
         return self.sprite
     
@@ -466,7 +449,6 @@ class Body(ActorComponent):
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
         self.sprite.owner = self.owner
-        print(self.owner)
         if position is not None: 
             self.position = position
         if angle is not None:
@@ -969,7 +951,10 @@ class ObjectLayer(arcade.SpriteList):
         else: raise Exception('ObjectLayer only accept Sprite, Body, Actor')
         
         if sprite:
-            self.append(sprite)
+            try:
+                self.append(sprite)
+            except ValueError:
+                pass
         
         if self.physics_instance:
             if body:
