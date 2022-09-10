@@ -9,7 +9,7 @@ VERSION = Version()
 SPRITE_SCALING_PLAYER = 0.5
 PLAYER_MOVE_FORCE = 4000
 PLAYER_ATTACK_RANGE = 500
-PHYSICS_TEST_DEBRIS_NUM = 1000
+PHYSICS_TEST_DEBRIS_NUM = 100
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 
@@ -48,21 +48,30 @@ class PhysicsTestView(View):
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
         
+        field_start = CLOCK.perf
         self._setup_field(self.field_layer)
+        print('FIELD LOADING TIME :',CLOCK.perf - field_start)
         
+        wall_start = CLOCK.perf
         self._setup_walls_onecue(self.wall_layer)
+        print('WALLS LOADING TIME :',CLOCK.perf - wall_start)
         
         # self._setup_debris_onecue(self.debris_layer)
         
         ### test new method!
         test_simplebody = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
                                      physics_shape = physics_types.circle,
-                                     position=Vector(300,300),
+                                     collision_type=collision.none,
+                                     elasticity=1.0
+                                     )
+        test_simplebody2 = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
+                                     physics_shape = physics_types.circle,
                                      collision_type=collision.none,
                                      elasticity=1.0
                                      )
         # test_simplebody.position = vectors.zero
-        test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer)
+        test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer, position=Vector(200,200))
+        test_simpleactor2 = StaticObject(test_simplebody2).spawn(self.test_layer, position=Vector(200,568))
         # test_simpleactor.position = vectors.zero
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
@@ -98,21 +107,27 @@ class PhysicsTestView(View):
         print(f'INITIAL LOADING TIME : {round(CLOCK.perf - start_loading_time, 2)} sec')
         
     def _setup_debris_onecue(self, layer:ObjectLayer):
-        ### DynamicBody only test
+        '''
+        example of actor spawn setting
+        '''
         print('setup debris')
         for _ in tqdm(range(PHYSICS_TEST_DEBRIS_NUM)):
-            debri = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96)),
+            debri_body = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96)),
                                              mass = 0.5, elasticity = 0.2, friction=1.0,
                                              collision_type = collision.debris)
+            debri = DynamicObject(debri_body)
             placed = False
             while not placed:
                 debri.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
-                if not arcade.check_for_collision_with_lists(debri.sprite, [self.wall_layer, layer]):
+                if not arcade.check_for_collision_with_lists(debri.body.sprite, [self.wall_layer, layer]):
                     debri.spawn(layer)
                     placed = True
     
     def _setup_walls_onecue(self, layer:ObjectLayer):
-        ### StaticBody only test
+        '''
+        example of body spawn setting
+        
+        '''
         for x in range(0, CONFIG.screen_size.x + 1, 32):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
                               Vector(x, 0), 
@@ -134,6 +149,10 @@ class PhysicsTestView(View):
                               spawn_to = layer)
         
     def _setup_field(self, layer:ObjectLayer):
+        '''
+        example of sprite only setting
+        
+        '''
         print('setup field floor')
         field_size = 6400
         for x in tqdm(range(-field_size, field_size, 64)):
