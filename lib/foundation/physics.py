@@ -145,7 +145,9 @@ class physics_types:
     allmask:int = pymunk.ShapeFilter.ALL_MASKS()
     allcategories:int = pymunk.ShapeFilter.ALL_CATEGORIES()
     filter_nomask = pymunk.ShapeFilter(mask = 0)
+    ''' collides with nothing '''
     filter_allmask = pymunk.ShapeFilter(mask = allmask)
+    ''' collides with everything '''
     filter_allcategories = pymunk.ShapeFilter(mask = allcategories)
 
 
@@ -266,7 +268,7 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden')
+    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
@@ -287,6 +289,7 @@ class PhysicsObject:
         if hitbox: self._original_poly = self.hitbox.get_vertices()
         self._mass_scaling = mass_scaling
         
+        self._last_filter:pymunk.ShapeFilter = self.shape.filter    ### should revisit later
         self._hidden = False
 
     def _get_size(self):
@@ -299,7 +302,8 @@ class PhysicsObject:
 
     def _hide(self, switch:bool = None):
         if switch is None: switch = not self._hidden
-        self.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        if switch: self._last_filter = self.shape.filter
+        self.shape.filter = physics_types.filter_nomask if switch else self._last_filter
         return switch
     
     def draw(self):
