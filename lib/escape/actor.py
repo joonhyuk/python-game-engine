@@ -83,9 +83,9 @@ class BigBox(DynamicObject):
         self._temp_multiplier = -1
         
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
-        super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
         # delay_run(self.shrinking_start, self.start_shrink)
         schedule_once(self.start_shrink, self.shrinking_start)
+        return super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
     
     def start_shrink(self, dt):
         unschedule(self.start_shrink)

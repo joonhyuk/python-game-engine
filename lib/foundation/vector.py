@@ -36,6 +36,19 @@ class Vector(tuple):
         else: 
             return arg_in_deg
 
+    @property
+    def angle(self):
+        """ Returns the argument of the vector, with degrees, origin of (1, 0), clockwise
+        
+        For slightly better performance than argument() """
+        norm = math.sqrt(sum( x*x for x in self ))
+        if not norm: return 0
+        angle = math.degrees(math.acos(vector_right * self/norm))
+        if self[1] < 0:
+            return 360 - angle
+        else:
+            return angle
+    
     def normalize(self):
         """ Returns a normalized unit vector """
         norm = self.norm()
@@ -268,15 +281,6 @@ class Vector(tuple):
         length = math.sqrt(sum( x*x for x in self ))
         if not length : return True
         return math.isclose(length, 0, abs_tol = precision)
-    
-    @property
-    def angle(self):
-        """ Returns the argument of the vector, with degrees, origin of (1, 0), clockwise
-        
-        For slightly better performance than argument() """
-        norm = math.sqrt(sum( x*x for x in self ))
-        if not norm: return 0
-        return math.degrees(math.acos(vector_right * self/norm))
     
     @property
     def length(self):

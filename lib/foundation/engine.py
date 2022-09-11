@@ -910,7 +910,7 @@ class SpriteCircle(arcade.SpriteCircle, Sprite):
     
     def __init__(self, 
                  radius: int = 16, 
-                 color: colors = colors.ALLOY_ORANGE, 
+                 color: tuple = colors.ALLOY_ORANGE, 
                  soft: bool = False):
         self.owner = None
         super().__init__(radius, color, soft)
