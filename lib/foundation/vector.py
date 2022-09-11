@@ -24,7 +24,7 @@ class Vector(tuple):
     def argument(self, origin=None, radians=False):
         """ Returns the argument of the vector, the angle clockwise from +x. In degress by default, 
             set radians=True to get the result in radians. This only works for 2D vectors. """
-        if origin is None: origin = Vector(1, 0)
+        if origin is None: origin = vector_right
         norm = self.norm()
         if not norm: return 0
         arg_in_rad = math.acos(origin*self/norm)
@@ -261,17 +261,26 @@ class Vector(tuple):
     
     @property
     def is_zero(self) -> bool:
-        return self.norm() == 0.0
+        return self.length == 0.0
     
     # @property
     def near_zero(self, precision = 0.01) -> bool:
-        length = self.norm()
-        if length == 0.0 : return True
+        length = math.sqrt(sum( x*x for x in self ))
+        if not length : return True
         return math.isclose(length, 0, abs_tol = precision)
     
     @property
+    def angle(self):
+        """ Returns the argument of the vector, with degrees, origin of (1, 0), clockwise
+        
+        For slightly better performance than argument() """
+        norm = math.sqrt(sum( x*x for x in self ))
+        if not norm: return 0
+        return math.degrees(math.acos(vector_right * self/norm))
+    
+    @property
     def length(self):
-        return self.norm()
+        return math.sqrt(sum( x*x for x in self ))
     
     @property
     def x(self):
@@ -294,6 +303,9 @@ class Vector(tuple):
         else:
             return None
 
+vector_zero = Vector(0, 0)
+vector_right = Vector(1, 0)
+vector_up = Vector(0, 1)
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

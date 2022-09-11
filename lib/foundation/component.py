@@ -387,7 +387,7 @@ class SpriteMovement(ActorComponent):
         return True
     
     def _get_directional_speed_multiplier(self):
-        angle = abs(get_shortest_angle(self.rotation, self.velocity.argument()))
+        angle = abs(get_shortest_angle(self.rotation, self.velocity.angle))
         return get_curve_value(angle, CONFIG.directional_speed)
     
     def move(self, input:Vector = Vector()):
@@ -401,7 +401,7 @@ class SpriteMovement(ActorComponent):
     def turn_toward(self, abs_position:Vector = Vector()):
         ''' turn character to an absolute position '''
         # print(f'player position {self.owner.position}, mouse position {abs_position}')
-        angle = (abs_position - self.owner.position).argument()
+        angle = (abs_position - self.owner.position).angle
         self.turn(angle)
     
     def turn_toward_rel(self, rel_position:Vector = Vector()):
@@ -487,7 +487,7 @@ class PhysicsMovement(ActorComponent):
                 self.owner.velocity = vectors.zero
         else:
             # self.owner.velocity = self.move_direction * 250
-            angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.argument()))
+            angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.angle))
             # speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
             speed = 60 ### damping 0, force 10000 => max_spd 166.6 (1/60)
             '''
@@ -533,7 +533,7 @@ class PhysicsMovement(ActorComponent):
     def turn_toward(self, abs_position:Vector = Vector()):
         ''' turn character to an absolute position '''
         # print(f'player position {self.owner.position}, mouse position {abs_position}')
-        angle = (abs_position - self.owner.position).argument()
+        angle = (abs_position - self.owner.position).angle
         self.turn(angle)
     
 

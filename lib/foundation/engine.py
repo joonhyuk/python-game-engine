@@ -658,11 +658,11 @@ class MovementHandler(ActorComponent):
     
     def turn_toward(self, direction:Vector = None):
         if not direction: return False
-        self.desired_angle = direction.argument()
+        self.desired_angle = direction.angle
     
     def turn_to_position(self, destination:Vector = None):
         if not destination: return False
-        angle = (destination - self.body.position).argument()
+        angle = (destination - self.body.position).angle
         self.turn(angle)
         
     def move_toward(self, destination:Vector):
