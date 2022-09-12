@@ -14,39 +14,26 @@ import gc
 창 열고 기본 루프만 도는...
 
 '''
+batch = 100000
 
-class Comp:
-    def __init__(self) -> None:
-        self.position = None
+start = CLOCK.perf
+for i in range(batch):
+    a = vectors.zero * i
+    if a.length > 0: print('엥?')
+print('time1', CLOCK.perf - start)
+start = CLOCK.perf
 
-class Act:
-    def __init__(self) -> None:
-        self.comp = Comp()
-    
-    def hello(self):
-        return 
-    
-    position = PropertyFrom('comp')
+for i in range(batch):
+    a = vectors.zero * i
+    if a.angle > 0: print('잉?')
+print('time2', CLOCK.perf - start)
+start = CLOCK.perf
 
-class Act2(Act):
-    
-    def __init__(self) -> None:
-        super().__init__()
-        self.hello = None
-        # self.__dict__.pop('hello')
-        print(getattr(self,'hello', None))
-    
-    def _get_pos(self):
-        return 'pos'
-    
-    # def hello(self):
-    #     return super().hello()
-    
-    def _set_pos(self):
-        print('set pos')
-    
-    position = property(_get_pos, _set_pos)
-    """ overrided """
+for i in range(batch):
+    a = vectors.zero * i
+    if a.argument() > 0: print('잉?')
+print('time3', CLOCK.perf - start)
+start = CLOCK.perf
 
-aa = Act2()
-# print(aa.__dict__.items)
+
+    

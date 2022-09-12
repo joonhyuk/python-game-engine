@@ -45,7 +45,7 @@ class TitleScreen(View):
         self.window.show_view(game)
 
 class EscapeGameView(View):
-    def __init__(self, window: App = None):
+    def __init__(self, window: Client = None):
         super().__init__(window)
         # self.window.set_mouse_visible(True)
         # Sprites and sprite lists

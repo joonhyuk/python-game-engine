@@ -318,7 +318,7 @@ class SpriteMovement(ActorComponent):
         self._set_movement(delta_time)
         self._set_heading(delta_time)
         
-        ENV.debug_text['player_speed'] = self.speed_avg // delta_time
+        APP.debug_text['player_speed'] = self.speed_avg // delta_time
         # ENV.debug_text['player_heading'] = self.rotation
     
     def _set_movement(self, delta_time:float):
@@ -544,43 +544,18 @@ class NewSpriteMovement(MovementHandler):
 
 class NewPhysicsMovement(MovementHandler):
     
-    def _set_movement(self, delta_time: float):
-        return super()._set_movement(delta_time)
+    def __init__(self, 
+                 max_speed_run: float = 250, 
+                 max_speed_walk: float = 100, 
+                 rotation_interp_speed: float = 3,
+                 acceleration: float = 4, 
+                 **kwargs) -> None:
+        super().__init__(max_speed_run, max_speed_walk, rotation_interp_speed, acceleration, **kwargs)
 
-
-# class PlayerController(PawnController):
-#     #WIP
-#     '''  '''
-#     def __init__(self, **kwargs) -> None:
-#         super().__init__(**kwargs)
+    def set_movement(self, delta_time: float):
+        
+        return super().set_movement(delta_time)
     
-#     def tick(self, delta_time: float) -> bool:
-#         if not super().tick(delta_time): return False
-#         direction = ENV.target_point
-#         if direction: self.owner.movement.turn_toward(direction)
-#         self.movement.move(ENV.move_input)
-#         ENV.debug_text['player_speed'] = round(self.speed, 1)
-    
-#     def on_key_press(self, key: int, modifiers: int):
-#         pass
-    
-#     def on_key_release(self, key: int, modifiers: int):
-#         pass
-    
-#     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-#         pass
-    
-#     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-#         pass
-    
-#     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-#         pass
-    
-#     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-#         pass
-    
-#     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-#         pass
 
 class LifeTime(ActorComponent):
     pass

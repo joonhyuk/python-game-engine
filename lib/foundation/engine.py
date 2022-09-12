@@ -103,7 +103,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
         self[name] = round(CLOCK.timer_get(name),2)
     
     def remove_item(self, name:str = 'foo', delay:float = 0.0):
-        
         def _remove(name:str):
             if name in self: self.pop(name)
         
@@ -133,7 +132,7 @@ class Environment(metaclass = SingletonType):
     
     delta_time:float = 0.0
     physics_engine:PhysicsEngine = None
-    window:App = None
+    window:Client = None
     
     abs_screen_center:Vector = Vector()
     render_scale:float = 1.0
@@ -168,7 +167,7 @@ class Environment(metaclass = SingletonType):
             return gamepad
         return None
     
-    def set_screen(self, window:App):
+    def set_screen(self, window:Client):
         ''' should be called after resizing, fullscreen, etc. '''
         self.window = window
         window_x = window.get_size()[0]
@@ -557,11 +556,22 @@ class Body(ActorComponent):
 
 class MovementHandler(ActorComponent):
     #WIP
-    ''' need body component to move '''
-    '''
-    목표 지점으로 이동
-    방향과 속도로 이동
-    워프?
+    ''' need body component to move 
+    
+    Move:
+    - with direction and speed
+    - with force
+    - toward a position
+    
+    Turn:
+    - by some degrees
+    - to a certain degrees
+    - by rotational force
+    - toward a position
+    
+    Warp:
+    - to a position
+    
     '''
     def __init__(self, 
                  max_speed_run:float = 250,
@@ -576,6 +586,9 @@ class MovementHandler(ActorComponent):
         ''' direction unit vector for movement '''
         self.desired_angle:float = None
         self.rotation_interp_speed = rotation_interp_speed
+        
+        self.move_lock = False
+        self.turn_lock = False
     
     def on_register(self):
         body:list[Body] = self.owner.get_components(Body)
@@ -590,7 +603,7 @@ class MovementHandler(ActorComponent):
         이동에 필요한 것이 없으면 비활성화 시켜야 함.
         """
     
-    def tick(self, delta_time:float):
+    def tick(self, delta_time:float) -> bool:
         if not super().tick(delta_time): return False
         self._set_heading(delta_time)
         self._set_movement(delta_time)
@@ -604,6 +617,7 @@ class MovementHandler(ActorComponent):
             if self.body.velocity.near_zero():
                 self.body.velocity = vectors.zero
                 return False
+        if self.move_lock: return False
         
         return self.set_movement(delta_time)
     
@@ -612,6 +626,7 @@ class MovementHandler(ActorComponent):
         if math.isclose(self.body.angle, self.desired_angle):
             self.body.angle = self.desired_angle
             return False
+        if self.turn_lock: return False
         
         return self.set_heading(delta_time)
     
@@ -629,10 +644,6 @@ class MovementHandler(ActorComponent):
                                                         ))
         return True
     
-    def update(self, delta_time: float) -> bool:
-        
-        return True
-    
     def move_to_position(self, destination:Vector):
         #WIP
         ''' move to position '''
@@ -640,7 +651,12 @@ class MovementHandler(ActorComponent):
         self.move(cur_move_vec)
     
     def move_toward(self, direction:Vector, speed:float):
+        force = direction 
         pass
+    
+    def _get_force_scalar(self, speed:float):
+        damping = pow(ENV.physics_engine.damping, 1/60)
+        return speed * (1 - damping) * self.body.mass
     
     def move(self, force:Vector):
         self.owner.apply_force(force)
@@ -731,17 +747,50 @@ class PawnController(ActorComponent):
 
 class PlayerController(PawnController):
     
+    def on_register(self):
+        APP.player_controller = self
+        return super().on_register()
+    
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         
         self.movement.turn_to_position(ENV.target_point)
         # self.movement.move(ENV.move_input)
         self.movement.move_direction = ENV.move_input
-        ENV.debug_text['player_speed'] = round(self.body.speed, 1)
+        APP.debug_text['player_speed'] = round(self.body.speed, 1)
         
         return True
+    
+    def test_delegation(self, arg):
+        return print(arg)
+    
+    def on_input(self, input):
+        print('player input ready')
+        return self.test_delegation(input)
 
-class App(arcade.Window):
+    def on_key_press(self, key: int, modifiers: int):
+        pass
+    
+    def on_key_release(self, key: int, modifiers: int):
+        pass
+    
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        pass
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        pass
+    
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        pass
+    
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        pass
+    
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
+        pass
+
+
+class Client(arcade.Window):
     
     ### class variables : are they needed?
     lshift_applied = False
@@ -750,39 +799,25 @@ class App(arcade.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         ENV.physics_engine = PhysicsEngine()
+        self.debug_text:DebugTextLayer = None
+        self.player_controller:PlayerController = None
+    
+    def set_screen(self):
+        ''' should be called after resizing, fullscreen, etc. '''
+        size = self.get_size()
+        self.screen_shortside = min(*size)
+        self.screen_longside = max(*size)
+        
+        self.render_scale = self.get_framebuffer_size()[0] / size[0]
     
     def on_show(self):
         ENV.set_screen(self)
+        self.set_screen()
         if ENV.gamepad: self.set_mouse_visible(False)
-        ENV.debug_text = DebugTextLayer()
-        ENV.debug_text['FPS'] = 0
-        ENV.debug_text['MEMORY_USAGE'] = ""
-        ENV.debug_text['UPTIME'] = ""
-        
-        
-    def on_key_press(self, key: int, modifiers: int):
-        # ENV.key_inputs.append(key)
-        if key in (keys.W, keys.UP): ENV.input_move += vectors.up
-        if key in (keys.S, keys.DOWN): ENV.input_move += vectors.down
-        if key in (keys.A, keys.LEFT): ENV.input_move += vectors.left
-        if key in (keys.D, keys.RIGHT): ENV.input_move += vectors.right
-        if key == keys.LSHIFT: self.lshift_applied = True
-        if key == keys.LCTRL: self.lctrl_applied = True
-        
-        if key == keys.F2: CONFIG.debug_draw = not CONFIG.debug_draw
-        
-        ENV.on_key_press(key, modifiers)
-        
-    def on_key_release(self, key: int, modifiers: int):
-        # ENV.key_inputs.remove(key)
-        if key in (keys.W, keys.UP): ENV.input_move -= vectors.up
-        if key in (keys.S, keys.DOWN): ENV.input_move -= vectors.down
-        if key in (keys.A, keys.LEFT): ENV.input_move -= vectors.left
-        if key in (keys.D, keys.RIGHT): ENV.input_move -= vectors.right
-        if key == keys.LSHIFT: self.lshift_applied = False
-        if key == keys.LCTRL: self.lctrl_applied = False
-
-        ENV.on_key_release(key, modifiers)
+        self.debug_text = DebugTextLayer()
+        self.debug_text['FPS'] = 0
+        self.debug_text['MEMORY_USAGE'] = ""
+        self.debug_text['UPTIME'] = ""
         
     def on_update(self, delta_time: float):
         ENV.delta_time = delta_time
@@ -790,46 +825,66 @@ class App(arcade.Window):
         scheduler_count = pyglet_clock._schedule_interval_items.__len__()
         
         CLOCK.fps_current = 1 / delta_time
-        ENV.debug_text['FPS'] = CLOCK.fps_average
-        ENV.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
-        ENV.debug_text['UPTIME'] = CLOCK.uptime
-        ENV.debug_text['SCHEDULER'] = scheduler_count
+        self.debug_text['FPS'] = CLOCK.fps_average
+        self.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
+        self.debug_text['UPTIME'] = CLOCK.uptime
+        self.debug_text['SCHEDULER'] = scheduler_count
         # if scheduler_count > 600:
             # print(f'WARNING : scheduler count {scheduler_count}')
         # if CLOCK.fps_average < 30:
         #     print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
-        ENV.debug_text.perf_check('update_physics')
         ENV.physics_engine.step(resync_objects=False)
-        ENV.debug_text.perf_check('update_physics')
         
-        ENV.debug_text.perf_check('resync_objects')
         ENV.physics_engine.resync_objects()
-        ENV.debug_text.perf_check('resync_objects')
         
         
     def on_draw(self):
         # print('window_draw')
-        ENV.debug_text.draw()
+        self.debug_text.draw()
         pass
+    
+    def on_key_press(self, key: int, modifiers: int):
+        if key == keys.F2: CONFIG.debug_draw = not CONFIG.debug_draw    #LEGACY
+        
+        if key == keys.GRAVE: CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
+        for i in range(13):
+            if key == keys.__dict__[f'F{i+1}']: CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
+    
+        if self.player_controller: self.player_controller.on_key_press(key=key, modifiers=modifiers)
+        
+    def on_key_release(self, key: int, modifiers: int):
+        if self.player_controller: self.player_controller.on_key_release(key=key, modifiers=modifiers)
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         ENV.mouse_screen_position = Vector(x, y)
+        if self.player_controller: self.player_controller.on_mouse_motion(x=x, y=y, dx=dx, dy=dy)
+
+        # if self.player_controller:
+        #     self.player_controller.on_input(f'mouse-to-player : ({x,y})')
     
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        if self.player_controller: self.player_controller.on_mouse_drag(x=x, y=y, dx=dx, dy=dy, buttons=buttons, modifiers=modifiers)
+    
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
+        if self.player_controller: self.player_controller.on_mouse_scroll(x=x, y=y, scroll_x=scroll_x, scroll_y=scroll_y)
+
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
             ENV.last_abs_pos_mouse_lb_pressed = ENV.abs_cursor_position
+        if self.player_controller: self.player_controller.on_mouse_press(x=x, y=y, button=button, modifiers=modifiers)
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
             ENV.last_abs_pos_mouse_lb_released = ENV.abs_cursor_position
-
+        if self.player_controller: self.player_controller.on_mouse_release(x=x, y=y, button=button, modifiers=modifiers)
+    
     def run(self):
         arcade.run()
     
 
 class View(arcade.View):
     
-    def __init__(self, window: App = None):
+    def __init__(self, window: Client = None):
         super().__init__(window)
         self.fade_out = 0.0
         self.fade_in = 0.0
@@ -875,10 +930,10 @@ class Sprite(arcade.Sprite):
                  hit_box_algorithm: str = "Simple", hit_box_detail: float = 4.5, 
                  texture: arcade.Texture = None, 
                  angle: float = 0):
+        super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.owner = None
         self._initial_scale = scale
         self._relative_scale = 1.0
-        super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.collides_with_radius = False
 
     def scheduled_remove_from_sprite_lists(self, dt):
@@ -891,6 +946,7 @@ class Sprite(arcade.Sprite):
     def _set_relative_scale(self, scale:float):
         self._relative_scale = scale
         self.scale = self._initial_scale * self._relative_scale
+        # print(self, 'SCALE :::', self.scale)
     
     relative_scale = property(_get_relative_scale, _set_relative_scale)
     
@@ -902,9 +958,9 @@ class Sprite(arcade.Sprite):
         self.visible = not switch
     
     hidden:bool = property(_get_hidden, _set_hidden)
+    
 
-
-class SpriteCircle(arcade.SpriteCircle, Sprite):
+class Old_SpriteCircle(arcade.SpriteCircle, Sprite):
     
     __slots__ = ('owner', )
     
@@ -916,8 +972,54 @@ class SpriteCircle(arcade.SpriteCircle, Sprite):
         super().__init__(radius, color, soft)
 
 
+class SpriteCircle(Sprite):
+    ''' If ellipse, make sure to set physics_shape as poly '''
+    # __slots__ = ['owner', 'texture', '_points']   ### sprite not works if set with slots.
+    
+    def __init__(self, 
+                 radius: Union[int, Vector], 
+                 color: arcade.Color = colors.ALIZARIN_CRIMSON, 
+                 nose: bool = True):
+        super().__init__()
+        self.owner = None
+        if isinstance(radius, int):
+            radius = Vector.diagonal(radius)
+        diameter = radius * 2
+
+        # determine the texture's cache name
+        # if soft:
+            # cache_name = arcade.texture._build_cache_name("circle_texture_soft", diameter, color[0], color[1], color[2])
+        # else:
+        cache_name = arcade.texture._build_cache_name("circle_texture", diameter, color[0], color[1], color[2], 255, 0)
+
+        # use the named texture if it was already made
+        if cache_name in arcade.texture.load_texture.texture_cache:  # type: ignore
+            texture = arcade.texture.load_texture.texture_cache[cache_name]  # type: ignore
+
+        # generate the texture if it's not in the cache
+        else:
+            img = PIL.Image.new('RGBA', diameter, (0, 0, 0, 0))
+            draw = PIL.ImageDraw.Draw(img)
+            
+            point_b:Vector = diameter - Vector(1, 1)
+            
+            draw.ellipse((0, 0, *point_b), fill = color)
+            if nose: draw.line((*radius, point_b.x, radius.y), width = 1, fill = (0, 0, 0, 255))
+            texture = GLTexture(cache_name, img)
+            # if soft:
+            #     texture = arcade.texture.make_soft_circle_texture(diameter, color, name=cache_name)
+            # else:
+            #     texture = arcade.texture.make_circle_texture(diameter, color, name=cache_name)
+
+            arcade.texture.load_texture.texture_cache[cache_name] = texture  # type: ignore
+
+        # apply results to the new sprite
+        self.texture = texture
+        self._points = self.texture.hit_box_points
+
+
 class Capsule(Sprite):
-    """ LEGACY : WILL BE DEPRECATED """
+    """ LEGACY : DEPRECATED """
     
     def __init__(self, radius: int):
         super().__init__()
@@ -1086,5 +1188,6 @@ if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     SOUND = SoundBank(SFX_PATH)
     ENV = Environment()
+    APP = Client(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
     
     # DEBUG = DebugTextLayer()

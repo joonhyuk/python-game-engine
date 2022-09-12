@@ -102,8 +102,8 @@ class DynamicObject(Actor):
             self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
     
-    # def draw(self):
-    #     # self.body.draw()
+    def draw(self):
+        self.body.draw()
     #     pass    ### delegate draw to body. 
     
     mass:float = PropertyFrom('body')

@@ -15,16 +15,18 @@ PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 class PhysicsTestView(View):
     
-    def __init__(self, window: App = None):
+    def __init__(self, window: Client = None):
         super().__init__(window)
         
-        self.field_layer = ObjectLayer()
-        self.wall_layer = ObjectLayer(ENV.physics_engine)
-        self.debris_layer = ObjectLayer(ENV.physics_engine)
-        self.character_layer = ObjectLayer(ENV.physics_engine)
-        self.fx_layer = ObjectLayer(ENV.physics_engine)
+        self.physics_main = PhysicsEngine()
         
-        self.test_layer = ObjectLayer(ENV.physics_engine)
+        self.field_layer = ObjectLayer()
+        self.wall_layer = ObjectLayer(self.physics_main)
+        self.debris_layer = ObjectLayer(self.physics_main)
+        self.character_layer = ObjectLayer(self.physics_main)
+        self.fx_layer = ObjectLayer(self.physics_main)
+        
+        self.test_layer = ObjectLayer(self.physics_main)
         
         self.player:EscapePlayer = None
         self.test_npc:Actor = None
@@ -44,7 +46,7 @@ class PhysicsTestView(View):
         self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
         self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
         
-        ENV.physics_engine.damping = 0.01
+        self.physics_main.damping = 0.01
         
         self.player = EscapePlayer()
         self.player.spawn(self.character_layer, Vector(100, 100))
@@ -111,7 +113,7 @@ class PhysicsTestView(View):
         def seperate_player_hit_wall(player, wall, arbiter, space, data):
             print('seperate_hit')
         
-        # ENV.physics_engine.add_collision_handler(collision.character, collision.wall, 
+        # self.physics_main.add_collision_handler(collision.character, collision.wall, 
         #                                           begin_handler=begin_player_hit_wall, 
         #                                           pre_handler=pre_player_hit_wall,
         #                                           separate_handler=seperate_player_hit_wall,
@@ -190,10 +192,10 @@ class PhysicsTestView(View):
         if key == keys.RIGHT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
         
-        if key == keys.SPACE: self.player.test_boost(500)
+        # if key == keys.SPACE: self.player.test_boost(500)
         
-        if key == keys.H:
-            self.player.body.physics.hidden = None
+        # if key == keys.H:
+        #     self.player.body.physics.hidden = None
         
         if key == keys.I: self._setup_debris_onecue(self.debris_layer)
         
@@ -204,35 +206,35 @@ class PhysicsTestView(View):
         if key == arcade.key.ESCAPE: arcade.exit()
         return super().on_key_release(key, modifiers)
     
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        ENV.last_mouse_lb_hold_time = CLOCK.perf
-        ENV.debug_text.timer_start('mouse_lb_hold')
+    # def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+    #     ENV.last_mouse_lb_hold_time = CLOCK.perf
+    #     APP.debug_text.timer_start('mouse_lb_hold')
         
-        self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
+    #     self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
-        # if self._tmp: self._tmp.destroy() # works well
+    #     # if self._tmp: self._tmp.destroy() # works well
     
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
-        ENV.debug_text.timer_end('mouse_lb_hold', 3)
+    # def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+    #     ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
+    #     APP.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self._tmp = self.player.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
-        # delay_run(2, self._tmp.destroy)
-        # CLOCK.reserve_exec(2, self._tmp.destroy)
+    #     self._tmp = self.player.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+    #     # delay_run(2, self._tmp.destroy)
+    #     # CLOCK.reserve_exec(2, self._tmp.destroy)
         
-        # self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
-        # self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
+    #     # self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
+    #     # self.line_of_fire_check(self.player.position, self.player.position + self.player.forward_vector * 1000, 5)
     
     def change_gravity(self, direction:Vector) -> None:
         
         if direction == vectors.zero:
-            ENV.physics_engine.damping = 0.01
-            ENV.physics_engine.gravity = vectors.zero
+            self.physics_main.damping = 0.01
+            self.physics_main.gravity = vectors.zero
             return
         
-        ENV.physics_engine.gravity = direction * GRAVITY
-        ENV.physics_engine.damping = 1.0
-        ENV.physics_engine.activate_objects()
+        self.physics_main.gravity = direction * GRAVITY
+        self.physics_main.damping = 1.0
+        self.physics_main.activate_objects()
         return
         
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
@@ -240,8 +242,8 @@ class PhysicsTestView(View):
         '''
         self.player.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
         sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
-        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, sf)
-        query_first = ENV.physics_engine.space.segment_query_first(origin, end, thickness / 2, sf)
+        query = self.physics_main.space.segment_query(origin, end, thickness / 2, sf)
+        query_first = self.physics_main.space.segment_query_first(origin, end, thickness / 2, sf)
         # if query:
         #     for sq in query:
         #         shape = sq.shape
@@ -260,7 +262,7 @@ class PhysicsTestView(View):
             add_sprite_timeout(SpriteCircle(5, (255, 64, 0, 128)), query_first.point, self.debris_layer, 3)
     
     def on_draw(self):
-        ENV.debug_text.perf_check('on_draw')
+        APP.debug_text.perf_check('on_draw')
         super().on_draw()
         # self.clear()
         
@@ -300,41 +302,48 @@ class PhysicsTestView(View):
         self.player.draw()
         self.camera_gui.use()
         
-        ENV.debug_text.perf_check('on_draw')
+        APP.debug_text.perf_check('on_draw')
     
     def on_update(self, delta_time: float):
-        ENV.debug_text.perf_check('update_game')
+        APP.debug_text.perf_check('update_game')
         super().on_update(delta_time)
         
         self.player.tick(delta_time)
         self.test_npc.tick(delta_time)
+        
+        APP.debug_text.perf_check('update_physics')
+        self.physics_main.step(resync_objects=False)
+        APP.debug_text.perf_check('update_physics')
+        APP.debug_text.perf_check('resync_objects')
+        self.physics_main.resync_objects()
+        APP.debug_text.perf_check('resync_objects')
         # print(self.player.body.physics.shape.segment_query((0,0), CONFIG.screen_size))
         
-        # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
+        # APP.debug_text['distance'] = rowund(self.player.position.length, 1)
         
-        if ENV.physics_engine.non_static_objects:
-            total = len(ENV.physics_engine.non_static_objects)
-            sleeps = list(map(lambda a:a.is_sleeping, ENV.physics_engine.space.bodies)).count(True)
-            ENV.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
+        if self.physics_main.non_static_objects:
+            total = len(self.physics_main.non_static_objects)
+            sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
+            APP.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
-        # ENV.debug_text.perf_check('update_empty_physics')
+        # APP.debug_text.perf_check('update_empty_physics')
         # for pe in self.test_physics_layers:
         #     pe.physics_instance.step(delta_time)
-        # ENV.debug_text.perf_check('update_empty_physics')
-        ENV.debug_text.show_timer('mouse_lb_hold')
-        ENV.debug_text.perf_check('update_game')
+        # APP.debug_text.perf_check('update_empty_physics')
+        APP.debug_text.show_timer('mouse_lb_hold')
+        APP.debug_text.perf_check('update_game')
         
         
-        ENV.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
+        APP.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
         
         
 def main():
     CLOCK.use_engine_tick = True
-    game = App(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
+    # APP = Client(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
     view = PhysicsTestView()
     view.setup()
-    game.show_view(view)
-    arcade.run()
+    APP.show_view(view)
+    APP.run()
 
 if __name__ == '__main__':
     main()

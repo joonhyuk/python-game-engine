@@ -1,4 +1,5 @@
 from lib.foundation import *
+from .component import *
 
 class Ball(Pawn):
     
@@ -134,7 +135,7 @@ class EscapePlayer(Character):
         self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
-        self.controller = PlayerController()
+        self.controller = EscapePlayerController()
         self.movement = MovementHandler()
         
         # self.hidden = TrasferProperty(self.body.hidden)
@@ -188,13 +189,14 @@ class EscapePlayer(Character):
         # self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
         shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
         
-        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
+        query = self.body.physics.body.space.segment_query(origin, end, thickness / 2, shape_filter)
+        # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         
         if query:
             first_hit = query[0]
             sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
             # sprite_first_hit.color = colors.RED
-            print(sprite_first_hit.owner)
+            # print(sprite_first_hit.owner)
 
 
 class Door(Pawn):
