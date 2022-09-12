@@ -27,6 +27,8 @@ class PhysicsTestView(View):
         self.test_layer = ObjectLayer(ENV.physics_engine)
         
         self.player:EscapePlayer = None
+        self.test_npc:Actor = None
+        
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
         
@@ -83,8 +85,15 @@ class PhysicsTestView(View):
                                physics_shape=physics_types.box,
                                )
         # box = DynamicObject(box_body)
-        box = BigBox(box_body)
+        box = ShrinkingToy(box_body)
         box.spawn(self.debris_layer, CONFIG.screen_size / 2)
+        
+        self.test_npc = RollingRock(DynamicBody(SpriteCircle(48),
+                                            mass = 7,
+                                            friction = 1.2,
+                                            collision_type=collision.debris,
+                                            ),
+                                ).spawn(self.debris_layer, Vector(500,550))
         ### DynamicObject.spawn test
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):
@@ -275,6 +284,7 @@ class PhysicsTestView(View):
         super().on_update(delta_time)
         
         self.player.tick(delta_time)
+        self.test_npc.tick(delta_time)
         # print(self.player.body.physics.shape.segment_query((0,0), CONFIG.screen_size))
         
         # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)

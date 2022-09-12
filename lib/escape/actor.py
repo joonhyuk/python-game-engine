@@ -73,7 +73,7 @@ class ShrinkingBall(BallProjectile):
         self.body.scale = alpha
 
 
-class BigBox(DynamicObject):
+class ShrinkingToy(DynamicObject):
     
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
@@ -107,6 +107,17 @@ class BigBox(DynamicObject):
         alpha = clamp(self.alpha, 0.3, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha
+
+
+class RollingRock(ShrinkingToy):
+    
+    # def __init__(self, *args, **kwargs) -> None:
+    #     super().__init__(*args, **kwargs)
+        
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        if CONFIG.debug_f_keys[5]: self.body.physics.body.angular_velocity = 10 * self._temp_multiplier
+        return True
 
 
 class EscapePlayer(Character):
