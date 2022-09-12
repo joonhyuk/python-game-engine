@@ -11,7 +11,33 @@ from lib.foundation.engine import *
 from lib.foundation.component import *
 
 
-class StaticObject(MObject):
+class BodyObject(Actor):
+    def __init__(self, 
+                 body:Body,
+                 **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:Body = body
+    
+    def spawn(self, 
+              spawn_to:ObjectLayer, 
+              position:Vector = None,
+              angle:float = None,
+              lifetime: float = None) -> None:
+        
+        self.body.spawn(spawn_to, position, angle)
+        return super().spawn(lifetime)
+
+    def register_components(self):
+        self.body.owner = self
+        self.tick_components.append(self.body.tick)
+        self.body.on_register()
+        # return super().register_components()
+    
+    position:Vector = PropertyFrom('body')
+    angle:float = PropertyFrom('body')
+
+
+class StaticObject(Actor):
     ''' Actor with simple sprite '''
     __slots__ = ('body', )
     
@@ -20,12 +46,14 @@ class StaticObject(MObject):
         self.body:StaticBody = body
     
     def spawn(self, spawn_to:ObjectLayer, position:Vector = None, angle:float = None):
-        self.body.spawn(spawn_to, position, angle)
+        self.body.owner = self
+        if position is not None: self.position = position
+        if angle is not None: self.angle = angle
+        self.body.spawn(spawn_to)
         return super().spawn()
-    
+
     def draw(self):
-        # self.body.draw()
-        pass    ### delegate draw to body. 
+        self.body.draw()
     
     def _get_position(self) -> Vector:
         return self.body.position
@@ -33,7 +61,7 @@ class StaticObject(MObject):
     def _set_position(self, position) -> None:
         self.body.sprite.position = position
         self.body.physics.position = position
-        self.body.physics.space.reindex_static()
+        if self._spawned: self.body.physics.space.reindex_static()    #BUG : when spawn, not yet added to space
         
     position:Vector = property(_get_position, _set_position)
     
@@ -43,7 +71,7 @@ class StaticObject(MObject):
     def _set_angle(self, angle:float = 0.0):
         self.body.sprite.angle = angle
         self.body.physics.angle = angle
-        self.body.physics.space.reindex_static()
+        if self._spawned: self.body.physics.space.reindex_static()    #BUG : when spawn, not yet added to space
     
     angle:float = property(_get_angle, _set_angle)
 
@@ -62,17 +90,20 @@ class DynamicObject(Actor):
     
     def spawn(self, 
               spawn_to:ObjectLayer, 
-              position:Vector,
+              position:Vector = None,
               angle:float = None,
               initial_impulse:Vector = None,
               lifetime: float = None) -> None:
+        if not position:
+            position = self.body.position
+        
         self.body.spawn(spawn_to, position, angle)
         if initial_impulse:
             self.body.apply_impulse_world(initial_impulse)
         return super().spawn(lifetime)
     
-    # def draw(self):
-    #     # self.body.draw()
+    def draw(self):
+        self.body.draw()
     #     pass    ### delegate draw to body. 
     
     mass:float = PropertyFrom('body')
@@ -258,7 +289,7 @@ class CameraHandler(ActorComponent):
         
         in_min = ENV.window_shortside // 5
         in_max = ENV.window_shortside // 1.2
-        ''' 최적화 필요 '''
+        ''' 최적화 필요 need optimization '''
         return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 
@@ -295,13 +326,14 @@ class Character(Pawn):
         super().__init__(body, hp, **kwargs)
         
         self.camera = CameraHandler()
+        self.controller:PawnController = None
         
-    def tick(self, delta_time: float = None) -> bool:
-        if not super().tick(delta_time): return False
-        direction = ENV.direction_input
-        if direction: self.movement.turn_toward(direction)
-        self.movement.move(ENV.move_input)
-        ENV.debug_text['player_speed'] = round(self.speed, 1)
-        return True
+    # def tick(self, delta_time: float = None) -> bool:
+    #     if not super().tick(delta_time): return False
+    #     direction = ENV.direction_input
+    #     if direction: self.movement.turn_toward(direction)
+    #     self.movement.move(ENV.move_input)
+    #     ENV.debug_text['player_speed'] = round(self.speed, 1)
+    #     return True
 
 

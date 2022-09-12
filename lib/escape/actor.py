@@ -1,8 +1,10 @@
 from lib.foundation import *
+from .component import *
 
 class Ball(Pawn):
     
     __slots__ = ()
+    recycling_bin = []
     
     def __init__(self, 
                  radius = 16, 
@@ -11,12 +13,23 @@ class Ball(Pawn):
                  mass: float = 1.0,
                  elasticity: float = 0.75, 
                  **kwargs) -> None:
+        # if self.recycling_bin:
+        #     print('body from',Ball.recycling_bin)
+        #     body = Ball.recycling_bin.pop(0)
+        #     body.hidden = False
+        # else:
         body = DynamicBody(SpriteCircle(radius, color),
-                           mass=mass,
-                           collision_type=collision.projectile,
-                           elasticity=elasticity,
-                           physics_shape=physics_types.circle) 
+                            mass=mass,
+                            collision_type=collision.projectile,
+                            elasticity=elasticity,
+                            physics_shape=physics_types.circle) 
         super().__init__(body, hp, **kwargs)
+    
+    # def destroy(self) -> bool:
+    #     Ball.recycling_bin.append(self.body)
+    #     print('body to',Ball.recycling_bin)
+    #     self.body.hidden = True
+    #     # return super().destroy()
 
 
 class BallProjectile(Ball):
@@ -34,8 +47,8 @@ class ShrinkingBall(BallProjectile):
     __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
 
     def __init__(self, 
-                 shrinking_start = 23.0,
-                 shrinking_delay = 37.0,
+                 shrinking_start = 3.0,
+                 shrinking_delay = 1.0,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
@@ -59,9 +72,9 @@ class ShrinkingBall(BallProjectile):
         alpha = clamp(self.alpha, 0.1, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha
-        
 
-class BigBox(DynamicObject):
+
+class ShrinkingToy(DynamicObject):
     
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
@@ -71,9 +84,9 @@ class BigBox(DynamicObject):
         self._temp_multiplier = -1
         
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
-        super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
         # delay_run(self.shrinking_start, self.start_shrink)
         schedule_once(self.start_shrink, self.shrinking_start)
+        return super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
     
     def start_shrink(self, dt):
         unschedule(self.start_shrink)
@@ -97,6 +110,17 @@ class BigBox(DynamicObject):
         self.body.scale = alpha
 
 
+class RollingRock(ShrinkingToy):
+    
+    # def __init__(self, *args, **kwargs) -> None:
+    #     super().__init__(*args, **kwargs)
+        
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        if CONFIG.debug_f_keys[5]: self.body.physics.body.angular_velocity = 10 * self._temp_multiplier
+        return True
+
+
 class EscapePlayer(Character):
     
     # __slots__ = ('_fire_counter', 'movement', 'camera')
@@ -109,14 +133,18 @@ class EscapePlayer(Character):
         super().__init__(body, hp, **kwargs)
         self.body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
+        self.max_energy = 100
+        self.energy = self.max_energy
+        self.controller = EscapePlayerController()
+        self.movement = MovementHandler()
         
         # self.hidden = TrasferProperty(self.body.hidden)
     
-    hidden = PropertyFrom('body')
-    position = PropertyFrom('body')
-    angle = PropertyFrom('body')
-    velocity = PropertyFrom('body')
-    visibility = PropertyFrom('body')
+    # hidden = PropertyFrom('body')
+    # position = PropertyFrom('body')
+    # angle = PropertyFrom('body')
+    # velocity = PropertyFrom('body')
+    # visibility = PropertyFrom('body')
     
     def tick(self, delta_time: float = None) -> bool:
         if not super().tick(delta_time): return False
@@ -133,6 +161,8 @@ class EscapePlayer(Character):
         Failed condition: !space->locked
         Source:Chipmunk2D/src/cpSpace.c:527
         '''
+    def test_boost(self, power:float = 1000):
+        self.apply_impulse(self.forward_vector * power)
     
     def test_projectile(self, impulse:float = 10000):
         proj = ShrinkingBall()
@@ -159,13 +189,14 @@ class EscapePlayer(Character):
         # self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
         shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
         
-        query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
+        query = self.body.physics.body.space.segment_query(origin, end, thickness / 2, shape_filter)
+        # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         
         if query:
             first_hit = query[0]
             sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
             # sprite_first_hit.color = colors.RED
-            print(sprite_first_hit.owner)
+            # print(sprite_first_hit.owner)
 
 
 class Door(Pawn):

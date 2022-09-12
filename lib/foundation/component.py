@@ -9,7 +9,7 @@ class ActionComponent(ActorComponent):
     pass
 
 
-class SpriteBody(BodyComponent):
+class SpriteBody(Body):
     
     __slots__ = ()
     def __init__(self, 
@@ -25,7 +25,7 @@ class SpriteBody(BodyComponent):
             self.spawn(spawn_to, position, angle)
 
 
-class StaticBody(BodyComponent):
+class StaticBody(Body):
     
     __slots__ = ('physics', )
     def __init__(self, 
@@ -38,7 +38,7 @@ class StaticBody(BodyComponent):
                  body_type = physics_types.static,
                  collision_type = collision.wall,
                  elasticity:float = None,
-                 friction:float = 1.0,
+                 friction:float = 0.7,
                  shape_edge_radius:float = 0.0,
                  physics_shape:Union[physics_types.shape, type] = physics_types.poly,
                  offset_circle:Vector = vectors.zero,
@@ -98,7 +98,8 @@ class StaticBody(BodyComponent):
     def _hide(self, switch: bool = None) -> bool:
         #WIP : should revisit filter control
         switch = super()._hide(switch)
-        self.physics.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        # self.physics.shape.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
+        self.physics.hidden = switch
         print('hide me!',switch)
         return switch
     
@@ -115,19 +116,19 @@ class StaticBody(BodyComponent):
         if not self.physics: self.sprite.position = position
         else: raise PhysicsException(f'Can\'t move static object by overriding position = {position}. Set position with StaticActor.')
         
-    position:Vector = property(BodyComponent._get_position, _set_position)  
+    position:Vector = property(Body._get_position, _set_position)  
     
     def _set_velocity(self, velocity):
         if not self.physics: self.sprite.velocity = velocity
         else: raise PhysicsException(f'Can\'t move static object by overriding velocity = {velocity}. Set position with StaticActor.')
 
-    velocity: Vector = property(BodyComponent._get_veloticy, _set_velocity)
+    velocity: Vector = property(Body._get_veloticy, _set_velocity)
     
     def _set_angle(self, angle: float):
         if not self.physics: self.sprite.angle = angle
         else: raise PhysicsException(f'Can\'t rotate static object by set angle = {angle}. Set angle with StaticActor.')
 
-    angle:float = property(BodyComponent._get_angle, _set_angle)
+    angle:float = property(Body._get_angle, _set_angle)
     
     # def _get_mass(self):
     #     return self.physics.mass
@@ -162,6 +163,10 @@ class StaticBody(BodyComponent):
     def _set_scale(self, scale: float):
         # self.physics.shape.
         return super()._set_scale(scale)
+    
+    @property
+    def is_movable_physics(self) -> bool:
+        return self.movable and True if self.physics else False
 
 
 class DynamicBody(StaticBody):
@@ -177,7 +182,7 @@ class DynamicBody(StaticBody):
                  body_type:int = physics_types.dynamic,
                  collision_type:int = collision.default,
                  elasticity: float = None,
-                 friction: float = 1,
+                 friction: float = 0.5,
                  shape_edge_radius: float = 0,
                  physics_shape: Union[physics_types.shape, type] = physics_types.circle,
                  offset_circle: Vector = vectors.zero,
@@ -235,16 +240,16 @@ class DynamicBody(StaticBody):
             self.physics.body.position = position
         self.sprite.position = position
     
-    position:Vector = property(BodyComponent._get_position, _set_position)    
+    position:Vector = property(Body._get_position, _set_position)    
     
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
             self.physics.body.angle = math.radians(angle)
         self.sprite.angle = angle
 
-    angle:float = property(BodyComponent._get_angle, _set_angle)
+    angle:float = property(Body._get_angle, _set_angle)
     
-    velocity: Vector = property(BodyComponent._get_veloticy, BodyComponent._set_velocity)
+    velocity: Vector = property(Body._get_veloticy, Body._set_velocity)
     
     def _get_gravity(self):
         return self.sprite.pymunk.gravity
@@ -313,7 +318,7 @@ class SpriteMovement(ActorComponent):
         self._set_movement(delta_time)
         self._set_heading(delta_time)
         
-        ENV.debug_text['player_speed'] = self.speed_avg // delta_time
+        APP.debug_text['player_speed'] = self.speed_avg // delta_time
         # ENV.debug_text['player_heading'] = self.rotation
     
     def _set_movement(self, delta_time:float):
@@ -382,7 +387,7 @@ class SpriteMovement(ActorComponent):
         return True
     
     def _get_directional_speed_multiplier(self):
-        angle = abs(get_shortest_angle(self.rotation, self.velocity.argument()))
+        angle = abs(get_shortest_angle(self.rotation, self.velocity.angle))
         return get_curve_value(angle, CONFIG.directional_speed)
     
     def move(self, input:Vector = Vector()):
@@ -396,7 +401,7 @@ class SpriteMovement(ActorComponent):
     def turn_toward(self, abs_position:Vector = Vector()):
         ''' turn character to an absolute position '''
         # print(f'player position {self.owner.position}, mouse position {abs_position}')
-        angle = (abs_position - self.owner.position).argument()
+        angle = (abs_position - self.owner.position).angle
         self.turn(angle)
     
     def turn_toward_rel(self, rel_position:Vector = Vector()):
@@ -457,38 +462,11 @@ class SpriteMovement(ActorComponent):
         else: return self._braking
     
 
-class MovementHandler(ActorComponent):
-    #WIP
-    ''' need body component to move '''
-    def __init__(self, 
-                 max_speed_run:float = 250,
-                 max_speed_walk:float = 100,
-                 rotation_interp_speed:float = 3.0,
-                 acceleration:float = 4,
-                 **kwargs) -> None:
-        super().__init__(**kwargs)
-        
-        self.move_direction:Vector = None
-        self.desired_angle:float = 0.0
-    
-    def update(self, delta_time: float) -> bool:
-        
-        return True
-    
-    def move(self):
-        pass
-    
-    def rotate(self, angle):
-        pass
-    
-    def warp(self, position):
-        pass
-    
-
 class PhysicsMovement(ActorComponent):
     ''' movement handler for actor based on pymunk physics engine '''
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, acceleration:float = 10,**kwargs) -> None:
         super().__init__(**kwargs)
+        self.acceleration = acceleration
         self.move_direction:Vector = None
         self.desired_angle:float = 0.0
         self.rotation_interp_speed = 3.0
@@ -509,7 +487,7 @@ class PhysicsMovement(ActorComponent):
                 self.owner.velocity = vectors.zero
         else:
             # self.owner.velocity = self.move_direction * 250
-            angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.argument()))
+            angle = abs(get_shortest_angle(self.owner.angle, self.owner.velocity.angle))
             # speed = 1000 * get_curve_value(angle, CONFIG.directional_speed)
             speed = 60 ### damping 0, force 10000 => max_spd 166.6 (1/60)
             '''
@@ -526,7 +504,8 @@ class PhysicsMovement(ActorComponent):
                 # schedule_once(self._foo_print, 1)
                 pass
             
-            self.owner.body.apply_force_world(self.move_direction * 1000)
+            self.owner.body.apply_force_world(self._get_force(self.move_direction, 250))
+            # self.owner.velocity = self.move_direction * 250
             self.stopped = False
     
     def _set_heading(self, delta_time:float):
@@ -541,6 +520,10 @@ class PhysicsMovement(ActorComponent):
         self.owner.angle = get_positive_angle(rot)
         return True
     
+    def _get_force(self, direction:Vector, speed:float):
+        damping = pow(ENV.physics_engine.damping, 1/60)
+        return direction * speed * (1 - damping) * 60 * self.owner.body.mass
+    
     def move(self, direction:Vector = vectors.zero):
         self.move_direction = direction
     
@@ -550,41 +533,29 @@ class PhysicsMovement(ActorComponent):
     def turn_toward(self, abs_position:Vector = Vector()):
         ''' turn character to an absolute position '''
         # print(f'player position {self.owner.position}, mouse position {abs_position}')
-        angle = (abs_position - self.owner.position).argument()
+        angle = (abs_position - self.owner.position).angle
         self.turn(angle)
     
 
-class PlayerController(Controller):
-    #WIP
-    '''  '''
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+class NewSpriteMovement(MovementHandler):
     
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        direction = ENV.direction_input
-        if direction: self.owner.movement.turn_toward(direction)
-        self.movement.move(ENV.move_input)
-        ENV.debug_text['player_speed'] = round(self.speed, 1)
+    pass
+
+
+class NewPhysicsMovement(MovementHandler):
     
-    def on_key_press(self, key: int, modifiers: int):
-        pass
+    def __init__(self, 
+                 max_speed_run: float = 250, 
+                 max_speed_walk: float = 100, 
+                 rotation_interp_speed: float = 3,
+                 acceleration: float = 4, 
+                 **kwargs) -> None:
+        super().__init__(max_speed_run, max_speed_walk, rotation_interp_speed, acceleration, **kwargs)
+
+    def set_movement(self, delta_time: float):
+        
+        return super().set_movement(delta_time)
     
-    def on_key_release(self, key: int, modifiers: int):
-        pass
-    
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        pass
-    
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        pass
-    
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-        pass
-    
+
+class LifeTime(ActorComponent):
+    pass

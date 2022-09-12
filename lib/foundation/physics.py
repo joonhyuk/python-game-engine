@@ -145,7 +145,9 @@ class physics_types:
     allmask:int = pymunk.ShapeFilter.ALL_MASKS()
     allcategories:int = pymunk.ShapeFilter.ALL_CATEGORIES()
     filter_nomask = pymunk.ShapeFilter(mask = 0)
+    ''' collides with nothing '''
     filter_allmask = pymunk.ShapeFilter(mask = allmask)
+    ''' collides with everything '''
     filter_allcategories = pymunk.ShapeFilter(mask = allcategories)
 
 
@@ -266,7 +268,7 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly')
+    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: pymunk.Shape = None, 
@@ -286,6 +288,9 @@ class PhysicsObject:
         self._initial_mass = body.mass
         if hitbox: self._original_poly = self.hitbox.get_vertices()
         self._mass_scaling = mass_scaling
+        
+        self._last_filter:pymunk.ShapeFilter = self.shape.filter    ### should revisit later
+        self._hidden = False
 
     def _get_size(self):
         if not self.shape: return 0
@@ -294,8 +299,13 @@ class PhysicsObject:
         if isinstance(self.shape, physics_types.segment):
             return (self.shape.a - self.shape.b).length
         return None
-        
-        
+
+    def _hide(self, switch:bool = None):
+        if switch is None: switch = not self._hidden
+        if switch: self._last_filter = self.shape.filter
+        self.shape.filter = physics_types.filter_nomask if switch else self._last_filter
+        return switch
+    
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
@@ -385,6 +395,14 @@ class PhysicsObject:
         self.shape.collision_type = collision_type
     
     collision_type = property(_get_collision_type, _set_collision_type)
+    
+    def _get_hidden(self):
+        return self._hidden
+    
+    def _set_hidden(self, switch:bool = None):
+        self._hidden = self._hide(switch)
+        
+    hidden:bool = property(_get_hidden, _set_hidden)
     
     @property
     def speed(self):
@@ -634,8 +652,8 @@ class PhysicsEngine:
     
     def get_object_from_shape(self, shape: Optional[pymunk.Shape]) -> Optional[Sprite]:
         """ Given a shape, what sprite is associated with it? """
-        for sprite in self.objects:
-            if self.objects[sprite].shape is shape:
+        for sprite, physics in self.objects.items():
+            if physics.shape is shape:
                 return sprite
         return None
     
@@ -645,6 +663,10 @@ class PhysicsEngine:
         sprite1 = self.get_object_from_shape(shape1)
         sprite2 = self.get_object_from_shape(shape2)
         return sprite1, sprite2
+    
+    def get_owner(self, shape:Optional[pymunk.Shape]):
+        print('HIT SPRITE ', self.get_object_from_shape(shape))
+        return self.get_object_from_shape(shape).owner
     
     def is_on_ground(self, sprite: Sprite) -> bool:
         """ Return true of sprite is on top of something. """
