@@ -39,6 +39,10 @@ class PhysicsTestView(View):
         
     def setup(self):
         start_loading_time = CLOCK.get_perf()
+        self.channel_static = None
+        self.channel_dynamic = None
+        self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
+        self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
         
         ENV.physics_engine.damping = 0.01
         
@@ -72,8 +76,8 @@ class PhysicsTestView(View):
                                      elasticity=1.0
                                      )
         # test_simplebody.position = vectors.zero
-        test_simpleactor = StaticObject(test_simplebody).spawn(self.test_layer, position=Vector(200,200))
-        test_simpleactor2 = StaticObject(test_simplebody2).spawn(self.test_layer, position=Vector(200,568))
+        test_simpleactor = StaticObject(test_simplebody).spawn(self.wall_layer, position=Vector(200,200))
+        test_simpleactor2 = StaticObject(test_simplebody2).spawn(self.wall_layer, position=Vector(200,568))
         # test_simpleactor.position = vectors.zero
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
@@ -261,10 +265,16 @@ class PhysicsTestView(View):
         # self.clear()
         
         self.camera.use()
-        self.field_layer.draw()
+        
+        self.channels[0].use()
+        self.channels[0].clear()
         self.wall_layer.draw()
         self.debris_layer.draw()
         
+        self.channels[1].use()
+        self.channels[1].clear()
+        self.wall_layer.draw()
+        self.debris_layer.draw()
         self.character_layer.draw()
         self.fx_layer.draw()
         
@@ -275,6 +285,19 @@ class PhysicsTestView(View):
         # 
         # debug_draw_segment(end = CONFIG.screen_size)
         
+        self.shader.program['activated'] = CONFIG.debug_f_keys[0]
+        self.shader.program['lightPosition'] = self.player.screen_position * ENV.render_scale
+        self.shader.program['lightSize'] = 500 * ENV.render_scale
+        self.shader.program['lightAngle'] = 75.0
+        self.shader.program['lightDirectionV'] = self.player.body.forward_vector
+        
+        self.window.use()
+        self.clear()
+        self.field_layer.draw()
+        self.shader.render()
+        # self.debris_layer.draw()
+        # self.character_layer.draw()
+        self.player.draw()
         self.camera_gui.use()
         
         ENV.debug_text.perf_check('on_draw')

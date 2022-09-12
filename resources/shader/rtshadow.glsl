@@ -16,7 +16,7 @@ float terrain(vec2 samplePoint)
 {
     // iChannel0(terrain) 
     float samplePointAlpha = texture(iChannel0, samplePoint).a;
-    float sampleStepped = step(0.1, samplePointAlpha);
+    float sampleStepped = step(0.1, samplePointAlpha);  // minimum alpha to count
     float result = 1.0 - sampleStepped;
     // Soften the shadows. Comment out for hard shadows.
     // The closer the first number is to 1.0, the softer the shadows.
@@ -33,6 +33,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         // Distance in pixels to the light
         float distanceToLight = length(lightPosition - fragCoord);
         vec2 samplep = fragCoord - lightPosition;
+        vec2 normalizedFragCoord = fragCoord/iResolution.xy;
 
         float angleFromHeading = acos(dot(samplep, lightDirectionV) / length(samplep));
         // float angleFromHeading = acos(dot(samplep, vec2(0,1)) / length(samplep)) - radians(lightDirectionV);
@@ -51,13 +52,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         {
 
             // Normalize the fragment coordinate from (0.0, 0.0) to (1.0, 1.0)
-            vec2 normalizedFragCoord = fragCoord/iResolution.xy;
+            // vec2 normalizedFragCoord = fragCoord/iResolution.xy;
 
             // normalize light coord
             vec2 normalizedLightCoord = lightPosition.xy/iResolution.xy;
 
             // Start our mixing variable at 1.0
             float lightAmount = 1.0;
+            bool touched = false;
 
             for(float i = 0.0; i < N; i++)
             {
@@ -69,7 +71,18 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
                 float shadowAmount = terrain(samplePoint);
                 // Multiply the light amount.
                 // (Multiply in case we want to upgrade to soft shadows)
-                lightAmount *= shadowAmount;
+                if (shadowAmount < 1.0)
+                {
+                    if (touched == true)
+                    {
+                        lightAmount *= shadowAmount;
+                    }
+                    else
+                    {
+                        touched = true;
+                    }
+                }
+                // lightAmount *= shadowAmount;
             }
 
             // Make shadow for terrain itself
