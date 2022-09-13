@@ -137,6 +137,7 @@ class EscapePlayer(Character):
         self.energy = self.max_energy
         self.controller = EscapePlayerController()
         self.movement = NewPhysicsMovement()
+        self.actions = ActionComponent()
         
         # self.hidden = TrasferProperty(self.body.hidden)
     
@@ -191,7 +192,6 @@ class EscapePlayer(Character):
         
         query = self.body.physics.body.space.segment_query(origin, end, thickness / 2, shape_filter)
         # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
-        
         if query:
             first_hit = query[0]
             sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)

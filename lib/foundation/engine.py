@@ -717,6 +717,7 @@ class PawnController(ActorComponent):
     
     def on_register(self):
         
+        self.actions = self.owner.get_components(ActionComponent)[0]
         self.body = self.owner.get_components(Body)[0]
         self.movement = self.owner.get_components(MovementHandler)[0]
         
@@ -727,9 +728,44 @@ class PawnController(ActorComponent):
         # if actor is not valid: return False
         self.owner = actor
     
-    def testing(self):
+    def action(self):
         self.owner.move(vectors.up)
 
+
+class ActionComponent(ActorComponent):
+    '''
+    Action : custom functions for owner
+    기본 액션을 미리 정의해 놓는게 나을지?
+    attack, evade, open(이건 인터렉션이잖아...)
+    컨트롤러에서 실행시키는 방식. 이름 커맨드로 할지 아니면 미리 정의해놓은 키워드로 하는게 나을지?
+    
+    '''
+    pass
+
+    def on_register(self):
+        self.body:Body = self.owner.get_components(Body)[0]
+        self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
+    
+    def test_boost(self, direction:Vector, impulse:float):
+        self.body.apply_impulse(direction.unit * impulse)
+        
+    def test_shoot_ball(self, projectile:Actor, impulse:float = 10000):
+        projectile.body.damping = 1.0
+        return projectile.spawn(self.body.layers[0], self.body.position, initial_impulse=self.forward_vector * impulse)
+    
+    def test_attack(self, direction:Vector = None, range:float = 500):
+        self.movement.move_lock = True
+        self.movement.turn_lock = True
+        
+        if direction is None: direction = self.body.forward_vector
+        
+        def delayed_action(dt, direction, range):
+            print(self.body.physics.segment_query(self.body.position + direction * range, radius=5))
+            self.movement.move_lock = False
+            self.movement.turn_lock = False
+        
+        schedule_once(delayed_action, 1, direction, range)
+            
 
 class PlayerController(PawnController):
     

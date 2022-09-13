@@ -2,11 +2,7 @@ from config.engine import *
 from lib.foundation.engine import *
 
 
-class ActionComponent(ActorComponent):
-    '''
-    Action : custom functions for owner
-    '''
-    pass
+
 
 
 class SpriteBody(Body):

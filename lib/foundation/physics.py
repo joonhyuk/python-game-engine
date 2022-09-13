@@ -306,6 +306,12 @@ class PhysicsObject:
         self.shape.filter = physics_types.filter_nomask if switch else self._last_filter
         return switch
     
+    def segment_query(self, end:Vector, start:Vector = None, radius:float = 1, shape_filter = None):
+        if start is None: start = self.position
+        if shape_filter is None: shape_filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)  ### need to revisit
+        
+        return self.body.space.segment_query(start, end, radius, shape_filter)
+    
     def draw(self):
         if not CONFIG.debug_draw: return False
         if isinstance(self.shape, physics_types.circle):
