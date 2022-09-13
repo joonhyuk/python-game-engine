@@ -177,7 +177,11 @@ def get_positive_angle(degrees:float):
     return degrees
 
 def clamp(value, in_min, in_max):
-    return min(in_max, max(in_min, value))
+    # return min(in_max, max(in_min, value))
+    ''' optimized '''
+    if value <= in_min: return in_min
+    if value >= in_max: return in_max
+    return value
 
 def clamp_abs(value, in_min, in_max):
     result = min(abs(in_max), max(abs(in_min), abs(value)))
@@ -213,27 +217,17 @@ def get_from_dict(dict:dict, keyword:str, default:... = None):
         return dict[keyword]
     return default
 
-def map_range_easeinout(value, in_min, in_max, out_min, out_max, clamped = False):
-    # if clamped: value = clamp(value, in_min, in_max)
-    if value <= in_min: return out_min
-    if value >= in_max: return out_max
-    return map_range(cubic_easeinout(map_range(value, in_min, in_max, 0, 1)), 0, 1, out_min, out_max)
-    
+def map_range_easing(value, in_min, in_max, out_min, out_max, clamped=False, easing_class = LinearInOut):
+    return easing_class(out_min, out_max)(map_range(value, in_min, in_max, 0, 1, clamped))
 
-def get_curve_value(x:float, curve:dict, get_value_func = map_range):
+def get_curve_value(x:float, curve:dict, easing_class = LinearInOut):
     '''
     Get unreal style curve value from dict data.
     Keys could be float, int, 'rclamp', 'lclamp'
     i.e. curve = {0:0, 1:1, 'rclamp':True, 'lclamp':True}
     rclamp / lclamp: clamping to right / left end value
         
-    Get_value_func arguments should be;
-    x : in_value
-    in_min : start x
-    in_max : end x
-    out_min : start y
-    out_max : end y
-    clamped : if true, value will be clamped
+    easing_class referes to easing-functions module
     '''
     
     keys = curve.keys()
@@ -255,14 +249,21 @@ def get_curve_value(x:float, curve:dict, get_value_func = map_range):
         ''' get curve value from the index of x '''
         return curve[dots[dots_idx]]
     
-    if idx_x == 0:
-        id_start, id_end, clamp = 1, 2, lclamp
-    elif idx_x == len(dots) - 1:
-        id_start, id_end, clamp = idx_x - 2, idx_x - 1, rclamp
+    if idx_x == 0:     ### if x is the first value
+        if lclamp: return curve[dots[1]]    ### return clamped value
+        id_start, id_end = 1, 2
+    elif idx_x == len(dots) - 1:     ### if x is the last value
+        if rclamp: return curve[dots[-2]]    ### return clamped value
+        id_start, id_end = -3, -2
     else:
-        id_start, id_end, clamp = idx_x - 1, idx_x + 1, None
+        id_start, id_end = idx_x - 1, idx_x + 1
     
-    return get_value_func(x, dots[id_start], dots[id_end], gcv(id_start), gcv(id_end), clamp)
+    alpha = map_range(dots[idx_x], dots[id_start], dots[id_end], 0, 1)
+    
+    y_start = curve[dots[id_start]]
+    y_end = curve[dots[id_end]]
+    
+    return easing_class(y_start, y_end)(alpha)
 
 def avg_generator(value, num_limit:int = 10):
     '''
