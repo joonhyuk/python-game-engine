@@ -260,9 +260,9 @@ class DynamicBody(StaticBody):
     gravity:float = property(_get_gravity, _set_gravity)
     
     def _get_damping(self):
-        return self.sprite.pymunk.damping
+        return self.sprite.pymunk.damping or self.physics.body.space.damping
     
-    def _set_damping(self, damping:float):
+    def _set_damping(self, damping:float = None):
         self.sprite.pymunk.damping = damping
     
     damping:float = property(_get_damping, _set_damping)
@@ -550,12 +550,27 @@ class NewPhysicsMovement(MovementHandler):
                  rotation_interp_speed: float = 3,
                  acceleration: float = 4, 
                  **kwargs) -> None:
-        super().__init__(max_speed_run, max_speed_walk, rotation_interp_speed, acceleration, **kwargs)
+        super().__init__(rotation_interp_speed, **kwargs)
+        self.max_speed_run = max_speed_run
+        self.max_speed_walk = max_speed_walk
+        self.acceleration = acceleration
 
-    def set_movement(self, delta_time: float):
-        
-        return super().set_movement(delta_time)
+    def _get_force_scalar(self, speed:float):
+        damping = pow(self.body.damping, 1/60)
+        return speed * (1 - damping) * 60 * self.body.mass
     
+    def set_movement(self, delta_time: float):
+        self.body.apply_force(self.move_direction * self._get_force_scalar(self.max_speed_run))
+        return True
+    
+    def set_heading(self, delta_time:float):
+        ''' overridable or inheritable method for rotation setting '''
+        self.body.angle = get_positive_angle(rinterp_to(self.body.angle,
+                                                        self.desired_angle,
+                                                        delta_time,
+                                                        self.rotation_interp_speed
+                                                        ))
+        return True
 
 class LifeTime(ActorComponent):
     pass

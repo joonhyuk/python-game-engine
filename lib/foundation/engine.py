@@ -418,7 +418,6 @@ class Actor(MObject):
     # def __del__(self):
     #     print(self, 'actor removed. ciao!')
 
-
 class Body(ActorComponent):
     
     """
@@ -574,10 +573,7 @@ class MovementHandler(ActorComponent):
     
     '''
     def __init__(self, 
-                 max_speed_run:float = 250,
-                 max_speed_walk:float = 100,
                  rotation_interp_speed:float = 3.0,
-                 acceleration:float = 4,
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:Body = None
@@ -632,16 +628,10 @@ class MovementHandler(ActorComponent):
     
     def set_movement(self, delta_time:float):
         ''' overridable method for movement setting '''
-        self.body.apply_force(self.move_direction * 1000)
         return True
     
     def set_heading(self, delta_time:float):
         ''' overridable or inheritable method for rotation setting '''
-        self.body.angle = get_positive_angle(rinterp_to(self.body.angle,
-                                                        self.desired_angle,
-                                                        delta_time,
-                                                        self.rotation_interp_speed
-                                                        ))
         return True
     
     def move_to_position(self, destination:Vector):
@@ -653,10 +643,6 @@ class MovementHandler(ActorComponent):
     def move_toward(self, direction:Vector, speed:float):
         force = direction 
         pass
-    
-    def _get_force_scalar(self, speed:float):
-        damping = pow(ENV.physics_engine.damping, 1/60)
-        return speed * (1 - damping) * self.body.mass
     
     def move(self, force:Vector):
         self.owner.apply_force(force)
@@ -760,13 +746,6 @@ class PlayerController(PawnController):
         APP.debug_text['player_speed'] = round(self.body.speed, 1)
         
         return True
-    
-    def test_delegation(self, arg):
-        return print(arg)
-    
-    def on_input(self, input):
-        print('player input ready')
-        return self.test_delegation(input)
 
     def on_key_press(self, key: int, modifiers: int):
         pass
