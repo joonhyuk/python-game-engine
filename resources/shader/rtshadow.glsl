@@ -111,6 +111,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     }
     else
     {
+        // vec2 samplep = fragCoord - lightPosition;
+
+        // float angleFromHeading = acos(dot(samplep, lightDirectionV) / length(samplep));
+        
+        // mat2 rotate = mat2(
+        //     cos(angleFromHeading), -sin(angleFromHeading),
+        //     sin(angleFromHeading), cos(angleFromHeading)
+        // );
         vec2 normalizedFragCoord = fragCoord/iResolution.xy;
 
         fragColor = texture(iChannel1, normalizedFragCoord);
