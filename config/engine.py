@@ -17,6 +17,8 @@ RESOURCE_PATH = 'resources/'
 IMG_PATH = RESOURCE_PATH + 'art/'
 SFX_PATH = RESOURCE_PATH + 'sfx/'
 
+DEFAULT_PAWN_MOVE_SPEEDS = (100, 250, 400)
+
 
 @dataclass
 class default_settings:

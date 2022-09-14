@@ -538,17 +538,20 @@ class NewSpriteMovement(MovementHandler):
     pass
 
 
-class NewPhysicsMovement(MovementHandler):
+class TopDownPhysicsMovement(MovementHandler):
+    
+    walk = 0
+    run = 1
+    sprint = 2
     
     def __init__(self, 
-                 max_speed_run: float = 250, 
-                 max_speed_walk: float = 100, 
+                 max_speeds:tuple = DEFAULT_PAWN_MOVE_SPEEDS,
                  rotation_interp_speed: float = 3,
                  acceleration: float = 4, 
                  **kwargs) -> None:
         super().__init__(rotation_interp_speed, **kwargs)
-        self.max_speed_run = max_speed_run
-        self.max_speed_walk = max_speed_walk
+        self.max_speeds = max_speeds
+        self.speed_level = self.run
         self.acceleration = acceleration
 
     def _get_force_scalar(self, speed:float):
@@ -556,7 +559,7 @@ class NewPhysicsMovement(MovementHandler):
         return speed * (1 - damping) * 60 * self.body.mass
     
     def set_movement(self, delta_time: float):
-        self.body.apply_force(self.move_direction * self._get_force_scalar(self.max_speed_run))
+        self.body.apply_force(self.move_direction * self._get_force_scalar(self.desired_move_speed))
         return True
     
     def set_heading(self, delta_time:float):
@@ -564,9 +567,18 @@ class NewPhysicsMovement(MovementHandler):
         self.body.angle = get_positive_angle(rinterp_to(self.body.angle,
                                                         self.desired_angle,
                                                         delta_time,
-                                                        self.rotation_interp_speed
+                                                        self.desired_rotation_speed
                                                         ))
         return True
+    
+    @property
+    def desired_move_speed(self):
+        return self._move_modifier * self.max_speeds[self.speed_level]
+    
+    @property
+    def desired_rotation_speed(self):
+        return self._turn_modifier * self.rotation_interp_speed
+
 
 class LifeTime(ActorComponent):
     pass

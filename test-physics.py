@@ -1,6 +1,8 @@
 # from lib.foundation import *
 from lib.escape import *
-from config import *
+# from config.game import *
+import config
+
 from tqdm import tqdm
 import gc
 
@@ -232,7 +234,7 @@ class PhysicsTestView(View):
             self.physics_main.gravity = vectors.zero
             return
         
-        self.physics_main.gravity = direction * GRAVITY
+        self.physics_main.gravity = direction * DEFAULT_GRAVITY
         self.physics_main.damping = 1.0
         self.physics_main.activate_objects()
         return
@@ -335,7 +337,6 @@ class PhysicsTestView(View):
         
 def main():
     CLOCK.use_engine_tick = True
-    # APP = Client(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
     view = PhysicsTestView()
     view.setup()
     APP.show_view(view)
