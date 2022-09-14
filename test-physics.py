@@ -1,6 +1,8 @@
 # from lib.foundation import *
 from lib.escape import *
-from config import *
+# from config.game import *
+import config
+
 from tqdm import tqdm
 import gc
 
@@ -232,7 +234,7 @@ class PhysicsTestView(View):
             self.physics_main.gravity = vectors.zero
             return
         
-        self.physics_main.gravity = direction * GRAVITY
+        self.physics_main.gravity = direction * DEFAULT_GRAVITY
         self.physics_main.damping = 1.0
         self.physics_main.activate_objects()
         return
@@ -264,9 +266,9 @@ class PhysicsTestView(View):
     def on_draw(self):
         APP.debug_text.perf_check('on_draw')
         super().on_draw()
-        # self.clear()
         
         self.camera.use()
+        # self.field_layer.draw()
         
         self.channels[0].use()
         self.channels[0].clear()
@@ -275,6 +277,7 @@ class PhysicsTestView(View):
         
         self.channels[1].use()
         self.channels[1].clear()
+        self.field_layer.draw()
         self.wall_layer.draw()
         self.debris_layer.draw()
         self.character_layer.draw()
@@ -283,9 +286,6 @@ class PhysicsTestView(View):
         self.test_layer.draw()
         debug_draw_segment(self.player.position, self.player.position + self.player.body.velocity, color = colors.AERO_BLUE)
         debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
-        # self.test_layer.__getitem__(0).draw()
-        # 
-        # debug_draw_segment(end = CONFIG.screen_size)
         
         self.shader.program['activated'] = CONFIG.debug_f_keys[0]
         self.shader.program['lightPosition'] = self.player.screen_position * ENV.render_scale
@@ -294,12 +294,10 @@ class PhysicsTestView(View):
         self.shader.program['lightDirectionV'] = self.player.body.forward_vector
         
         self.window.use()
-        self.clear()
-        self.field_layer.draw()
+        # self.clear()
         self.shader.render()
-        # self.debris_layer.draw()
-        # self.character_layer.draw()
-        self.player.draw()
+
+        # self.player.draw()
         self.camera_gui.use()
         
         APP.debug_text.perf_check('on_draw')
@@ -339,7 +337,6 @@ class PhysicsTestView(View):
         
 def main():
     CLOCK.use_engine_tick = True
-    # APP = Client(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
     view = PhysicsTestView()
     view.setup()
     APP.show_view(view)

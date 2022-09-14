@@ -136,7 +136,7 @@ class EscapePlayer(Character):
         self.max_energy = 100
         self.energy = self.max_energy
         self.controller = EscapePlayerController()
-        self.movement = NewPhysicsMovement()
+        self.movement = TopDownPhysicsMovement()
         self.actions = ActionComponent()
         
         # self.hidden = TrasferProperty(self.body.hidden)

@@ -12,6 +12,7 @@ import PIL.ImageDraw
 
 from dataclasses import dataclass
 from typing import Union
+from abc import *
 
 import arcade
 import arcade.key as keys
@@ -23,6 +24,10 @@ from lib.foundation.physics import *
 from lib.foundation.utils import *
 
 from config.engine import *
+try:
+    from config.game import *
+except:
+    pass
 
 import psutil
 PROCESS = psutil.Process(os.getpid())
@@ -583,8 +588,16 @@ class MovementHandler(ActorComponent):
         self.desired_angle:float = None
         self.rotation_interp_speed = rotation_interp_speed
         
-        self.move_lock = False
-        self.turn_lock = False
+        self._move_modifier:float = 1.0
+        self._turn_modifier:float = 1.0
+        
+    @property
+    def move_lock(self):
+        return math.isclose(self._move_modifier, 0.0, abs_tol=0.001)
+    
+    @property
+    def turn_lock(self):
+        return math.isclose(self._turn_modifier, 0.0, abs_tol=0.001)
     
     def on_register(self):
         body:list[Body] = self.owner.get_components(Body)
@@ -626,10 +639,12 @@ class MovementHandler(ActorComponent):
         
         return self.set_heading(delta_time)
     
+    @abstractmethod
     def set_movement(self, delta_time:float):
         ''' overridable method for movement setting '''
         return True
     
+    @abstractmethod
     def set_heading(self, delta_time:float):
         ''' overridable or inheritable method for rotation setting '''
         return True

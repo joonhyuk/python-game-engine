@@ -176,11 +176,14 @@ def get_positive_angle(degrees:float):
     if degrees < 0: degrees += 360
     return degrees
 
-def clamp(value, in_min, in_max):
+def clamp(value, in_min = None, in_max = None):
+    if in_min > in_max: raise ValueError('in_min > in_max')
+    # if in_min is None: return min(value, in_max)
+    # if in_max is None: return max(value, in_min)
     # return min(in_max, max(in_min, value))
     ''' optimized '''
-    if value <= in_min: return in_min
-    if value >= in_max: return in_max
+    if in_min is not None and value < in_min: return in_min
+    if in_max is not None and value > in_max: return in_max
     return value
 
 def clamp_abs(value, in_min, in_max):

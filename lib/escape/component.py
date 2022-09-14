@@ -1,4 +1,5 @@
 from lib.foundation.component import *
+from config.game import * 
 
 class EscapePlayerController(PlayerController):
     
@@ -13,6 +14,8 @@ class EscapePlayerController(PlayerController):
         if key in (keys.S, keys.DOWN): ENV.input_move += vectors.down
         if key in (keys.A, keys.LEFT): ENV.input_move += vectors.left
         if key in (keys.D, keys.RIGHT): ENV.input_move += vectors.right
+        
+        if key == keys.LSHIFT: self.movement.speed_level = 2
         # if key == keys.LSHIFT: self.lshift_applied = True
         # if key == keys.LCTRL: self.lctrl_applied = True
 
@@ -25,6 +28,7 @@ class EscapePlayerController(PlayerController):
         if key in (keys.S, keys.DOWN): ENV.input_move -= vectors.down
         if key in (keys.A, keys.LEFT): ENV.input_move -= vectors.left
         if key in (keys.D, keys.RIGHT): ENV.input_move -= vectors.right
+        if key == keys.LSHIFT: self.movement.speed_level = 1
         # if key == keys.LSHIFT: self.lshift_applied = False
         # if key == keys.LCTRL: self.lctrl_applied = False
 
