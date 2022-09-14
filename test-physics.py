@@ -129,7 +129,7 @@ class PhysicsTestView(View):
         '''
         print('setup debris')
         for _ in tqdm(range(PHYSICS_TEST_DEBRIS_NUM)):
-            debri_body = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,96)),
+            debri_body = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,128)),
                                              mass = 0.5, elasticity = 0.2, friction=1.0,
                                              collision_type = collision.debris)
             debri = DynamicObject(debri_body)

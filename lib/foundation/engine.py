@@ -245,7 +245,7 @@ class MObject(object):
     __slots__ = ('id', '_alive', '_lifetime', '_update_tick', '_spawned', 'movable')
     
     def __init__(self, **kwargs) -> None:
-        self.id:str = self.get_id()
+        self.id:str = self.get_id()     ### will be deprecated. use id(target) instead.
         """set id by id()"""
         self._alive:bool = True
         """ Object alive state. if not, should be destroyed. 
@@ -729,6 +729,7 @@ class PawnController(ActorComponent):
         self.body:Body = None
         self.movement:MovementHandler = None
         self.priority = 9
+        ''' for reactivity '''
     
     def on_register(self):
         
@@ -760,27 +761,28 @@ class ActionComponent(ActorComponent):
     def on_register(self):
         self.body:Body = self.owner.get_components(Body)[0]
         self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
+        self.q:list(Action) = []
+        
+
+class Action(Callable):
+    ''' base class of all actions '''
+    timeline = (0.3, 0.25, 0.5)
     
-    def test_boost(self, direction:Vector, impulse:float):
-        self.body.apply_impulse(direction.unit * impulse)
-        
-    def test_shoot_ball(self, projectile:Actor, impulse:float = 10000):
-        projectile.body.damping = 1.0
-        return projectile.spawn(self.body.layers[0], self.body.position, initial_impulse=self.forward_vector * impulse)
+    def __init__(self) -> None:
+        pass
     
-    def test_attack(self, direction:Vector = None, range:float = 500):
-        self.movement.move_lock = True
-        self.movement.turn_lock = True
-        
-        if direction is None: direction = self.body.forward_vector
-        
-        def delayed_action(dt, direction, range):
-            print(self.body.physics.segment_query(self.body.position + direction * range, radius=5))
-            self.movement.move_lock = False
-            self.movement.turn_lock = False
-        
-        schedule_once(delayed_action, 1, direction, range)
-            
+    def __set_name__(self, owner, name):
+        self.owner:ActionComponent = owner
+        self.name = name
+    
+    def __call__(self, *args, **kwds) -> None:
+        self.do(*args, **kwds)
+        return super().__call__(*args, **kwds)
+    
+    @abstractmethod
+    def do(self, *args, **kwargs):
+        pass
+
 
 class PlayerController(PawnController):
     
@@ -1218,6 +1220,6 @@ if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     SOUND = SoundBank(SFX_PATH)
     ENV = Environment()
-    APP = Client(*CONFIG.screen_size, 'PHYSICS ENGINE TEST')
+    APP = Client(*CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
     
     # DEBUG = DebugTextLayer()
