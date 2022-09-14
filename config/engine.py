@@ -5,7 +5,7 @@ from lib.foundation.base import *
 
 
 PROJECT_NAME = 'mash python game engine'
-SCREEN_TITLE = PROJECT_NAME + 'dev'
+SCREEN_TITLE = PROJECT_NAME
 
 DEFAULT_SCREEN_WIDTH = 1024
 DEFAULT_SCREEN_HEIGHT = 768
@@ -22,6 +22,7 @@ DEFAULT_PAWN_MOVE_SPEEDS = (100, 250, 400)
 
 @dataclass
 class default_settings:
+    screen_title = SCREEN_TITLE
     ''' default setting of mutable config variables '''
     screen_size = Vector(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT)
     ''' current app resolution '''
