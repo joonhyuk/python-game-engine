@@ -88,7 +88,24 @@ def delay_run(delay:float, func, *args, **kwargs):
     
     return schedule_once(_wrapper, delay, *args, **kwargs)
 
-
 def delay_cancel(func):
     unschedule(scheduled_functions[func])
     scheduled_functions.pop(func, None)
+    
+def is_scheduled_item(func):
+    for it in pyglet_clock._schedule_interval_items:
+        if func == it.func:
+            return True
+    return False
+
+def tick_for(func, duration, interval = 1/DEFAULT_FPS, *args, **kwargs):
+    
+    if is_scheduled_item(func):
+        unschedule(func)
+        unschedule(delayed_unschedule)
+    
+    schedule_interval(func, interval, *args, **kwargs)
+    schedule_once(delayed_unschedule, duration, func)
+
+def delayed_unschedule(dt, func):
+    unschedule(func)
