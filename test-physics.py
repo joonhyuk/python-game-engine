@@ -149,7 +149,7 @@ class PhysicsTestView(View):
         example of body spawn setting
         
         '''
-        for x in range(0, CONFIG.screen_size.x + 1, 32):
+        for x in range(0, CONFIG.screen_size.x + 1, 64):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
                               Vector(x, 0), 
                               elasticity=0.75,
@@ -159,7 +159,7 @@ class PhysicsTestView(View):
                               elasticity=0.75,
                               spawn_to = layer)
         
-        for y in range(32, CONFIG.screen_size.y, 32):
+        for y in range(64, CONFIG.screen_size.y, 64):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
                               Vector(0, y), 
                               elasticity=0.75,
