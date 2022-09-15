@@ -128,17 +128,21 @@ class PhysicsTestView(View):
         example of actor spawn setting
         '''
         print('setup debris')
+        def spawn_rand_pos(actor:DynamicObject):
+            placed = False
+            while not placed:
+                actor.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
+                if not arcade.check_for_collision_with_lists(debri.body.sprite, [self.wall_layer, layer]):
+                    actor.spawn(layer)
+                placed = True
+        
         for _ in tqdm(range(PHYSICS_TEST_DEBRIS_NUM)):
             debri_body = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,128)),
                                              mass = 0.5, elasticity = 0.2, friction=1.0,
                                              collision_type = collision.debris)
-            debri = DynamicObject(debri_body)
-            placed = False
-            while not placed:
-                debri.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
-                if not arcade.check_for_collision_with_lists(debri.body.sprite, [self.wall_layer, layer]):
-                    debri.spawn(layer)
-                    placed = True
+            debri = SimpleAIObject(debri_body)
+            spawn_rand_pos(debri)
+        
     
     def _setup_walls_onecue(self, layer:ObjectLayer):
         '''
@@ -308,6 +312,10 @@ class PhysicsTestView(View):
         
         self.player.tick(delta_time)
         self.test_npc.tick(delta_time)
+        
+        for ai_pawn in ENV.ai_controllers:
+            ai_pawn.target = self.player
+            ai_pawn.tick(delta_time)
         
         APP.debug_text.perf_check('update_physics')
         self.physics_main.step(resync_objects=False)

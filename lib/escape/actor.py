@@ -199,6 +199,17 @@ class EscapePlayer(Character):
             # print(sprite_first_hit.owner)
 
 
+class SimpleAIObject(DynamicObject):
+    
+    def __init__(self, body: DynamicBody, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+        self.controller = TestAIController()
+        self.movement = EscapePlayerMovement()
+        self.actions = TestAIActionComponent()
+    
+    def get_components(self, *types: ActorComponent):
+        return super().get_components(*types)
+
 class Door(Pawn):
     
     def __init__(self, body: DynamicBody, hp: float = 1000, **kwargs) -> None:

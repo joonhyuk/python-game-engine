@@ -4,7 +4,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 
-from lib.foundation import *
+from lib.escape import *
 from config import *
 import gc
 
@@ -14,26 +14,103 @@ import gc
 창 열고 기본 루프만 도는...
 
 '''
-batch = 100000
 
-start = CLOCK.perf
-for i in range(batch):
-    a = vectors.zero * i
-    if a.length > 0: print('엥?')
-print('time1', CLOCK.perf - start)
-start = CLOCK.perf
+class TACT(TAction):
+    
+    def do(self, *args, **kwargs):
+        print(self.owner, 'do something like', args[0])
+        return super().do(*args, **kwargs)
 
-for i in range(batch):
-    a = vectors.zero * i
-    if a.angle > 0: print('잉?')
-print('time2', CLOCK.perf - start)
-start = CLOCK.perf
 
-for i in range(batch):
-    a = vectors.zero * i
-    if a.argument() > 0: print('잉?')
-print('time3', CLOCK.perf - start)
-start = CLOCK.perf
+class PACT(Action):
+    
+    def do(self, owner, a, d):
+        print(owner, 'is owner and I am', self, 'and args are', a, 'and kwargs are', d)
+        
 
+class MethodType:
+    "Emulate PyMethod_Type in Objects/classobject.c"
+
+    def __init__(self, func, obj):
+        self.__func__ = func
+        self.__self__ = obj
+
+    def __call__(self, *args, **kwargs):
+        func = self.__func__
+        obj = self.__self__
+        return func(obj, *args, **kwargs)
+    
+class FAction:
+    
+    def __get__(self, obj, objtype=None):
+        "Simulate func_descr_get() in Objects/funcobject.c"
+        if obj is None:
+            return self
+        return MethodType(self.do, obj)
+    
+    def do(self, *args, **kwargs):
+        pass
+
+class FACT(FAction):
+    
+    def do(self, a, b):
+        print('FACT called', self, a,b )
+
+
+def dummy(owner, c, d):
+    pass
+
+def action_func(owner, a, b):
+    print(owner,'called me', a, b)
+
+class Actio77:
+    
+    # func = None
+    
+    # def __new__(cls):
+    #     cls.func = cls.func
+    
+    def __init__(self, func) -> None:
+        self.func = func
+    
+    def __set_name__(self, owner, name):
+        self.name = name
+    
+    def __get__(self, owner, objtype = None):
+        # return partial(self.__class__.func, owner)
+        return partial(self.do, owner)
+    
+    def do(self, owner, *args, **kwargs):
+        self.func(owner, *args, **kwargs)
+
+class FACT(Action):
+    ''' f-act test class '''
+    # def __get__(self, owner, objtype=None):
+    #     return partial(self.do, owner)
+
+    def do(self, owner, a, b, c):
+        """ DOC을 유지하려면??? """
+        print(owner, a, b, c)
+    
+class TACC(ActionComponent):
+    
+    pact = PACT()
+    tact = TACT()
+    fact = FACT()
 
     
+class Tactor(Pawn):
+    
+    action = PACT()
+    faction = FACT()
+    
+    def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
+        super().__init__(body, hp, **kwargs)
+        self.actions = TACC()
+
+ta = Tactor(DynamicBody(SpriteCircle(16)))
+
+ta.register_components()
+# ta.actions.tact()
+# ta.faction()
+ta.actions.fact

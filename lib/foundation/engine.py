@@ -13,6 +13,7 @@ import PIL.ImageDraw
 from dataclasses import dataclass
 from typing import Union
 from abc import *
+from functools import partial, partialmethod, update_wrapper
 
 import arcade
 import arcade.key as keys
@@ -154,6 +155,8 @@ class Environment(metaclass = SingletonType):
     
     window_shortside = None
     window_longside = None
+    
+    ai_controllers = []
     
     def __init__(self) -> None:
         self.set_gamepad()
@@ -590,6 +593,7 @@ class MovementHandler(ActorComponent):
         
         self._move_modifier:float = 1.0
         self._turn_modifier:float = 1.0
+        self.priority = 8
         
     @property
     def move_lock(self):
@@ -759,16 +763,41 @@ class ActionComponent(ActorComponent):
     pass
 
     def on_register(self):
-        self.body:Body = self.owner.get_components(Body)[0]
-        self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
+        # self.body:Body = self.owner.get_components(Body)[0]
+        # self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
         self.q:list(Action) = []
         
 
-class Action(Callable):
+class Action:
+    ''' Base class of action.
+    
+    Wanna support type hint on do function.
+    '''
+    
+    def __init__(self) -> None:
+        # self.do = update_wrapper(self.do, self.do)
+        pass
+    
+    def __set_name__(self, owner, name):
+        self.name = name
+    
+    def __get__(self, owner, objtype = None):
+        func = partial(self.do, owner)
+        func.__doc__ = 'test __doc__'
+        # return update_wrapper(func, self.do)
+        return func
+    
+    @abstractmethod
+    def do(self, owner, *args, **kwargs):
+        pass
+    
+
+class TAction(Callable):
     ''' base class of all actions '''
     timeline = (0.3, 0.25, 0.5)
     
     def __init__(self) -> None:
+        self.owner:Actor = None
         pass
     
     def __set_name__(self, owner, name):
@@ -777,7 +806,6 @@ class Action(Callable):
     
     def __call__(self, *args, **kwds) -> None:
         self.do(*args, **kwds)
-        return super().__call__(*args, **kwds)
     
     @abstractmethod
     def do(self, *args, **kwargs):

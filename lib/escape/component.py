@@ -30,6 +30,9 @@ class EscapePlayerController(PlayerController):
             self.actions.test_action()
             APP.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
         
+        if key == keys.X:
+            self.actions.test_action_2()
+        
     def on_key_release(self, key: int, modifiers: int):
         if key in (keys.W, keys.UP): ENV.input_move -= vectors.up
         if key in (keys.S, keys.DOWN): ENV.input_move -= vectors.down
@@ -59,12 +62,41 @@ class EscapePlayerController(PlayerController):
         APP.debug_text.timer_end('mouse_lb_hold', 3)
         self._tmp = self.owner.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
         # self._tmp = self.actions.test_shoot_ball()
-        
+
+
+class Gaze(Action):
+    
+    def do(self, *args, **kwargs):
+        target_pos:Vector = get_from_dict(kwargs, 'target_pos')
+        self.owner.movement.turn_toward(target_pos - self.owner.body.position)
+        return super().do(*args, **kwargs)
+
+class TestAIController(PawnController):
+    
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.target = None
+    
+    def on_register(self):
+        ENV.ai_controllers.append(self)
+        return super().on_register()
+    
+    def set_target(self, target):
+        self.target = target
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        if CONFIG.debug_f_keys[7]: self.actions.gaze(target_pos = self.target.position)
+
+class TestAIActionComponent(ActionComponent):
+    
+    gaze = Gaze()  
 
 class EscapeCharacterAction(ActionComponent):
     
     # attack = aattack()
     test_action = TestAction()
+    test_action_2 = TestAction2()
     
     def setup(self):
         pass

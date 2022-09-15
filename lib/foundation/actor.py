@@ -303,7 +303,7 @@ class Pawn(DynamicObject):
                  **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.hp = hp
-        self.movement = PhysicsMovement()
+        self.movement = TopDownPhysicsMovement()
     
     def apply_damage(self, damage:float):
         self.hp -= damage

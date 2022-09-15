@@ -98,14 +98,41 @@ def is_scheduled_item(func):
             return True
     return False
 
-def tick_for(func, duration, interval = 1/DEFAULT_FPS, *args, **kwargs):
+def tick_for(tick_func, duration:float, interval:float = 1/DEFAULT_FPS, *args, **kwargs):
+    ''' run tick func immediately 
     
-    if is_scheduled_item(func):
-        unschedule(func)
-        unschedule(delayed_unschedule)
+    tick function should have delta_time as first arg like, tick(self, delta_time)
+    '''
+    # print(*args)
+    if is_scheduled_item(tick_func):
+        print('-------------tick-function-unscheduled', tick_func)
+        unschedule(tick_func)
+        print('-------------delayed-unschedule-unscheduled', delayed_unschedule)
+        unschedule(delayed_unschedule, tick_func)
     
-    schedule_interval(func, interval, *args, **kwargs)
-    schedule_once(delayed_unschedule, duration, func)
+    print('+++++++++++++++++++++schedule', tick_func)
+    schedule_interval(tick_func, interval, *args, **kwargs)
+    print('+++++++++++++++++++++schedule', delayed_unschedule)
+    schedule_once(delayed_unschedule, duration, tick_func)
 
 def delayed_unschedule(dt, func):
     unschedule(func)
+
+
+
+def delayed_func(dt, func, *args, **kwargs):
+    return func(*args, **kwargs)
+
+def reserve_run(func, delay:float, *args, **kwargs):
+    
+    if is_scheduled_item(func):
+        unschedule(func)
+    # print(*args)
+    schedule_once(func, delay, *args, **kwargs)
+
+def reserve_tick_for(tick_func, delay:float, duration:float, interval:float = 1/DEFAULT_FPS, *args, **kwargs):
+    
+    def reserved(dt):
+        return tick_for(tick_func, duration, interval, *args, **kwargs)
+    
+    reserve_run(reserved, delay)
