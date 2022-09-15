@@ -141,44 +141,21 @@ class EscapePlayer(Character):
         self.projectile = ShrinkingBall
     
         
-        # self.hidden = TrasferProperty(self.body.hidden)
-    
-    # hidden = PropertyFrom('body')
-    # position = PropertyFrom('body')
-    # angle = PropertyFrom('body')
-    # velocity = PropertyFrom('body')
-    # visibility = PropertyFrom('body')
-    
-    def tick(self, delta_time: float = None) -> bool:
-        if not super().tick(delta_time): return False
-        if self._fire_counter % 5 == 0:
-            if CONFIG.debug_f_keys[3]: self.test_projectile(1000)
-            self._fire_counter = 0
-        self._fire_counter += 1
-        '''
-        빠르게 쏘고 삭제하고를 반복할 경우,
-        삭제를 threading.Timer 스레드락 없이 쓰면 아래와 같은 에러가 나온다.
-        아마도 쿼리 도는 중에 바디를 삭제해버린게 아닐지.
+    # def tick(self, delta_time: float = None) -> bool:
+    #     if not super().tick(delta_time): return False
+    #     if self._fire_counter % 5 == 0:
+    #         if CONFIG.debug_f_keys[3]: self.test_projectile(1000)
+    #         self._fire_counter = 0
+    #     self._fire_counter += 1
+    #     '''
+    #     빠르게 쏘고 삭제하고를 반복할 경우,
+    #     삭제를 threading.Timer 스레드락 없이 쓰면 아래와 같은 에러가 나온다.
+    #     아마도 쿼리 도는 중에 바디를 삭제해버린게 아닐지.
         
-        Aborting due to Chipmunk error: This operation cannot be done safely during a call to cpSpaceStep() or during a query. Put these calls into a post-step callback.
-        Failed condition: !space->locked
-        Source:Chipmunk2D/src/cpSpace.c:527
-        '''
-    def test_boost(self, power:float = 1000):
-        self.apply_impulse(self.forward_vector * power)
-    
-    def test_projectile(self, impulse:float = 10000):
-        proj = ShrinkingBall()
-        # delay_run(2, proj.destroy)
-        # proj2 = BallProjectile()
-        proj.body.damping = 1.0
-        proj.spawn(self.body.layers[0], self.position,
-                   initial_impulse= self.forward_vector * impulse)
-        
-        # print(proj.destroy.__closure__)
-        # print('proj.dest ', proj.dest)
-        # print(threading.enumerate()
-        return proj
+    #     Aborting due to Chipmunk error: This operation cannot be done safely during a call to cpSpaceStep() or during a query. Put these calls into a post-step callback.
+    #     Failed condition: !space->locked
+    #     Source:Chipmunk2D/src/cpSpace.c:527
+    #     '''
     
     def test_directional_attack(self, 
                                 target_direction:Vector = None, 

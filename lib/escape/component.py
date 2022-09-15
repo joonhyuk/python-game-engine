@@ -56,23 +56,17 @@ class EscapePlayerController(PlayerController):
         APP.debug_text.timer_start('mouse_lb_hold')
         # self.owner.test_directional_attack(distance=500)
         APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
-        # self.actions.test_attack()
-        self.actions.test_perf()
+        self.actions.test_attack()
+        # self.actions.test_perf()
         APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
         APP.debug_text.timer_end('mouse_lb_hold', 3)
-        self._tmp = self.owner.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        
+        self._tmp = self.actions.test_projectile(self.owner.projectile, map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
         # self._tmp = self.actions.test_shoot_ball()
 
-
-class Gaze(Action):
-    
-    def do(self, *args, **kwargs):
-        target_pos:Vector = get_from_dict(kwargs, 'target_pos')
-        self.owner.movement.turn_toward(target_pos - self.owner.body.position)
-        return super().do(*args, **kwargs)
 
 class TestAIController(PawnController):
     
@@ -97,23 +91,14 @@ class TestAIActionComponent(ActionComponent):
 
 class EscapeCharacterAction(ActionComponent):
     
-    # attack = aattack()
     test_action = TestAction()
     test_action_2 = TestAction2()
     toggle_ball = ToggleFireAction()
+    test_boost = TestBoost()
+    test_projectile = TestShootBall()
     
     def setup(self):
         pass
-    
-    def test_perf(self):
-        a = 1 + 2
-    
-    def test_boost(self, direction:Vector, impulse:float):
-        self.body.apply_impulse(direction.unit * impulse)
-        
-    def test_shoot_ball(self, projectile:Actor, impulse:float = 10000):
-        projectile.body.damping = 1.0
-        return projectile.spawn(self.body.layers[0], self.body.position, initial_impulse=self.forward_vector * impulse)
     
     def test_attack(self, direction:Vector = None, range:float = 500):
         self.movement._move_modifier = 0.2

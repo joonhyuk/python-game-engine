@@ -1,25 +1,44 @@
 from lib.foundation import *
 
 
+class Gaze(Action):
+    
+    def do(self, owner:ActionComponent, target_pos):
+        # target_pos:Vector = get_from_dict(kwargs, 'target_pos')
+        self.owner.movement.turn_toward(target_pos - self.owner.body.position)
 
-class ToggleFireAction(Action):
+
+class TestBoost(Action):
+    
+    def do(self, owner: Union[Actor, ActionComponent], direction:Vector, impulse:float):
+        owner.body.apply_impulse(direction.unit * impulse)
+
+
+class TestShootBall(Action):
+    
+    def do(self, owner: Union[Actor, ActionComponent], proj_type, impulse):
+        
+        return self.fire(0, owner, proj_type, impulse)
+
+    def fire(self, dt, owner:ActionComponent, proj_type, impulse):
+        proj:DynamicObject = proj_type()
+        proj.body.damping = 1.0
+        return proj.spawn(owner.body.layers[0], owner.body.position, initial_impulse=owner.body.forward_vector * impulse)
+        ''' somewhat bad usage becaues action attached on ActionComponent '''
+
+
+class ToggleFireAction(TestShootBall):
     
     def __init__(self) -> None:
         super().__init__()
         self.fire_counter = 0
         self.on = False
     
-    def do(self, owner, proj_type:type, impulse):
+    def do(self, owner:Union[Actor, ActionComponent], proj_type:type, impulse):
         self.on = not self.on
         if self.on:
             schedule_interval(self.fire, 0.06, owner, proj_type, impulse)
         else: unschedule(self.fire)
-
-    def fire(self, dt, owner, proj_type, impulse):
-        proj = proj_type()
-        proj.body.damping = 1.0
-        proj.spawn(owner.owner.body.layers[0], owner.owner.body.position, initial_impulse=owner.owner.body.forward_vector * impulse)
-        ''' somewhat bad usage becaues action attached on ActionComponent '''
 
 
 class TestAction(Action):
@@ -42,13 +61,15 @@ class TestAction(Action):
         print('yeah', self.counter)
         self.counter += 1
 
+
 class TestAction2(TestAction):
     
     def do(self, owner):
         self.counter = 0
         tick_for(self.stupid, 1, 1/3)
 
-class FullAction(Action):
+
+class TestFullAction(Action):
     
     def end(self, dt):
         print('full action end------')

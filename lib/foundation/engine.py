@@ -760,11 +760,14 @@ class ActionComponent(ActorComponent):
     컨트롤러에서 실행시키는 방식. 이름 커맨드로 할지 아니면 미리 정의해놓은 키워드로 하는게 나을지?
     
     '''
-    pass
-
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.body:Body = None
+        self.movement:MovementHandler = None
+    
     def on_register(self):
-        # self.body:Body = self.owner.get_components(Body)[0]
-        # self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
+        self.body:Body = self.owner.get_components(Body)[0]
+        self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
         self.q:list(Action) = []
         
 
@@ -781,14 +784,14 @@ class Action:
     def __set_name__(self, owner, name):
         self.name = name
     
-    def __get__(self, owner, objtype = None):
+    def __get__(self, owner:Union[Actor, ActionComponent], objtype = None):
         func = partial(self.do, owner)
         func.__doc__ = 'test __doc__'
         # return update_wrapper(func, self.do)
         return func
     
     @abstractmethod
-    def do(self, owner, *args, **kwargs):
+    def do(self, owner:Union[Actor, ActionComponent], *args, **kwargs):
         pass
     
 
