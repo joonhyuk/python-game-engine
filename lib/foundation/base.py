@@ -58,7 +58,7 @@ class PropertyFrom:
 
 class Version(metaclass=SingletonType):
     '''planned to convert into singleton class'''
-    def __init__(self, major:int = None, minor:int = None, patch:int = None, is_production = False, file = 'version.json', run_count_up = True) -> None:
+    def __init__(self, major:int = None, minor:int = None, patch:int = None, is_production = False, file = 'data/version.json', run_count_up = True) -> None:
         import json
         self.path = get_path(file)
         

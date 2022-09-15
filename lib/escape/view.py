@@ -9,7 +9,7 @@ class TitleScreen(View):
         
         # reset viewport
         arcade.set_viewport(0, self.window.width, 0, self.window.height)
-        self.shadertoy = Shadertoy(size = self.window.get_framebuffer_size(), main_source = open(RESOURCE_PATH + 'shader/title_planet.glsl').read())
+        self.shadertoy = Shadertoy(size = self.window.get_framebuffer_size(), main_source = open(get_path('data/shader/title_planet.glsl')).read())
         self.fade_in = 0.5
         self.time = 0
     
@@ -99,7 +99,7 @@ class EscapeGameView(View):
         
         self.light_layer = lights.LightLayer(*self.window.get_framebuffer_size())
         self.light_layer.set_background_color(arcade.color.BLACK)
-        self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
+        self.shader = load_shader(get_path('data/shader/rtshadow.glsl'), self.window, self.channels)
         
         self._set_random_level()
         

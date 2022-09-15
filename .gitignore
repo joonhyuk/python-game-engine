@@ -4,3 +4,7 @@ __pycache__
 *.pyc
 *.build
 *.dist
+*.spec
+build
+dist
+app-assets

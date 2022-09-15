@@ -46,7 +46,7 @@ class PhysicsTestView(View):
         self.channel_static = None
         self.channel_dynamic = None
         self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
-        self.shader = load_shader(RESOURCE_PATH + '/shader/rtshadow.glsl', self.window, self.channels)
+        self.shader = load_shader(get_path('data/shader/rtshadow.glsl'), self.window, self.channels)
         
         self.physics_main.damping = 0.01
         
@@ -301,7 +301,7 @@ class PhysicsTestView(View):
         # self.clear()
         self.shader.render()
 
-        # self.player.draw()
+        self.player.draw()
         self.camera_gui.use()
         
         APP.debug_text.perf_check('on_draw')
