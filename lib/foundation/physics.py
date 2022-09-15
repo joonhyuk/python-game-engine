@@ -118,6 +118,13 @@ def _check_for_collision(sprite1: Sprite, sprite2: Sprite) -> bool:
 ### code injection
 arcade.sprite_list.spatial_hash._check_for_collision = _check_for_collision
 
+def is_sprite_not_in_zone(sprite:Sprite):
+    
+    if GAMEZONE_POS_MIN < sprite.position[0] < GAMEZONE_POS_MAX:
+        if GAMEZONE_POS_MIN < sprite.position[1] < GAMEZONE_POS_MAX:
+            return False
+
+    return True
 
 @dataclass
 class physics_types:
@@ -866,11 +873,16 @@ class PhysicsEngine:
         sprites = self.non_static_objects.copy()
 
         for sprite in sprites:
+            
             # Get physics object for this sprite
             physics_object = self.objects[sprite]
 
             # Item is sleeping, skip
             if physics_object.body.is_sleeping:
+                continue
+
+            if is_sprite_not_in_zone(sprite):
+                sprite.owner.destroy()
                 continue
 
             original_position = sprite.position
