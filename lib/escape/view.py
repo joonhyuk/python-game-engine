@@ -160,7 +160,7 @@ class EscapeGameView(View):
         self.emitter = arcade.Emitter(center_xy=(100, 100), 
                            emit_controller=arcade.EmitBurst(500), 
                            particle_factory=lambda emitter: arcade.LifetimeParticle(
-                               IMG_PATH + "smoke.png", 
+                               get_path(IMG_PATH + "smoke.png"), 
                                change_xy=arcade.rand_in_circle((0,0), 1.0), 
                                lifetime = 100, 
                                scale = 1, 

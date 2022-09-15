@@ -127,7 +127,7 @@ class EscapePlayer(Character):
     
     def __init__(self, hp: float = 100, body: DynamicBody = None, **kwargs) -> None:
         if not body:
-            body = DynamicBody(sprite = Sprite(IMG_PATH + 'player_handgun_original.png'),
+            body = DynamicBody(sprite = Sprite(get_path(IMG_PATH + 'player_handgun_original.png')),
                                collision_type = collision.character,
                                physics_shape = physics_types.circle(None, 16))
         super().__init__(body, hp, **kwargs)
