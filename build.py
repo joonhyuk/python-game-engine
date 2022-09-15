@@ -17,6 +17,7 @@ add_path_separator = {'win32' : ';'
 
 PyInstaller.__main__.run([
     'test-physics.py',
+    '--clean',
     '--onefile',
     '--windowed',
     '--icon=app-assets/icons/snake.' + icon_file_ext,
