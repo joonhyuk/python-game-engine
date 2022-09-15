@@ -32,6 +32,9 @@ class EscapePlayerController(PlayerController):
         
         if key == keys.X:
             self.actions.test_action_2()
+            
+        if key == keys.B:
+            self.actions.toggle_ball(self.owner.projectile, 1000)
         
     def on_key_release(self, key: int, modifiers: int):
         if key in (keys.W, keys.UP): ENV.input_move -= vectors.up
@@ -97,6 +100,7 @@ class EscapeCharacterAction(ActionComponent):
     # attack = aattack()
     test_action = TestAction()
     test_action_2 = TestAction2()
+    toggle_ball = ToggleFireAction()
     
     def setup(self):
         pass

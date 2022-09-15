@@ -1,5 +1,27 @@
 from lib.foundation import *
 
+
+
+class ToggleFireAction(Action):
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self.fire_counter = 0
+        self.on = False
+    
+    def do(self, owner, proj_type:type, impulse):
+        self.on = not self.on
+        if self.on:
+            schedule_interval(self.fire, 0.06, owner, proj_type, impulse)
+        else: unschedule(self.fire)
+
+    def fire(self, dt, owner, proj_type, impulse):
+        proj = proj_type()
+        proj.body.damping = 1.0
+        proj.spawn(owner.owner.body.layers[0], owner.owner.body.position, initial_impulse=owner.owner.body.forward_vector * impulse)
+        ''' somewhat bad usage becaues action attached on ActionComponent '''
+
+
 class TestAction(Action):
     
     def __init__(self) -> None:

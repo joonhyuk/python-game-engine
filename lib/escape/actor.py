@@ -138,6 +138,8 @@ class EscapePlayer(Character):
         self.controller = EscapePlayerController()
         self.movement = TopDownPhysicsMovement()
         self.actions = EscapeCharacterAction()
+        self.projectile = ShrinkingBall
+    
         
         # self.hidden = TrasferProperty(self.body.hidden)
     

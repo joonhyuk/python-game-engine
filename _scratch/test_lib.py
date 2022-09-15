@@ -91,12 +91,39 @@ class FACT(Action):
     def do(self, owner, a, b, c):
         """ DOC을 유지하려면??? """
         print(owner, a, b, c)
+
+
+class NewAction:
+    
+    # def __init__(self, owner) -> None:
+    #     self.owner = owner
+    
+    # def __set_name__(self, owner, name):
+    #     print('set_name', owner, name)
+    
+    # def __call__(self, *args, **kwargs):
+    #     return self.do(*args, **kwargs)
+    
+    # def do(self, a, b):
+    #     print('new action!', a, b)
+    def __get__(self, owner, objtype = None):
+        return partial(self.do, owner)
+    
+    # def do(self, owner, *args, **kwargs):
+    #     print(owner, args)
+
+class NACT(NewAction):
+    def do(self, owner, a, b):
+        ''' new d ! '''
+        print(owner, a, b)
     
 class TACC(ActionComponent):
     
     pact = PACT()
     tact = TACT()
     fact = FACT()
+    
+    nact = NACT()
 
     
 class Tactor(Pawn):
@@ -107,10 +134,12 @@ class Tactor(Pawn):
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)
         self.actions = TACC()
+        # self.new_action = NewAction(self)
 
 ta = Tactor(DynamicBody(SpriteCircle(16)))
 
 ta.register_components()
 # ta.actions.tact()
 # ta.faction()
-ta.actions.fact
+ta.actions.nact(12,3)
+
