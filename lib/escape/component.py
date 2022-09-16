@@ -71,6 +71,7 @@ class TestAIActionComponent(ActionHandler):
     
     gaze = Gaze()  
 
+
 class EscapeCharacterActionHandler(ActionHandler):
     
     test_action = TestAction()

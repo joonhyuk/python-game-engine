@@ -1000,7 +1000,7 @@ class Sprite(arcade.Sprite):
                  center_x: float = 0, center_y: float = 0, 
                  repeat_count_x: int = 1, repeat_count_y: int = 1, 
                  flipped_horizontally: bool = False, flipped_vertically: bool = False, flipped_diagonally: bool = False, 
-                 hit_box_algorithm: str = "Simple", hit_box_detail: float = 4.5, 
+                 hit_box_algorithm: str = "Detailed", hit_box_detail: float = 4.5, 
                  texture: arcade.Texture = None, 
                  angle: float = 0):
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
@@ -1089,6 +1089,30 @@ class SpriteCircle(Sprite):
         # apply results to the new sprite
         self.texture = texture
         self._points = self.texture.hit_box_points
+
+
+class SpriteCross(Sprite):
+    
+    def __init__(self, size:Vector, color:tuple):
+        cache_name = arcade.texture._build_cache_name("cross_texture", size, color[0], color[1], color[2], 255, 0)
+        
+        if cache_name in arcade.texture.load_texture.texture_cache:  # type: ignore
+            texture = arcade.texture.load_texture.texture_cache[cache_name]  # type: ignore
+        else:
+            img = PIL.Image.new('RGBA', size, (0, 0, 0, 0))
+            draw = PIL.ImageDraw.Draw(img)
+            
+            center = size / 2
+            
+            draw.rounded_rectangle((0,center.y + 10,size.x, center.y - 10), radius=5, fill=color)
+            draw.rounded_rectangle((center.x - 10,0,center.x + 10, size.y), radius=5, fill=color)
+            texture = GLTexture(cache_name, img)
+            arcade.texture.load_texture.texture_cache[cache_name] = texture  # type: ignore
+        main_path = ":resources:images/animated_characters/female_person/femalePerson_idle.png"
+        texture = arcade.load_texture(main_path, hit_box_algorithm="Detailed")
+        super().__init__(texture=texture, hit_box_algorithm="Detailed")
+        # self.texture = texture
+        # self._points = self.texture.hit_box_points
 
 
 class Capsule(Sprite):
