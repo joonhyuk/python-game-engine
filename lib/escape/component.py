@@ -75,9 +75,11 @@ class EscapeCharacterActionHandler(ActionHandler):
     
     test_action = TestAction()
     test_action_2 = TestAction2()
-    toggle_ball = ToggleFireAction()
+    toggle_ball = ToggleFireAction2()
     test_boost = TestBoost()
     test_projectile = TestShootBall()
+    
+    body:DynamicBody = None
     
     def setup(self):
         pass
@@ -110,6 +112,8 @@ class EscapeAIMovement(TopDownPhysicsMovement):
 
 
 class TestAIController(AIController):
+    
+    target:DynamicObject = None
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False

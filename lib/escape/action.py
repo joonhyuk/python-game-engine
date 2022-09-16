@@ -11,7 +11,12 @@ class Gaze(Action):
 class TestBoost(Action):
     
     def do(self, owner: Union[Actor, ActionHandler], direction:Vector, impulse:float):
+        # self.lock_global(owner)
+        self.lock_for(owner, 2, TestShootBall)
         owner.body.apply_impulse(direction.unit * impulse)
+        # schedule_once(self.unlock_global, 1, owner)
+        # schedule_once(self.unlock, 2, owner)
+        
 
 
 class TestShootBall(Action):
@@ -40,6 +45,13 @@ class ToggleFireAction(TestShootBall):
             schedule_interval(self.fire, 0.06, owner, proj_type, impulse)
         else: unschedule(self.fire)
 
+
+class ToggleFireAction2(ToggleFireAction):
+    ''' 다른 액션을 호출하는 테스트 '''
+    
+    def fire(self, dt, owner, proj_type, impulse):
+        owner.test_projectile(proj_type, impulse)
+        
 
 class TestAction(Action):
     

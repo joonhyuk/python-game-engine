@@ -746,7 +746,10 @@ class PawnController(ActorComponent):
     
     def possess(self, actor:Actor):
         # if actor is not valid: return False
-        self.owner = actor
+        if self.owner == actor: return False
+        else:
+            # self.owner.get_components(PawnController) = None
+            self.owner = actor
     
 
 class ActionHandler(ActorComponent):
@@ -761,12 +764,22 @@ class ActionHandler(ActorComponent):
         super().__init__(**kwargs)
         self.body:Body = None
         self.movement:MovementHandler = None
+        self._locked = False
+        self.locked_actions:list[type] = []
     
     def on_register(self):
         self.body:Body = self.owner.get_components(Body)[0]
         self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
-        self.q:list(Action) = []
-        
+        self.q:list[Action] = []
+    
+    def _get_global_lock(self):
+        return self._locked
+    
+    def _set_global_lock(self, switch:bool = None):
+        if switch is None: switch = not self._locked
+        self._locked = switch
+    
+    global_lock:bool = property(_get_global_lock, _set_global_lock)
 
 class Action:
     ''' Base class of action.
@@ -776,20 +789,58 @@ class Action:
     
     def __init__(self) -> None:
         # self.do = update_wrapper(self.do, self.do)
-        pass
+        self.owner = None
     
     def __set_name__(self, owner, name):
+        # setattr(owner, 'act_'+name, self)
         self.name = name
     
     def __get__(self, owner:Union[Actor, ActionHandler], objtype = None):
+        if isinstance(owner, ActionHandler):
+            if owner.global_lock or self.__class__ in owner.locked_actions:
+                return self.void
+                # return lambda x, *args, **kwargs:x    ### return empty function
+        
         func = partial(self.do, owner)
-        func.__doc__ = 'test __doc__'
-        # return update_wrapper(func, self.do)
+        # owner.q.append(id(func))
         return func
+    
+    def void(self, *args, **kwargs):
+        ''' empty function for locked situation '''
+        pass
+    
+    def lock_global(self, owner:Union[Actor, ActionHandler]):
+        if isinstance(owner, Actor):
+            raise Exception('actor could not be locked')
+        owner.global_lock = True
+        
+    def unlock_global(self, dt, owner:Union[Actor, ActionHandler]):
+        if isinstance(owner,ActionHandler):
+            owner.global_lock = False
+    
+    def lock(self, owner:ActionHandler, *action_types):
+        if not action_types: action_types = (self.__class__, )
+        owner.locked_actions.extend(action_types)
+    
+    def unlock(self, owner:ActionHandler, *action_types):
+        if not action_types: action_types = (self.__class__, )
+        for at in action_types:
+            owner.locked_actions.remove(at)
+    
+    def delayed_unlock(self, dt, owner:ActionHandler, *action_types):
+        return self.unlock(owner, *action_types)
+        if not action_types: action_types = (self.__class__, )
+        for at in action_types:
+            owner.locked_actions.remove(at)
+    
+    def lock_for(self, owner:ActionHandler, duration:float, *action_types):
+        self.lock(owner, *action_types)
+        schedule_once(self.delayed_unlock, duration, owner, *action_types)
+    
     
     @abstractmethod
     def do(self, owner:Union[Actor, ActionHandler], *args, **kwargs):
-        pass
+        return True
     
 
 class TAction(Callable):
