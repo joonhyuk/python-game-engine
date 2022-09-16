@@ -119,4 +119,7 @@ class TestAIController(AIController):
         if not super().tick(delta_time): return False
         if CONFIG.debug_f_keys[7]:
             self.actions.gaze(target_pos = self.target.position)
-            self.movement.move_to_position(self.target.position)
+        if CONFIG.debug_f_keys[6]:
+            dist = get_distance(*self.body.position, *self.target.position)
+            if dist > 100:
+                self.movement.move(self.body.forward_vector * dist)

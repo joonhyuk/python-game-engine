@@ -667,8 +667,8 @@ class MovementHandler(ActorComponent):
         self.owner.apply_force(force)
         pass
     
-    def move_forward(self, angle:float = 0.0):
-        # if not angle: self.body.apply
+    def move_forward(self):
+        # self.move_towa
         pass
     
     def turn(self, angle:float = 0.0):
