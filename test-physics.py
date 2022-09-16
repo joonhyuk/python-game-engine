@@ -315,7 +315,7 @@ class PhysicsTestView(View):
         
         for ai_pawn in ENV.ai_controllers:
             ai_pawn.target = self.player
-            ai_pawn.tick(delta_time)
+            ai_pawn.owner.tick(delta_time)
         
         APP.debug_text.perf_check('update_physics')
         self.physics_main.step(resync_objects=False)

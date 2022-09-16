@@ -136,8 +136,8 @@ class EscapePlayer(Character):
         self.max_energy = 100
         self.energy = self.max_energy
         self.controller = EscapePlayerController()
-        self.movement = TopDownPhysicsMovement()
-        self.actions = EscapeCharacterAction()
+        self.movement = EscapePlayerMovement()
+        self.actions = EscapeCharacterActionHandler()
         self.projectile = ShrinkingBall
     
         
@@ -183,11 +183,15 @@ class SimpleAIObject(DynamicObject):
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.controller = TestAIController()
-        self.movement = EscapePlayerMovement()
+        self.movement = EscapeAIMovement()
         self.actions = TestAIActionComponent()
     
-    def get_components(self, *types: ActorComponent):
-        return super().get_components(*types)
+    # def get_components(self, *types: ActorComponent):
+        # return super().get_components(*types)
+    
+    # def tick(self, delta_time: float) -> bool:
+    #     print(self, 'ticking')
+    #     return super().tick(delta_time)
 
 class Door(Pawn):
     

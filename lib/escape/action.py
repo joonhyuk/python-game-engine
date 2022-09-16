@@ -5,7 +5,7 @@ class Gaze(Action):
     
     def do(self, owner:ActionComponent, target_pos):
         # target_pos:Vector = get_from_dict(kwargs, 'target_pos')
-        self.owner.movement.turn_toward(target_pos - self.owner.body.position)
+        owner.movement.turn_toward(target_pos - owner.body.position)
 
 
 class TestBoost(Action):

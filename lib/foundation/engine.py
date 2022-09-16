@@ -796,7 +796,7 @@ class Action:
     
 
 class TAction(Callable):
-    ''' base class of all actions '''
+    ''' NOT USED. just for reference '''
     timeline = (0.3, 0.25, 0.5)
     
     def __init__(self) -> None:
@@ -814,6 +814,20 @@ class TAction(Callable):
     def do(self, *args, **kwargs):
         pass
 
+
+class AIController(PawnController):
+    
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.target:Actor = None
+    
+    def on_register(self):
+        ENV.ai_controllers.append(self)
+        return super().on_register()
+    
+    def set_target(self, target):
+        self.target = target
+    
 
 class PlayerController(PawnController):
     

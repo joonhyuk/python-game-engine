@@ -55,10 +55,9 @@ class EscapePlayerController(PlayerController):
         ENV.last_mouse_lb_hold_time = CLOCK.perf
         APP.debug_text.timer_start('mouse_lb_hold')
         # self.owner.test_directional_attack(distance=500)
-        APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
-        self.actions.test_attack()
-        # self.actions.test_perf()
-        APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
+        # APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
+        # self.actions.test_attack()
+        # APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
@@ -68,28 +67,11 @@ class EscapePlayerController(PlayerController):
         # self._tmp = self.actions.test_shoot_ball()
 
 
-class TestAIController(PawnController):
-    
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.target = None
-    
-    def on_register(self):
-        ENV.ai_controllers.append(self)
-        return super().on_register()
-    
-    def set_target(self, target):
-        self.target = target
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        if CONFIG.debug_f_keys[7]: self.actions.gaze(target_pos = self.target.position)
-
 class TestAIActionComponent(ActionComponent):
     
     gaze = Gaze()  
 
-class EscapeCharacterAction(ActionComponent):
+class EscapeCharacterActionHandler(ActionComponent):
     
     test_action = TestAction()
     test_action_2 = TestAction2()
@@ -117,5 +99,21 @@ class EscapeCharacterAction(ActionComponent):
 
 
 
-class EscapePlayerMovement(MovementHandler):
+class EscapePlayerMovement(TopDownPhysicsMovement):
     pass
+
+
+class EscapeAIMovement(TopDownPhysicsMovement):
+    
+    def tick(self, delta_time: float) -> bool:
+        # if self.desired_angle != 0.0:
+        #     print(self.owner, 'moving!')
+        return super().tick(delta_time)
+
+class TestAIController(AIController):
+    
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        if CONFIG.debug_f_keys[7]:
+            self.actions.gaze(target_pos = self.target.position)
+            self.movement.move_to_position(self.target.position)
