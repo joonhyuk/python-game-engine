@@ -7,12 +7,12 @@ Usage:
 
 from setuptools import setup
 
-APP = ['PythonByte.py']
+APP = ['test-physics.py']
 DATA_FILES = []
 OPTIONS = {'iconfile': 'app-assets/icons/snake.icns', 'resources': ['resources', 'data']}
 
 setup(
-    name='PythonByte', 
+    name='test-physics', 
     app=APP,
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
