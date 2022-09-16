@@ -737,7 +737,7 @@ class PawnController(ActorComponent):
     
     def on_register(self):
         
-        self.actions = self.owner.get_components(ActionComponent)[0]
+        self.actions = self.owner.get_components(ActionHandler)[0]
         self.body = self.owner.get_components(Body)[0]
         self.movement = self.owner.get_components(MovementHandler)[0]
         
@@ -748,11 +748,8 @@ class PawnController(ActorComponent):
         # if actor is not valid: return False
         self.owner = actor
     
-    def action(self):
-        self.owner.move(vectors.up)
 
-
-class ActionComponent(ActorComponent):
+class ActionHandler(ActorComponent):
     '''
     Action : custom functions for owner
     기본 액션을 미리 정의해 놓는게 나을지?
@@ -784,14 +781,14 @@ class Action:
     def __set_name__(self, owner, name):
         self.name = name
     
-    def __get__(self, owner:Union[Actor, ActionComponent], objtype = None):
+    def __get__(self, owner:Union[Actor, ActionHandler], objtype = None):
         func = partial(self.do, owner)
         func.__doc__ = 'test __doc__'
         # return update_wrapper(func, self.do)
         return func
     
     @abstractmethod
-    def do(self, owner:Union[Actor, ActionComponent], *args, **kwargs):
+    def do(self, owner:Union[Actor, ActionHandler], *args, **kwargs):
         pass
     
 
@@ -804,7 +801,7 @@ class TAction(Callable):
         pass
     
     def __set_name__(self, owner, name):
-        self.owner:ActionComponent = owner
+        self.owner:ActionHandler = owner
         self.name = name
     
     def __call__(self, *args, **kwds) -> None:
@@ -812,58 +809,6 @@ class TAction(Callable):
     
     @abstractmethod
     def do(self, *args, **kwargs):
-        pass
-
-
-class AIController(PawnController):
-    
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.target:Actor = None
-    
-    def on_register(self):
-        ENV.ai_controllers.append(self)
-        return super().on_register()
-    
-    def set_target(self, target):
-        self.target = target
-    
-
-class PlayerController(PawnController):
-    
-    def on_register(self):
-        APP.player_controller = self
-        return super().on_register()
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        
-        self.movement.turn_to_position(ENV.target_point)
-        # self.movement.move(ENV.move_input)
-        self.movement.move_direction = ENV.move_input
-        APP.debug_text['player_speed'] = round(self.body.speed, 1)
-        
-        return True
-
-    def on_key_press(self, key: int, modifiers: int):
-        pass
-    
-    def on_key_release(self, key: int, modifiers: int):
-        pass
-    
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        pass
-    
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        pass
-    
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         pass
 
 
@@ -877,7 +822,7 @@ class Client(arcade.Window):
         super().__init__(*args, **kwargs)
         ENV.physics_engine = PhysicsEngine()
         self.debug_text:DebugTextLayer = None
-        self.player_controller:PlayerController = None
+        self.player_controller:PawnController = None
     
     def set_screen(self):
         ''' should be called after resizing, fullscreen, etc. '''

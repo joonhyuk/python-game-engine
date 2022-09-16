@@ -67,11 +67,11 @@ class EscapePlayerController(PlayerController):
         # self._tmp = self.actions.test_shoot_ball()
 
 
-class TestAIActionComponent(ActionComponent):
+class TestAIActionComponent(ActionHandler):
     
     gaze = Gaze()  
 
-class EscapeCharacterActionHandler(ActionComponent):
+class EscapeCharacterActionHandler(ActionHandler):
     
     test_action = TestAction()
     test_action_2 = TestAction2()
@@ -97,8 +97,6 @@ class EscapeCharacterActionHandler(ActionComponent):
         schedule_once(delayed_action, 1, direction, range)
             
 
-
-
 class EscapePlayerMovement(TopDownPhysicsMovement):
     pass
 
@@ -109,6 +107,7 @@ class EscapeAIMovement(TopDownPhysicsMovement):
         # if self.desired_angle != 0.0:
         #     print(self.owner, 'moving!')
         return super().tick(delta_time)
+
 
 class TestAIController(AIController):
     

@@ -3,24 +3,24 @@ from lib.foundation import *
 
 class Gaze(Action):
     
-    def do(self, owner:ActionComponent, target_pos):
+    def do(self, owner:ActionHandler, target_pos):
         # target_pos:Vector = get_from_dict(kwargs, 'target_pos')
         owner.movement.turn_toward(target_pos - owner.body.position)
 
 
 class TestBoost(Action):
     
-    def do(self, owner: Union[Actor, ActionComponent], direction:Vector, impulse:float):
+    def do(self, owner: Union[Actor, ActionHandler], direction:Vector, impulse:float):
         owner.body.apply_impulse(direction.unit * impulse)
 
 
 class TestShootBall(Action):
     
-    def do(self, owner: Union[Actor, ActionComponent], proj_type, impulse):
+    def do(self, owner: Union[Actor, ActionHandler], proj_type, impulse):
         
         return self.fire(0, owner, proj_type, impulse)
 
-    def fire(self, dt, owner:ActionComponent, proj_type, impulse):
+    def fire(self, dt, owner:ActionHandler, proj_type, impulse):
         proj:DynamicObject = proj_type()
         proj.body.damping = 1.0
         return proj.spawn(owner.body.layers[0], owner.body.position, initial_impulse=owner.body.forward_vector * impulse)
@@ -34,7 +34,7 @@ class ToggleFireAction(TestShootBall):
         self.fire_counter = 0
         self.on = False
     
-    def do(self, owner:Union[Actor, ActionComponent], proj_type:type, impulse):
+    def do(self, owner:Union[Actor, ActionHandler], proj_type:type, impulse):
         self.on = not self.on
         if self.on:
             schedule_interval(self.fire, 0.06, owner, proj_type, impulse)

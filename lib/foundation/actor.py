@@ -200,18 +200,6 @@ class Projectile(DynamicBody):
         return super().spawn(spawn_to, position, angle)
 
 
-class AIController(ActorComponent):
-    
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.move_path = None
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        # self.owner.movement.turn_toward(self.move_path[0])
-        # self.owner.movement.move_toward(self.move_path[0])
-
-
 class InteractionHandler(ActorComponent):
     '''
     handling interaction for actor

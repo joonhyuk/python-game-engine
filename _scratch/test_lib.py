@@ -117,7 +117,7 @@ class NACT(NewAction):
         ''' new d ! '''
         print(owner, a, b)
     
-class TACC(ActionComponent):
+class TACC(ActionHandler):
     
     pact = PACT()
     tact = TACT()
