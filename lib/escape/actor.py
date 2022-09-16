@@ -117,7 +117,7 @@ class RollingRock(ShrinkingToy):
         
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
-        if CONFIG.debug_f_keys[5]: self.body.physics.body.angular_velocity = 10 * self._temp_multiplier
+        if CONFIG.debug_f_keys[5]: self.body.physics._body.angular_velocity = 7 * self._temp_multiplier
         return True
 
 
@@ -169,7 +169,7 @@ class EscapePlayer(Character):
         # self.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
         shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
         
-        query = self.body.physics.body.space.segment_query(origin, end, thickness / 2, shape_filter)
+        query = self.body.physics.space.segment_query(origin, end, thickness / 2, shape_filter)
         # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         if query:
             first_hit = query[0]

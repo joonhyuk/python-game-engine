@@ -97,16 +97,18 @@ class PhysicsTestView(View):
         box.spawn(self.debris_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
 
-        fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), hit_box_algorithm='Detailed'),
-                                     physics_shape=physics_types.poly, shape_edge_radius=1)
+        fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed', is_concave=True),
+                                     physics_shape=physics_types.poly, 
+                                     shape_edge_radius=1)
         circle_body = DynamicBody(SpriteCircle(48),
                                             mass = 7,
                                             friction = 1.2,
                                             collision_type=collision.debris,
                                             )
         # print(fan_blade_body.physics.shape)
-        self.test_npc = RollingRock(circle_body,
+        self.test_npc = RollingRock(fan_blade_body,
                                 ).spawn(self.debris_layer, Vector(500,550))
+        fan_blade_body.physics.add_world_pivot(fan_blade_body.position)
         ### DynamicObject.spawn test
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):

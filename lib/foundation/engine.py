@@ -1175,7 +1175,7 @@ class ObjectLayer(arcade.SpriteList):
         if self.physics_instance:
             if body:
                 if body.physics:
-                    self.physics_instance.add_object(sprite, body.physics.body, body.physics.shape)
+                    self.physics_instance.add_physics_object(sprite, body.physics)
                     self.physics_instance.add_to_space(sprite)
                     
     def remove(self, obj:Union[Actor, Body, Sprite, SpriteCircle]):

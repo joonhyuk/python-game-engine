@@ -211,16 +211,16 @@ class DynamicBody(StaticBody):
         return super().on_register()
     
     def apply_force_local(self, force:Vector = vectors.zero):
-        return self.physics.body.apply_force_at_local_point(force)
+        return self.physics._body.apply_force_at_local_point(force)
     
     def apply_impulse_local(self, impulse:Vector = vectors.zero):
-        return self.physics.body.apply_impulse_at_local_point(impulse)
+        return self.physics._body.apply_impulse_at_local_point(impulse)
     
     def apply_force_world(self, force:Vector = vectors.zero):
-        return self.physics.body.apply_force_at_world_point(force, self.position)
+        return self.physics._body.apply_force_at_world_point(force, self.position)
     
     def apply_impulse_world(self, impulse:Vector = vectors.zero):
-        return self.physics.body.apply_impulse_at_world_point(impulse, self.position)
+        return self.physics._body.apply_impulse_at_world_point(impulse, self.position)
     
     def apply_acceleration_world(self, acceleration:Vector):
         self.apply_force_world(acceleration * self.mass)
@@ -233,14 +233,14 @@ class DynamicBody(StaticBody):
     
     def _set_position(self, position) -> None:
         if self.physics:
-            self.physics.body.position = position
+            self.physics._body.position = position
         self.sprite.position = position
     
     position:Vector = property(Body._get_position, _set_position)    
     
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
-            self.physics.body.angle = math.radians(angle)
+            self.physics._body.angle = math.radians(angle)
         self.sprite.angle = angle
 
     angle:float = property(Body._get_angle, _set_angle)
@@ -256,7 +256,7 @@ class DynamicBody(StaticBody):
     gravity:float = property(_get_gravity, _set_gravity)
     
     def _get_damping(self):
-        return self.sprite.pymunk.damping or self.physics.body.space.damping
+        return self.sprite.pymunk.damping or self.physics._body.space.damping
     
     def _set_damping(self, damping:float = None):
         self.sprite.pymunk.damping = damping

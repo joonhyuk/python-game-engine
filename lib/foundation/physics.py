@@ -91,7 +91,7 @@ def setup_physics_object(sprite:Sprite,
         elif physics_shape == physics_types.box or isinstance(physics_shape, physics_types.box):
             _moment = pymunk.moment_for_box(mass, size)
         else:
-            scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
+            scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()].reverse()
             _moment = pymunk.moment_for_poly(mass, scaled_poly, offset_circle, radius=shape_edge_radius)
     
     if moment is None: moment = _moment
@@ -100,24 +100,6 @@ def setup_physics_object(sprite:Sprite,
     body.position = sprite.position
     body.angle = math.radians(sprite.angle)
     
-    if isinstance(physics_shape, physics_types.shape):
-        shape = physics_shape
-        shape.body = body
-    else:
-        if physics_shape == physics_types.circle:
-            shape = physics_types.circle(body, 
-                                            min(size.x, size.y) / 2 + shape_edge_radius, 
-                                            offset_circle)
-        else:
-            scaled_poly = [[x * sprite.scale for x in z] for z in sprite.get_hit_box()]
-            shape = physics_types.poly(body, scaled_poly, radius=shape_edge_radius)
-    
-    shape.collision_type = collision_type
-    shape.friction = friction
-
-    if elasticity is not None:
-        shape.elasticity = elasticity
-
     def velocity_callback(my_body, my_gravity, my_damping, dt):
         """ Used for custom damping, gravity, and max_velocity. """
         # Custom damping
@@ -174,7 +156,39 @@ def setup_physics_object(sprite:Sprite,
     else:
         hitbox = None
     
-    return PhysicsObject(body, shape, hitbox)
+    if isinstance(physics_shape, (physics_types.shape, list)):
+        shape = physics_shape
+        if isinstance(physics_shape, list):
+            for sh in shape:
+                sh.body = body
+        else:
+           shape.body = body
+    else:
+        if physics_shape == physics_types.circle:
+            shape = physics_types.circle(body, 
+                                            min(size.x, size.y) / 2 + shape_edge_radius, 
+                                            offset_circle)
+        else:
+            poly = sprite.get_hit_box()
+            scaled_poly = [[x * sprite.scale for x in z] for z in poly]
+            scaled_poly.reverse()
+            if hasattr(sprite, 'is_concave') and sprite.is_concave:
+                shape:list[physics_types.poly] = []
+                triangles = pymunk.util.triangulate(scaled_poly)
+                for triangle in triangles:
+                    shape.append(physics_types.poly(body, triangle, radius=shape_edge_radius))
+            else:    
+                shape = physics_types.poly(body, scaled_poly, radius=shape_edge_radius)
+
+    obj = PhysicsObject(body, shape, hitbox)
+    
+    obj.collision_type = collision_type
+    obj.friction = friction
+
+    if elasticity is not None:
+        obj.elasticity = elasticity
+    
+    return obj
 
 
 class PhysicsObject:
@@ -184,7 +198,7 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', '_shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter', 'joints', 'multi_shape')
+    __slots__ = ('_body', '_shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter', 'joints', 'multi_shape')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: Union[list[pymunk.Shape], pymunk.Shape] = None, 
@@ -192,7 +206,7 @@ class PhysicsObject:
                  mass_scaling:bool = True,
                  ):
         
-        self.body: Optional[pymunk.Body] = body
+        self._body: Optional[pymunk.Body] = body
         ''' actual body which has mass, position, velocity, rotation '''
         if isinstance(shape, list):
             self.multi_shape = True
@@ -240,7 +254,7 @@ class PhysicsObject:
         if start is None: start = self.position
         if shape_filter is None: shape_filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)  ### need to revisit
         
-        return self.body.space.segment_query(start, end, radius, shape_filter)
+        return self._body.space.segment_query(start, end, radius, shape_filter)
     
     def draw(self):
         if not CONFIG.debug_draw: return False
@@ -256,12 +270,12 @@ class PhysicsObject:
         #         debug_draw_poly(self.body.position, shape, (255,255,255,255))
     
     def add_pivot(self, target:physics_types.body, *positions):
-        joint = pymunk.constraints.PivotJoint(self.body, target, *positions)
+        joint = pymunk.constraints.PivotJoint(self._body, target, *positions)
         self.joints.append(joint)
         self.space.add(joint)
     
     def add_world_pivot(self, position:Vector):
-        joint = pymunk.constraints.PivotJoint(self.body, self.space.static_body, position)
+        joint = pymunk.constraints.PivotJoint(self._body, self.space.static_body, position)
         self.joints.append(joint)
         self.space.add(joint)
     
@@ -275,12 +289,23 @@ class PhysicsObject:
     def destroy(self):
         if self.multi_shape: self.space.remove(*self._shape)
         else: self.space.remove(self._shape)
-        self.space.remove(self.body, *self.joints)      ### self.space is from self.body, so it should come last
+        self.space.remove(self._body, *self.joints)      ### self.space is from self.body, so it should come last
         self.joints.clear()
     
     def __del__(self):
         if self.joints:
             map(self.space.remove, self.joints)
+    
+    def _get_body(self):
+        return self._body
+    
+    def _set_body(self, body):
+        if self.multi_shape:
+            for shape in self._shape:
+                shape.body = body
+        else: self._shape.body = body
+    
+    body = property(_get_body, _set_body)
     
     def _get_shape(self):
         return self._shape if not self.multi_shape else self._shape[0]
@@ -309,12 +334,13 @@ class PhysicsObject:
             if self._mass_scaling: self.mass = self._initial_mass * scale
     
     scale:float = property(_get_scale, _set_scale)
+    ''' scaling is not yet supported for multi-shape object '''
     
     def _get_mass(self):
-        return self.body.mass
+        return self._body.mass
     
     def _set_mass(self, mass:float):
-        self.body.mass = mass
+        self._body.mass = mass
     
     mass:float = property(_get_mass, _set_mass)
     
@@ -341,26 +367,26 @@ class PhysicsObject:
     friction:float = property(_get_friction, _set_friction)
 
     def _get_position(self):
-        return Vector(self.body.position)
+        return Vector(self._body.position)
     
     def _set_position(self, position:tuple[float, float]):
-        self.body.position = position
+        self._body.position = position
     
     position:Vector = property(_get_position, _set_position)
     
     def _get_velocity(self):
-        return Vector(self.body.velocity)
+        return Vector(self._body.velocity)
     
     def _set_velocity(self, velocity:tuple[float, float]):
-        self.body.velocity = velocity
+        self._body.velocity = velocity
     
     velocity:Vector = property(_get_velocity, _set_velocity)
     
     def _get_angle(self):
-        return math.degrees(self.body.angle)
+        return math.degrees(self._body.angle)
     
     def _set_angle(self, angle:float):
-        self.body.angle = math.radians(angle)
+        self._body.angle = math.radians(angle)
     
     angle:float = property(_get_angle, _set_angle)
     
@@ -403,7 +429,7 @@ class PhysicsObject:
     
     @property
     def space(self):
-        return self.body.space
+        return self._body.space
 
 
 class PhysicsException(Exception):
@@ -566,27 +592,32 @@ class PhysicsEngine:
         if shape is None:
             # poly = sprite.get_adjusted_hit_box()
             poly = sprite.get_hit_box()
-            scaled_poly = [[x * sprite.scale for x in z] for z in poly]
-            
-            shape = pymunk.Poly(body, scaled_poly, radius=radius)
+            scaled_poly = [[x * sprite.scale for x in z] for z in poly].reverse()
+            if hasattr(sprite, 'is_concave') and sprite.is_concave:
+                shape:list[pymunk.Poly] = []
+                triangles = pymunk.util.triangulate(scaled_poly)
+                for triangle in triangles:
+                    shape.append(pymunk.Poly(body, triangle, radius=radius))
+            else:    
+                shape = pymunk.Poly(body, scaled_poly, radius=radius)
         else:
             shape.body = body
+        
+        # Create physics object and add to list
+        physics_object = self.add_object(sprite, body, shape)
         
         # Set collision type, used in collision callbacks
         if collision_type:
             # shape.collision_type = collision_type_id
-            shape.collision_type = collision_type
+            physics_object.collision_type = collision_type
 
         # How bouncy is the shape?
         if elasticity is not None:
-            shape.elasticity = elasticity
+            physics_object.elasticity = elasticity
 
         # Set shapes friction
-        shape.friction = friction
+        physics_object.friction = friction
         """ Friction only applied to collision """
-        
-        # Create physics object and add to list
-        physics_object = self.add_object(sprite, body, shape)
         
         if spawn:
             # Add body and shape to pymunk engine, register physics engine to sprite
@@ -596,14 +627,20 @@ class PhysicsEngine:
     
     def add_object(self, sprite:Sprite, body:pymunk.Body, shape:pymunk.Shape):
         physics_object = PhysicsObject(body, shape)
+        self.add_physics_object(sprite, physics_object)
+    
+    def add_physics_object(self, sprite:Sprite, physics_object:PhysicsObject):
         self.objects[sprite] = physics_object
-        if body.body_type != self.STATIC:
+        if physics_object._body.body_type != self.STATIC:
             self.non_static_objects.append(sprite)
         return physics_object
     
     def add_to_space(self, sprite:Sprite) -> None:
         physics_object = self.objects[sprite]
-        self.space.add(physics_object.body, physics_object.shape)
+        if hasattr(sprite, 'is_concave') and sprite.is_concave:
+            self.space.add(physics_object._body, *physics_object._shape)
+        else:
+            self.space.add(physics_object._body, physics_object.shape)
         
         # Register physics engine with sprite, so we can remove from physics engine
         # if we tell the sprite to go away.
@@ -700,9 +737,9 @@ class PhysicsEngine:
                 grounding['position'] = arbiter.contact_point_set.points[0].point_b
 
         physics_object = self.objects[sprite]
-        if not physics_object.body:
+        if not physics_object._body:
             raise ValueError("No physics body set.")
-        physics_object.body.each_arbiter(f)
+        physics_object._body.each_arbiter(f)
 
         return grounding
     
@@ -711,28 +748,28 @@ class PhysicsEngine:
         physics_object = self.get_physics_object(sprite)
         if physics_object is None:
             raise PhysicsException("Tried to apply an impulse, but this physics object has no 'body' set.")
-        physics_object.body.apply_impulse_at_local_point(impulse)
+        physics_object._body.apply_impulse_at_local_point(impulse)
     
     def apply_impulse_world(self, sprite: Sprite, impulse: Vector, point: Vector):
         """ Apply an impulse force on a sprite from a world point """
         physics_object = self.get_physics_object(sprite)
         if physics_object is None:
             raise PhysicsException("Tried to apply an impulse, but this physics object has no 'body' set.")
-        physics_object.body.apply_impulse_at_world_point(impulse, point)
+        physics_object._body.apply_impulse_at_world_point(impulse, point)
     
     def apply_force(self, sprite: Sprite, force: Vector):
         """ Apply an impulse force on a sprite """
         physics_object = self.get_physics_object(sprite)
         if physics_object is None:
             raise PhysicsException("Tried to apply a force, but this physics object has no 'body' set.")
-        physics_object.body.apply_force_at_local_point(force)
+        physics_object._body.apply_force_at_local_point(force)
     
     def apply_force_world(self, sprite: Sprite, force: Vector, point: Vector):
         """ Apply an impulse force on a sprite from a world point """
         physics_object = self.get_physics_object(sprite)
         if physics_object is None:
             raise PhysicsException("Tried to apply a force, but this physics object has no 'body' set.")
-        physics_object.body.apply_force_at_world_point(force, point)
+        physics_object._body.apply_force_at_world_point(force, point)
     
     def get_physics_object(self, sprite: Sprite) -> PhysicsObject:
         """ Get the shape/body for a sprite. """
@@ -741,16 +778,16 @@ class PhysicsEngine:
     def set_position(self, sprite: Sprite, position: Vector):
         ''' might be deprecated '''
         physics_object = self.get_physics_object(sprite)
-        if physics_object.body is None:
+        if physics_object._body is None:
             raise PhysicsException("Tried to set a position, but this physics object has no 'body' set.")
-        physics_object.body.position = position
+        physics_object._body.position = position
     
     def set_velocity(self, sprite: Sprite, velocity: Vector):
         ''' might be deprecated '''
         physics_object = self.get_physics_object(sprite)
-        if physics_object.body is None:
+        if physics_object._body is None:
             raise PhysicsException("Tried to set a velocity, but this physics object has no 'body' set.")
-        physics_object.body.velocity = velocity
+        physics_object._body.velocity = velocity
     
     def apply_opposite_running_force(self, sprite: Sprite):
         """
@@ -758,7 +795,7 @@ class PhysicsEngine:
         should get pushed to the right.
         """
         grounding = self.check_grounding(sprite)
-        body = self.get_physics_object(sprite).body
+        body = self.get_physics_object(sprite)._body
         if not body:
             raise ValueError("Physics body not set.")
 
@@ -774,7 +811,7 @@ class PhysicsEngine:
     def hide(self, sprite: Sprite):
         physics_object = self.get_physics_object(sprite)
         self.space.add_default_collision_handler()
-        physics_object.body.sleep()
+        physics_object._body.sleep()
     
     def add_collision_handler(self, 
                               first_type:str,
@@ -839,7 +876,7 @@ class PhysicsEngine:
     
     def activate_objects(self):
         for sprite in self.non_static_objects:
-            self.objects[sprite].body.activate()
+            self.objects[sprite]._body.activate()
     
     def resync_objects(self):
         """
@@ -856,7 +893,7 @@ class PhysicsEngine:
             physics_object = self.objects[sprite]
 
             # Item is sleeping, skip
-            if physics_object.body.is_sleeping:
+            if physics_object._body.is_sleeping:
                 continue
 
             if is_sprite_not_in_zone(sprite):
@@ -865,8 +902,8 @@ class PhysicsEngine:
                 continue
 
             original_position = sprite.position
-            new_position = physics_object.body.position
-            new_angle = math.degrees(physics_object.body.angle)
+            new_position = physics_object._body.position
+            new_angle = math.degrees(physics_object._body.angle)
 
             # Calculate change in location, used in call-back
             dx = new_position[0] - original_position[0]
