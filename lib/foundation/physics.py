@@ -184,7 +184,7 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter', 'joints')
+    __slots__ = ('body', '_shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter', 'joints', 'multi_shape')
     def __init__(self,
                  body: pymunk.Body = None,
                  shape: Union[list[pymunk.Shape], pymunk.Shape] = None, 
@@ -194,15 +194,22 @@ class PhysicsObject:
         
         self.body: Optional[pymunk.Body] = body
         ''' actual body which has mass, position, velocity, rotation '''
-        if isinstance(shape, pymunk.Shape):
-            self.shape: Optional[pymunk.Shape] = shape
+        if isinstance(shape, list):
+            self.multi_shape = True
+            self._shape:list[pymunk.Shape] = shape
         else:
-            self.shape:list[pymunk.Shape] = shape
+            self.multi_shape = False
+            self._shape:pymunk.Shape = shape
+        # if isinstance(shape, pymunk.Shape):
+        #     self.shape: Optional[pymunk.Shape] = shape
+        # else:
+        #     self.shape:list[pymunk.Shape] = shape
+        # self._shape: Union[list[pymunk.Shape], pymunk.Shape] = shape
         ''' main collision '''
         self.hitbox: physics_types.poly = hitbox
         ''' custom hitbox collision if needed '''
         self._scale = 1.0
-        self._initial_size:Union(float, Vector) = self._get_size()
+        self._initial_size:Union[float, Vector] = self._get_size()
         ''' no need to be set when poly '''
         self._initial_mass = body.mass
         # if hitbox: self._original_poly = self.hitbox.get_vertices()
@@ -225,8 +232,8 @@ class PhysicsObject:
 
     def _hide(self, switch:bool = None):
         if switch is None: switch = not self._hidden
-        if switch: self._last_filter = self.shape.filter
-        self.shape.filter = physics_types.filter_nomask if switch else self._last_filter
+        if switch: self._last_filter = self.filter
+        self.filter = physics_types.filter_nomask if switch else self._last_filter
         return switch
     
     def segment_query(self, end:Vector, start:Vector = None, radius:float = 1, shape_filter = None):
@@ -265,9 +272,23 @@ class PhysicsObject:
                 self.joints.remove(joint)
                 self.space.remove(joint)
     
+    def destroy(self):
+        if self.multi_shape: self.space.remove(*self._shape)
+        else: self.space.remove(self._shape)
+        self.space.remove(self.body, *self.joints)      ### self.space is from self.body, so it should come last
+        self.joints.clear()
+    
     def __del__(self):
         if self.joints:
             map(self.space.remove, self.joints)
+    
+    def _get_shape(self):
+        return self._shape if not self.multi_shape else self._shape[0]
+    
+    def _set_shape(self, shape):
+        self._shape = shape
+    
+    shape = property(_get_shape, _set_shape)
     
     def _get_scale(self):
         return self._scale
@@ -298,18 +319,24 @@ class PhysicsObject:
     mass:float = property(_get_mass, _set_mass)
     
     def _get_elasticity(self):
-        return self.shape.elasticity
+        return self._shape.elasticity if not self.multi_shape else self._shape[0].elasicity
     
     def _set_elasticity(self, elasticity:float):
-        self.shape.elasticity = elasticity
+        if self.multi_shape:
+            for shape in self._shape:
+                shape.elasticity = elasticity
+        else: self._shape.elasticity = elasticity
     
     elasticity:float = property(_get_elasticity, _set_elasticity)
     
     def _get_friction(self):
-        return self.shape.friction
+        return self._shape.friction if not self.multi_shape else self._shape[0].friction
     
     def _set_friction(self, friction:float):
-        self.shape.friction = friction
+        if self.multi_shape:
+            for shape in self._shape:
+                shape.friction = friction
+        else: self._shape.friction = friction
     
     friction:float = property(_get_friction, _set_friction)
 
@@ -339,10 +366,14 @@ class PhysicsObject:
     
     def _get_collision_type(self):
         ''' movement or hitbox? '''
+        return self._shape.collision_type if not self.multi_shape else self._shape[0].collision_type
         return self.shape.collision_type
     
     def _set_collision_type(self, collision_type:int):
-        self.shape.collision_type = collision_type
+        if self.multi_shape:
+            for shape in self._shape:
+                shape.collision_type = collision_type
+        else: self._shape.collision_type = collision_type
     
     collision_type = property(_get_collision_type, _set_collision_type)
     
@@ -353,6 +384,18 @@ class PhysicsObject:
         self._hidden = self._hide(switch)
         
     hidden:bool = property(_get_hidden, _set_hidden)
+    
+    def _get_filter(self):
+        return self._shape.filter if not self.multi_shape else self._shape[0].filter
+    
+    def _set_filter(self, filter):
+        if self.multi_shape:
+            for shape in self._shape:
+                shape.filter = filter
+        else: self._shape.filter = filter
+    
+    filter = property(_get_filter, _set_filter)
+        
     
     @property
     def speed(self):
@@ -591,14 +634,12 @@ class PhysicsEngine:
     
     def remove_sprite(self, sprite:Sprite):
         ''' name coupled with aracde framework. so do not change it'''
-        physics_object = self.objects[sprite]
-        self.space.remove(physics_object.body)  # type: ignore
-        self.space.remove(physics_object.shape)  # type: ignore
-        self.objects.pop(sprite)
+        # physics_object = self.objects[sprite]
+        # self.space.remove(physics_object.body)  # type: ignore
+        # self.space.remove(physics_object.shape)  # type: ignore
+        self.objects.pop(sprite).destroy()
         if sprite in self.non_static_objects:
             self.non_static_objects.remove(sprite)
-            return True
-        return False
     
     def get_object_from_shape(self, shape: Optional[pymunk.Shape]) -> Optional[Sprite]:
         """ Given a shape, what sprite is associated with it? """

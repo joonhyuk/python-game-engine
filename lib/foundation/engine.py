@@ -991,7 +991,7 @@ class View(arcade.View):
 
 class Sprite(arcade.Sprite):
     
-    __slots__ = ('owner', 'collide_with_radius', '_initial_scale', '_relative_scale')
+    __slots__ = ('owner', 'collide_with_radius', '_initial_scale', '_relative_scale', 'is_concave')
     
     def __init__(self, 
                  filename: str = None, 
@@ -1002,12 +1002,14 @@ class Sprite(arcade.Sprite):
                  flipped_horizontally: bool = False, flipped_vertically: bool = False, flipped_diagonally: bool = False, 
                  hit_box_algorithm: str = "Detailed", hit_box_detail: float = 4.5, 
                  texture: arcade.Texture = None, 
-                 angle: float = 0):
+                 angle: float = 0,
+                 is_concave:bool = False):
         super().__init__(filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self.owner = None
         self._initial_scale = scale
         self._relative_scale = 1.0
-        self.collides_with_radius = False
+        self.collides_with_radius = False   ### will be deprecated
+        self.is_concave = is_concave
 
     def scheduled_remove_from_sprite_lists(self, dt):
         # print('REMOVING!')

@@ -53,7 +53,7 @@ class PhysicsTestView(View):
         self.player = EscapePlayer()
         self.player.spawn(self.character_layer, Vector(100, 100))
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
-        # self.player.body.physics.shape.friction = 1.0
+        # self.player.body.physics.friction = 1.0
         # self.player.body.sprite.pymunk.gravity = (0,980)
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
@@ -251,7 +251,7 @@ class PhysicsTestView(View):
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
         ''' 초고속 발사체(광학병기, 레일건) 체크용. 화학병기 발사체는 발사체를 직접 날려서 충돌체크.
         '''
-        self.player.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        self.player.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
         sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
         query = self.physics_main.space.segment_query(origin, end, thickness / 2, sf)
         query_first = self.physics_main.space.segment_query_first(origin, end, thickness / 2, sf)
@@ -329,7 +329,7 @@ class PhysicsTestView(View):
         APP.debug_text.perf_check('resync_objects')
         self.physics_main.resync_objects()
         APP.debug_text.perf_check('resync_objects')
-        # print(self.player.body.physics.shape.segment_query((0,0), CONFIG.screen_size))
+        # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
         # APP.debug_text['distance'] = rowund(self.player.position.length, 1)
         

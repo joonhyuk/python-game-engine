@@ -38,9 +38,9 @@ class BallProjectile(Ball):
 
     def __init__(self, radius=16, color=colors.OUTRAGEOUS_ORANGE, hp: float = 100, mass: float = 1, elasticity: float = 0.75, **kwargs) -> None:
         super().__init__(radius, color, hp, mass, elasticity, **kwargs)
-        # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=pymunk.ShapeFilter.ALL_MASKS())
-        # self.body.physics.shape.filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)
-        # print(self.body.physics.shape.filter)
+        # self.body.physics.filter = pymunk.ShapeFilter(mask=pymunk.ShapeFilter.ALL_MASKS())
+        # self.body.physics.filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)
+        # print(self.body.physics.filter)
 
 class ShrinkingBall(BallProjectile):
     
@@ -131,7 +131,7 @@ class EscapePlayer(Character):
                                collision_type = collision.character,
                                physics_shape = physics_types.circle(None, 16))
         super().__init__(body, hp, **kwargs)
-        self.body.physics.shape.filter = pymunk.ShapeFilter(categories=collision.character)
+        self.body.physics.filter = pymunk.ShapeFilter(categories=collision.character)
         self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
@@ -166,7 +166,7 @@ class EscapePlayer(Character):
         origin = self.position
         if not target_direction: target_direction = Vector.directional(self.angle)
         end = target_direction * distance + origin
-        # self.body.physics.shape.filter = pymunk.ShapeFilter(categories=0b1)
+        # self.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
         shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
         
         query = self.body.physics.body.space.segment_query(origin, end, thickness / 2, shape_filter)
