@@ -132,9 +132,9 @@ class PhysicsTestView(View):
             placed = False
             while not placed:
                 actor.position = random.randrange(CONFIG.screen_size.x), random.randrange(CONFIG.screen_size.y)
-                if not arcade.check_for_collision_with_lists(debri.body.sprite, [self.wall_layer, layer]):
+                if not arcade.check_for_collision_with_lists(actor.body.sprite, [self.wall_layer, layer]):
                     actor.spawn(layer)
-                placed = True
+                    placed = True
         
         for _ in tqdm(range(PHYSICS_TEST_DEBRIS_NUM)):
             debri_body = DynamicBody(SpriteCircle(PHYSICS_TEST_DEBRIS_RADIUS, (255,255,0,128)),
