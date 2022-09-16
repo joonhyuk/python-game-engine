@@ -66,7 +66,7 @@ LEFT_FACING = 1
 DISTANCE_TO_CHANGE_TEXTURE = 20
 
 # How much force to put on the bullet
-BULLET_MOVE_FORCE = 250000
+BULLET_MOVE_FORCE = 60000
 
 # Mass of the bullet
 BULLET_MASS = 1
@@ -272,7 +272,13 @@ class GameWindow(arcade.Window):
         
         # Create player sprite
         self.player_sprite = PlayerSprite(self.ladder_list, hit_box_algorithm="Detailed")
-
+        # self.player_sprite.pymunk.damping = 0.01
+        # self.player_sprite.pymunk.gravity = (0,0)
+        
+        
+        self.fan_blade_sprite = arcade.Sprite('/Users/mash/Projects/PyArcadeTest/resources/art/test_fan_blade2.png', hit_box_algorithm="Detailed")
+        self.fan_blade_sprite.position = (220,500)
+        
         # Set player location
         grid_x = 1
         grid_y = 1
@@ -280,6 +286,7 @@ class GameWindow(arcade.Window):
         self.player_sprite.center_y = SPRITE_SIZE * grid_y + SPRITE_SIZE / 2
         # Add to player sprite list
         self.player_list.append(self.player_sprite)
+        self.player_list.append(self.fan_blade_sprite)
 
         # --- Pymunk Physics Engine Setup ---
 
@@ -336,6 +343,13 @@ class GameWindow(arcade.Window):
                                        max_horizontal_velocity=PLAYER_MAX_HORIZONTAL_SPEED,
                                        max_vertical_velocity=PLAYER_MAX_VERTICAL_SPEED)
 
+        self.polygons = self.physics_engine.add_concave(self.fan_blade_sprite,
+                                       friction=PLAYER_FRICTION,
+                                       mass=PLAYER_MASS,
+                                       collision_type="wall",
+                                       )
+        self.physics_engine.add_joint(self.fan_blade_sprite, (220, 500))
+        # self.physics_engine.
         # Create the walls.
         # By setting the body type to PymunkPhysicsEngine.STATIC the walls can't
         # move.
@@ -523,6 +537,15 @@ class GameWindow(arcade.Window):
         self.bullet_list.draw()
         self.item_list.draw()
         self.player_list.draw()
+        self.player_sprite.draw_hit_box()
+        self.fan_blade_sprite.draw_hit_box(color=(255, 192, 0, 255))
+        
+        for ply in self.polygons:
+            
+            # for point in ply:
+            #     arcade.draw_circle_filled(point[0]+220, point[1]+500, 1, (255, 0,0,255))
+            drw = [[pt[0]+220, pt[1]+500] for pt in ply]
+            arcade.draw_polygon_outline(drw, (255, 0, 0, 255))
 
         # for item in self.player_list:
         #     item.draw_hit_box(arcade.color.RED)
