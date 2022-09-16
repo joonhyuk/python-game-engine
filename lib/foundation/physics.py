@@ -4,12 +4,12 @@ very simple physics code injection by mash
 
 may be coupled with pymunk
 '''
-import sys
+import sys, math
 from typing import Callable, Optional, Union
 from enum import Enum
 
 ### for in-house physics engine
-import arcade, pymunk, math
+import arcade, pymunk, pymunk.util
 from .vector import Vector
 from config.engine import *
 
@@ -55,6 +55,14 @@ class physics_types:
     filter_allcategories = pymunk.ShapeFilter(mask = allcategories)
 
 
+def setup_shape(sprite:Sprite,
+                body:physics_types.body,
+                         collision_type = collision.default,
+                
+                ):
+    pass
+
+
 def setup_physics_object(sprite:Sprite, 
                          mass:float = 0,
                          moment = None,
@@ -68,6 +76,7 @@ def setup_physics_object(sprite:Sprite,
                          max_speed:float = None,
                          custom_gravity:Vector = None,
                          custom_damping:float = None,
+                         additional_hitbox:bool = False,
                          ):
     
     size = Vector(sprite.width, sprite.height)
@@ -160,7 +169,10 @@ def setup_physics_object(sprite:Sprite,
     if body_type == physics_types.dynamic:
         body.velocity_func = velocity_callback
     
-    hitbox = physics_types.poly(body, sprite.get_hit_box(), pymunk.Transform.scaling(sprite.scale))
+    if additional_hitbox:
+        hitbox = physics_types.poly(body, sprite.get_hit_box(), pymunk.Transform.scaling(sprite.scale))
+    else:
+        hitbox = None
     
     return PhysicsObject(body, shape, hitbox)
 
@@ -172,17 +184,20 @@ class PhysicsObject:
     
     completely decoupled with private codes
     '''
-    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter')
+    __slots__ = ('body', 'shape', 'hitbox', '_scale', '_initial_size', '_initial_mass', '_mass_scaling', '_original_poly', '_hidden', '_last_filter', 'joints')
     def __init__(self,
                  body: pymunk.Body = None,
-                 shape: pymunk.Shape = None, 
+                 shape: Union[list[pymunk.Shape], pymunk.Shape] = None, 
                  hitbox: physics_types.poly = None,
                  mass_scaling:bool = True,
                  ):
         
         self.body: Optional[pymunk.Body] = body
         ''' actual body which has mass, position, velocity, rotation '''
-        self.shape: Optional[pymunk.Shape] = shape
+        if isinstance(shape, pymunk.Shape):
+            self.shape: Optional[pymunk.Shape] = shape
+        else:
+            self.shape:list[pymunk.Shape] = shape
         ''' main collision '''
         self.hitbox: physics_types.poly = hitbox
         ''' custom hitbox collision if needed '''
@@ -190,11 +205,15 @@ class PhysicsObject:
         self._initial_size:Union(float, Vector) = self._get_size()
         ''' no need to be set when poly '''
         self._initial_mass = body.mass
-        if hitbox: self._original_poly = self.hitbox.get_vertices()
+        # if hitbox: self._original_poly = self.hitbox.get_vertices()
+        if isinstance(self.shape, physics_types.poly):
+            self._original_poly = self.shape.get_vertices()
         self._mass_scaling = mass_scaling
         
         self._last_filter:pymunk.ShapeFilter = self.shape.filter    ### should revisit later
         self._hidden = False
+        
+        self.joints:list[pymunk.constraints.Constraint] = []
 
     def _get_size(self):
         if not self.shape: return 0
@@ -229,6 +248,27 @@ class PhysicsObject:
         #             shape.append(point.rotated(angle))
         #         debug_draw_poly(self.body.position, shape, (255,255,255,255))
     
+    def add_pivot(self, target:physics_types.body, *positions):
+        joint = pymunk.constraints.PivotJoint(self.body, target, *positions)
+        self.joints.append(joint)
+        self.space.add(joint)
+    
+    def add_world_pivot(self, position:Vector):
+        joint = pymunk.constraints.PivotJoint(self.body, self.space.static_body, position)
+        self.joints.append(joint)
+        self.space.add(joint)
+    
+    def remove_pivot(self, target:physics_types.body = None):
+        if target is None: target = self.space.static_body
+        for joint in self.joints:
+            if joint.b == target:
+                self.joints.remove(joint)
+                self.space.remove(joint)
+    
+    def __del__(self):
+        if self.joints:
+            map(self.space.remove, self.joints)
+    
     def _get_scale(self):
         return self._scale
     
@@ -242,7 +282,7 @@ class PhysicsObject:
         else:
             ### totally unsafe...
             # self.shape.update(pymunk.Transform.scaling(scale))
-            if not self.hitbox: return False
+            # if not self.hitbox: return False
             st = pymunk.Transform.scaling(scale)
             self.shape.unsafe_set_vertices(self._original_poly, st)
             if self._mass_scaling: self.mass = self._initial_mass * scale
@@ -689,7 +729,7 @@ class PhysicsEngine:
         query = self.space.segment_query(origin, end, radius, shape_filter)
         if not query: return None
         return query
-            
+    
     def hide(self, sprite: Sprite):
         physics_object = self.get_physics_object(sprite)
         self.space.add_default_collision_handler()

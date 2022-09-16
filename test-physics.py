@@ -31,7 +31,7 @@ class PhysicsTestView(View):
         self.test_layer = ObjectLayer(self.physics_main)
         
         self.player:EscapePlayer = None
-        self.test_npc:Actor = None
+        self.test_npc:RollingRock = None
         
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
@@ -95,12 +95,17 @@ class PhysicsTestView(View):
         # box = DynamicObject(box_body)
         box = ShrinkingToy(box_body)
         box.spawn(self.debris_layer, CONFIG.screen_size / 2)
-        
-        self.test_npc = RollingRock(DynamicBody(SpriteCircle(48),
+        # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
+
+        fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), hit_box_algorithm='Detailed'),
+                                     physics_shape=physics_types.poly, shape_edge_radius=1)
+        circle_body = DynamicBody(SpriteCircle(48),
                                             mass = 7,
                                             friction = 1.2,
                                             collision_type=collision.debris,
-                                            ),
+                                            )
+        # print(fan_blade_body.physics.shape)
+        self.test_npc = RollingRock(circle_body,
                                 ).spawn(self.debris_layer, Vector(500,550))
         ### DynamicObject.spawn test
         
@@ -302,6 +307,7 @@ class PhysicsTestView(View):
         self.shader.render()
 
         self.player.draw()
+        self.test_npc.body.sprite.draw_hit_box(color = colors.YELLOW)
         self.camera_gui.use()
         
         APP.debug_text.perf_check('on_draw')
