@@ -80,10 +80,10 @@ class DynamicObject(Actor):
     
     # __slots__ = ('body', 'apply_force', 'apply_impulse')
     def __init__(self, 
-                 body:DynamicBody,
+                 body:Union[DynamicBody, KinematicBody],
                  **kwargs) -> None:
         super().__init__(**kwargs)
-        self.body:DynamicBody = body
+        self.body:Union[DynamicBody, KinematicBody] = body
         self.movable = True
         self.apply_force = self.body.apply_force_world
         self.apply_impulse = self.body.apply_impulse_world
@@ -159,6 +159,11 @@ class DynamicObject(Actor):
     def speed(self) -> float:
         return self.body.speed
         
+
+class KinematicObject(DynamicObject):
+    def __init__(self, body: KinematicBody, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+
 
 class Projectile(DynamicBody):
     

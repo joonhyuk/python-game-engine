@@ -78,36 +78,17 @@ class ShrinkingToy(DynamicObject):
     
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
-        self.shrinking_start = 5
         self.shrinking_delay = 3
-        self.alpha = 1.0
-        self._temp_multiplier = -1
         
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
         # delay_run(self.shrinking_start, self.start_shrink)
-        schedule_once(self.start_shrink, self.shrinking_start)
+        schedule_once(self.start_shrink, self.shrinking_delay)
         return super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
     
-    def start_shrink(self, dt):
-        unschedule(self.start_shrink)
-        schedule_interval(self._shrink, 1/60)
-        print('box dancing start!')
+    scaling = TestScaleToggle()
     
-    def _shrink(self, dt):
-        if not CONFIG.debug_f_keys[4] :return False
-        self.alpha = self.alpha + self._temp_multiplier * dt / self.shrinking_delay
-        if self.alpha <= 0:
-            self.alpha = 0
-            # self.destroy()
-            self._temp_multiplier = 1
-            return
-        if self.alpha > 1:
-            self.alpha = 1
-            self._temp_multiplier = -1
-            return
-        alpha = clamp(self.alpha, 0.3, 1)
-        self.body.sprite.color = (255, 0, 255, 255 * alpha)
-        self.body.scale = alpha
+    def start_shrink(self, dt):
+        self.scaling()
 
 
 class RollingRock(ShrinkingToy):
@@ -120,6 +101,11 @@ class RollingRock(ShrinkingToy):
         if CONFIG.debug_f_keys[5]: self.body.physics._body.angular_velocity = 7 * self._temp_multiplier
         return True
 
+class RotatingFan(KinematicObject):
+    
+    def __init__(self, body: KinematicBody, **kwargs) -> None:
+        super().__init__(body, **kwargs)
+    
 
 class EscapePlayer(Character):
     

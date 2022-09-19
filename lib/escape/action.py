@@ -18,6 +18,38 @@ class TestBoost(Action):
         # schedule_once(self.unlock, 2, owner)
         
 
+class TestScaleToggle(Action):
+    
+    def setup(self, 
+              scaling_duration:float = 3,
+              scaling_min:float = 0.3):
+        self.alpha = 1.0
+        self.scaling_duration = scaling_duration
+        self._toggler = -1
+        self.scaling_min = scaling_min
+    
+    def do(self, owner: Union[Actor, ActionHandler], *args, **kwargs):
+        schedule_interval(self.shrink, 1/60, owner)
+        pass
+    
+    def stop(self, owner):
+        unschedule(self.shrink)
+    
+    def shrink(self, delta_time:float, owner:Union[Actor, ActionHandler]):
+        if not CONFIG.debug_f_keys[4]: return False
+        self.alpha = self.alpha + self._toggler * delta_time / self.scaling_duration
+        if self.alpha <= 0:
+            self.alpha = 0
+            self._toggler = 1
+            return
+        if self.alpha >= 1:
+            self.alpha = 1
+            self._toggler = -1
+            return
+        alpha = clamp(self.alpha, self.scaling_min, 1)
+        owner.body.sprite.alpha = 255 * alpha
+        owner.body.scale = alpha
+
 
 class TestShootBall(Action):
     
@@ -34,8 +66,7 @@ class TestShootBall(Action):
 
 class ToggleFireAction(TestShootBall):
     
-    def __init__(self) -> None:
-        super().__init__()
+    def setup(self, *args, **kwargs):
         self.fire_counter = 0
         self.on = False
     
@@ -55,9 +86,8 @@ class ToggleFireAction2(ToggleFireAction):
 
 class TestAction(Action):
     
-    def __init__(self) -> None:
+    def setup(self, *args, **kwargs):
         self.counter = 0
-        super().__init__()
     
     def do(self, owner):
         ''' hellow '''

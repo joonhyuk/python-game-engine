@@ -57,7 +57,7 @@ class Vector(tuple):
         normed = tuple( x / norm for x in self )
         return self.__class__(*normed)
     
-    def rotate(self, theta):
+    def rotate(self, theta, radian = False):
         """ Rotate this vector. If passed a number, assumes this is a 
             2D vector and rotates by the passed value in degrees.  Otherwise,
             assumes the passed value is a list acting as a matrix which rotates the vector.
@@ -66,13 +66,21 @@ class Vector(tuple):
             # So, if rotate is passed an int or a float...
             if len(self) != 2:
                 raise ValueError("Rotation axis not defined for greater than 2D vector")
-            return self._rotate2D(theta)
+            if radian: return self._rotate2D_radian(theta)
+            else: return self._rotate2D(theta)
         
         matrix = theta
         if not all(len(row) == len(self) for row in matrix) or not len(matrix)==len(self):
             raise ValueError("Rotation matrix must be square and same dimensions as vector")
         return self.matrix_mult(matrix)
-        
+    
+    def _rotate2D_radian(self, theta):
+        # Just applying the 2D rotation matrix
+        dc, ds = math.cos(theta), math.sin(theta)
+        x, y = self
+        x, y = dc*x - ds*y, ds*x + dc*y
+        return self.__class__(x, y)
+    
     def _rotate2D(self, theta):
         """ Rotate this vector by theta in degrees.
             

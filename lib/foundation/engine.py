@@ -787,9 +787,10 @@ class Action:
     Wanna support type hint on do function.
     '''
     
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         # self.do = update_wrapper(self.do, self.do)
         self.owner = None
+        self.setup(*args, **kwargs)
     
     def __set_name__(self, owner, name):
         # setattr(owner, 'act_'+name, self)
@@ -804,6 +805,10 @@ class Action:
         func = partial(self.do, owner)
         # owner.q.append(id(func))
         return func
+    
+    def setup(self, *args, **kwargs):
+        ''' set up additional vars '''
+        pass
     
     def void(self, *args, **kwargs):
         ''' empty function for locked situation '''

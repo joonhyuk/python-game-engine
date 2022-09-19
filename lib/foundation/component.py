@@ -1,8 +1,7 @@
+from __future__ import annotations
+
 from config.engine import *
 from lib.foundation.engine import *
-
-
-
 
 
 class SpriteBody(Body):
@@ -86,10 +85,10 @@ class StaticBody(Body):
         
         return super().spawn(spawn_to, position, angle)
 
-    def draw(self, *args, **kwargs):
-        super().draw(*args, **kwargs)
-        if CONFIG.debug_draw:
-            self.physics.draw()
+    # def draw(self, *args, **kwargs):
+        # super().draw(*args, **kwargs)
+        # if CONFIG.debug_draw:
+            # self.physics.draw()
     
     def _hide(self, switch: bool = None) -> bool:
         #WIP : should revisit filter control
@@ -270,6 +269,29 @@ class DynamicBody(StaticBody):
         self.sprite.pymunk.max_velocity = max_speed
     
     max_speed:int = property(_get_max_speed, _set_max_speed)
+
+
+class KinematicBody(DynamicBody):
+    
+    def __init__(self, 
+                 sprite: Sprite,
+                 position: Vector = None,
+                 angle: float = None, 
+                 spawn_to: ObjectLayer = None,
+                 mass=0, moment=None,
+                 body_type=physics_types.kinematic, 
+                 collision_type=collision.wall,
+                 elasticity: float = None, 
+                 friction: float = 0.7, 
+                 shape_edge_radius: float = 0,
+                 physics_shape: Union[physics_types.shape, type] = physics_types.poly,
+                 offset_circle: Vector = vectors.zero, max_speed: float = None,
+                 custom_gravity: Vector = None,
+                 custom_damping: float = None,
+                 **kwargs) -> None:
+        super().__init__(sprite, position, angle, spawn_to, mass, moment, body_type, collision_type, elasticity, friction, shape_edge_radius, physics_shape, offset_circle, max_speed, custom_gravity, custom_damping, **kwargs)
+        
+    velocity: Vector = property(Body._get_veloticy, Body._set_velocity)
 
 
 class SpriteMovement(ActorComponent):

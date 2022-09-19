@@ -105,7 +105,7 @@ class EscapePlayerMovement(TopDownPhysicsMovement):
 
 
 class EscapeAIMovement(TopDownPhysicsMovement):
-    
+    #WIP
     def tick(self, delta_time: float) -> bool:
         # if self.desired_angle != 0.0:
         #     print(self.owner, 'moving!')
@@ -113,7 +113,7 @@ class EscapeAIMovement(TopDownPhysicsMovement):
 
 
 class TestAIController(AIController):
-    
+    #WIP #test
     target:DynamicObject = None
     
     def tick(self, delta_time: float) -> bool:
@@ -124,3 +124,9 @@ class TestAIController(AIController):
             dist = get_distance(*self.body.position, *self.target.position)
             if dist > 100:
                 self.movement.move(self.body.forward_vector * dist)
+
+
+class TestKinematicObject(StaticObject):
+    
+    def __init__(self, body: KinematicBody, **kwargs) -> None:
+        super().__init__(body, **kwargs)

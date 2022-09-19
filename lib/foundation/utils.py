@@ -4,6 +4,7 @@ utils coupled with arcade, pymunk, pyglet, etc
 ...and some injections
 '''
 import functools
+from typing import Tuple
 
 import arcade
 from arcade.experimental import Shadertoy, lights
@@ -13,6 +14,7 @@ from pyglet.clock import schedule, schedule_once, schedule_interval, schedule_in
 from pyglet.clock import _default as pyglet_clock
 
 import pyglet
+import pymunk
 
 ### for in-house physics engine
 
@@ -118,9 +120,6 @@ def _check_for_collision(sprite1: Sprite, sprite2: Sprite) -> bool:
 ### code injection
 arcade.sprite_list.spatial_hash._check_for_collision = _check_for_collision
 
-
-
-
 def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade.Texture]):
     
     window_size = target_window.get_framebuffer_size()
@@ -149,21 +148,48 @@ def debug_draw_circle(center:Vector = vectors.zero,
     if fill_color is not None: arcade.draw_circle_filled(center.x, center.y, radius - line_thickness, fill_color)
     return arcade.draw_circle_outline(*center, radius, line_color, line_thickness)
 
-def debug_draw_poly(center:Vector = vectors.zero,
-                    points:arcade.PointList = None,
+def debug_draw_poly(points:list[Tuple[float, float]],
+                    center:Vector = vectors.zero,
+                    angle:float = 0.0,
                     line_color = arcade.color.WHITE, 
                     line_thickness = 1, 
-                    fill_color = None
+                    fill_color = None,
+                    radian = False,
                     ):
     if not CONFIG.debug_draw: return False
-    if not points: return False
     
     new_poly = []
     for point in points:
+        if angle: point = Vector(point).rotate(angle, radian)
         new_poly.append(point + center)
     
     if fill_color is not None: return arcade.draw_polygon_filled(new_poly, fill_color)
     return arcade.draw_polygon_outline(new_poly, line_color, line_thickness)
+
+def debug_draw_shape(shape:pymunk.Shape,
+                     body:pymunk.Body,
+                     line_color = arcade.color.WHITE, 
+                     line_thickness = 1, 
+                     fill_color = None,):
+    center = body.position
+    angle = body.angle  # in radian
+    if isinstance(shape, pymunk.Poly):
+        debug_draw_poly(shape.get_vertices(), center, angle, line_color, line_thickness, fill_color, radian=True)
+    if isinstance(shape, pymunk.Circle):
+        center += shape.offset
+        debug_draw_circle(center, shape.radius, line_color, line_thickness, fill_color)
+    if isinstance(shape, pymunk.Segment):
+        debug_draw_segment(center + shape.a, center + shape.b, line_color, line_thickness)
+
+def debug_draw_multi_shape(shapelist:list[pymunk.Poly],
+                    body:pymunk.Body,
+                    line_color = arcade.color.WHITE, 
+                    line_thickness = 1, 
+                    fill_color = None
+                    ):
+    
+    for shape in shapelist:
+        debug_draw_shape(shape, body, line_color, line_thickness, fill_color)
 
 def debug_draw_marker(position:Vector = Vector(), 
                       radius:float = DEFAULT_TILE_SIZE, 

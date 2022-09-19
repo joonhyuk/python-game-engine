@@ -32,6 +32,7 @@ class PhysicsTestView(View):
         
         self.player:EscapePlayer = None
         self.test_npc:RollingRock = None
+        self.test_box = None
         
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
@@ -93,22 +94,30 @@ class PhysicsTestView(View):
                                physics_shape=physics_types.box,
                                )
         # box = DynamicObject(box_body)
-        box = ShrinkingToy(box_body)
-        box.spawn(self.debris_layer, CONFIG.screen_size / 2)
+        self.test_box = ShrinkingToy(box_body)
+        self.test_box.spawn(self.debris_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
 
-        fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed', is_concave=True),
+        fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed', is_concave=True),
                                      physics_shape=physics_types.poly, 
                                      shape_edge_radius=1)
+        
+        self.test_kinematic:KinematicObject = RotatingFan(fan_blade_body).spawn(self.debris_layer, Vector(500,550))
+        # fan_blade_body.physics.add_world_pivot(fan_blade_body.position)
+        # fan_blade_body.damping = 0.5
+        
+        fan_blade_body.physics.angular_velocity = 5
+        
         circle_body = DynamicBody(SpriteCircle(48),
                                             mass = 7,
                                             friction = 1.2,
                                             collision_type=collision.debris,
                                             )
         # print(fan_blade_body.physics.shape)
-        self.test_npc = RollingRock(fan_blade_body,
-                                ).spawn(self.debris_layer, Vector(500,550))
-        fan_blade_body.physics.add_world_pivot(fan_blade_body.position)
+        
+        
+        self.test_npc = RollingRock(circle_body,
+                                ).spawn(self.debris_layer, Vector(300,550))
         ### DynamicObject.spawn test
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):
@@ -309,7 +318,10 @@ class PhysicsTestView(View):
         self.shader.render()
 
         self.player.draw()
-        self.test_npc.body.sprite.draw_hit_box(color = colors.YELLOW)
+        self.test_npc.body.physics.debug_draw()
+        self.test_kinematic.body.physics.debug_draw()
+        # self.test_box.body.physics.debug_draw()
+        
         self.camera_gui.use()
         
         APP.debug_text.perf_check('on_draw')

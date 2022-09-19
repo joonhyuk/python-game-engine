@@ -12,6 +12,7 @@ from enum import Enum
 import arcade, pymunk, pymunk.util
 from .vector import Vector
 from config.engine import *
+from .utils import *
 
 from arcade import Sprite
 
@@ -256,20 +257,21 @@ class PhysicsObject:
         
         return self._body.space.segment_query(start, end, radius, shape_filter)
     
-    def draw(self):
-        if not CONFIG.debug_draw: return False
-        # if isinstance(self.shape, physics_types.circle):
-        #     arcade.draw_circle_outline(*self.body.position, self.shape.radius, (255,255,255,255))
-        # else:
-        #     if isinstance(self.shape, physics_types.poly):
-        #         shape = []
-        #         angle = self.body.angle
-        #         points = self.shape.get_vertices()
-        #         for point in points:
-        #             shape.append(point.rotated(angle))
-        #         debug_draw_poly(self.body.position, shape, (255,255,255,255))
+    def debug_draw(self, color = (255, 255, 0, 128)):
+        if not CONFIG.debug_f_keys[2]: return False
+        
+        if isinstance(self.shape, physics_types.circle):
+            arcade.draw_circle_outline(*self.body.position, self.shape.radius, color)
+        else:
+            center = self.position
+            angle = self.angle
+            ''' costs a lot. optimize later if needed '''
+            if self.multi_shape:
+                debug_draw_multi_shape(self._shape, self.body, color)
+            else : debug_draw_shape(self._shape, self.body, color)
     
     def add_pivot(self, target:physics_types.body, *positions):
+        if target is None: PhysicsException('target body is None. check spawnned')
         joint = pymunk.constraints.PivotJoint(self._body, target, *positions)
         self.joints.append(joint)
         self.space.add(joint)
@@ -281,6 +283,7 @@ class PhysicsObject:
     
     def remove_pivot(self, target:physics_types.body = None):
         if target is None: target = self.space.static_body
+        if target is None: PhysicsException('target body is None. check spawnned')
         for joint in self.joints:
             if joint.b == target:
                 self.joints.remove(joint)
@@ -295,6 +298,8 @@ class PhysicsObject:
     def __del__(self):
         if self.joints:
             map(self.space.remove, self.joints)
+    
+    angular_velocity = PropertyFrom('_body')
     
     def _get_body(self):
         return self._body
