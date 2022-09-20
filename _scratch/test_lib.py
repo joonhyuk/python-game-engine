@@ -141,5 +141,13 @@ ta = Tactor(DynamicBody(SpriteCircle(16)))
 ta.register_components()
 # ta.actions.tact()
 # ta.faction()
-ta.actions.nact(12,3)
 
+eah = EscapeCharacterActionHandler()
+import inspect
+# print(inspect.getmembers(eah))
+for member_name, member_object in inspect.getmembers(eah):
+    print(member_object)
+    if isinstance(member_object, ActionFunction):
+    # if inspect.isdatadescriptor(member_object):
+        # print(member_object)
+        print('weapons hot!')

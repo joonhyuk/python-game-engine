@@ -770,7 +770,6 @@ class ActionHandler(ActorComponent):
     def on_register(self):
         self.body:Body = self.owner.get_components(Body)[0]
         self.movement:MovementHandler = self.owner.get_components(MovementHandler)[0]
-        self.q:list[Action] = []
     
     def _get_global_lock(self):
         return self._locked
@@ -780,6 +779,12 @@ class ActionHandler(ActorComponent):
         self._locked = switch
     
     global_lock:bool = property(_get_global_lock, _set_global_lock)
+
+
+class ActionFunction(partial):
+    ''' needed??? '''
+    pass
+
 
 class Action:
     ''' Base class of action.
@@ -802,8 +807,7 @@ class Action:
                 return self.void
                 # return lambda x, *args, **kwargs:x    ### return empty function
         
-        func = partial(self.do, owner)
-        # owner.q.append(id(func))
+        func = ActionFunction(self.do, owner)
         return func
     
     def setup(self, *args, **kwargs):
