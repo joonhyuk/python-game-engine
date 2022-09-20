@@ -782,14 +782,18 @@ class ActionHandler(ActorComponent):
 
 
 class ActionFunction(partial):
-    ''' needed??? '''
+    ''' Wrapper for partial. Just in case of needed later. '''
     pass
 
 
 class Action:
     ''' Base class of action.
     
-    Wanna support type hint on do function.
+    (WIP: support type hint on do function.)
+    
+    :self.setup(): setting 'local' variable
+    :self.do(): action function
+    
     '''
     
     def __init__(self, *args, **kwargs) -> None:
@@ -805,7 +809,7 @@ class Action:
         if isinstance(owner, ActionHandler):
             if owner.global_lock or self.__class__ in owner.locked_actions:
                 return self.void
-                # return lambda x, *args, **kwargs:x    ### return empty function
+                # return lambda x, *args, **kwargs:x    ### return empty function. not good for performance
         
         func = ActionFunction(self.do, owner)
         return func
@@ -1183,8 +1187,8 @@ class ObjectLayer(arcade.SpriteList):
         if self.physics_instance:
             if body:
                 if body.physics:
-                    self.physics_instance.add_physics_object(sprite, body.physics)
-                    self.physics_instance.add_to_space(sprite)
+                    self.physics_instance.add_physics_object(sprite, body.physics)  ### add sprite-physics pair to engine for refering
+                    self.physics_instance.add_to_space(sprite)      ### add physics to space
                     
     def remove(self, obj:Union[Actor, Body, Sprite, SpriteCircle]):
         sprite:Sprite = None
