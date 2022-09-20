@@ -98,15 +98,23 @@ class PhysicsTestView(View):
         self.test_box.spawn(self.debris_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
 
-        fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
+        dynamic_fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
                                      physics_shape=physics_types.poly, 
-                                     shape_edge_radius=1)
+                                     mass=20,
+                                     shape_edge_radius=2)
         
-        self.test_kinematic:KinematicObject = RotatingFan(fan_blade_body).spawn(self.debris_layer, Vector(500,550))
-        # fan_blade_body.physics.add_world_pivot(fan_blade_body.position)
-        # fan_blade_body.damping = 0.5
+        self.test_rotating_dynamic = DynamicRotatingFan(dynamic_fan_blade_body).spawn(self.debris_layer, Vector(800,200))
+        dynamic_fan_blade_body.physics.add_world_pivot(dynamic_fan_blade_body.position)
+        dynamic_fan_blade_body.damping = 0.1
         
-        fan_blade_body.physics.angular_velocity = 5
+        
+        
+        kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
+                                                 physics_shape=physics_types.poly,
+                                                 shape_edge_radius=1)
+        self.test_rotating_kinematic = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.debris_layer, Vector(800, 550))
+        kinematic_fan_blade_body.physics.angular_velocity = 5
+        
         
         circle_body = DynamicBody(SpriteCircle(48),
                                             mass = 7,
@@ -319,7 +327,8 @@ class PhysicsTestView(View):
 
         self.player.draw()
         self.test_npc.body.physics.debug_draw()
-        self.test_kinematic.body.physics.debug_draw()
+        self.test_rotating_dynamic.body.physics.debug_draw()
+        self.test_rotating_kinematic.body.physics.debug_draw()
         # self.test_box.body.physics.debug_draw()
         
         self.camera_gui.use()
@@ -332,6 +341,7 @@ class PhysicsTestView(View):
         
         self.player.tick(delta_time)
         self.test_npc.tick(delta_time)
+        self.test_rotating_dynamic.tick(delta_time)
         
         for ai_pawn in ENV.ai_controllers:
             ai_pawn.target = self.player

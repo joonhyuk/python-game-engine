@@ -98,14 +98,23 @@ class RollingRock(ShrinkingToy):
         
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
-        if CONFIG.debug_f_keys[5]: self.body.physics._body.angular_velocity = 7 * self._temp_multiplier
+        if CONFIG.debug_f_keys[5]: self.body.physics._body.angular_velocity = 7
         return True
 
-class RotatingFan(KinematicObject):
+
+class KinematicRotatingFan(KinematicObject):
     
     def __init__(self, body: KinematicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
+
+
+class DynamicRotatingFan(DynamicObject):
     
+    def tick(self, delta_time: float) -> bool:
+        if not super().tick(delta_time): return False
+        if CONFIG.debug_f_keys[5]: self.body.physics._body.apply_force_at_local_point((0, 10000), (self.body.size.x, 0))
+        return True
+
 
 class EscapePlayer(Character):
     
