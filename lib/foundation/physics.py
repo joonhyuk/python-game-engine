@@ -173,9 +173,12 @@ def setup_physics_object(sprite:Sprite,
             poly = sprite.get_hit_box()
             scaled_poly = [[x * sprite.scale for x in z] for z in poly]
             scaled_poly.reverse()
-            if hasattr(sprite, 'is_concave') and sprite.is_concave:
+            if not pymunk.util.is_convex(scaled_poly):
+            # if hasattr(sprite, 'is_concave') and sprite.is_concave:
                 shape:list[physics_types.poly] = []
-                triangles = pymunk.util.triangulate(scaled_poly)
+                # triangles = pymunk.util.triangulate(scaled_poly)
+                triangles = pymunk.util.convexise(pymunk.util.triangulate(scaled_poly))
+                
                 for triangle in triangles:
                     shape.append(physics_types.poly(body, triangle, radius=shape_edge_radius))
             else:    
@@ -257,18 +260,15 @@ class PhysicsObject:
         
         return self._body.space.segment_query(start, end, radius, shape_filter)
     
-    def debug_draw(self, color = (255, 255, 0, 128)):
+    def debug_draw(self, color = (255, 255, 0, 128), line_thickness = 1):
         if not CONFIG.debug_f_keys[2]: return False
-        
         if isinstance(self.shape, physics_types.circle):
-            arcade.draw_circle_outline(*self.body.position, self.shape.radius, color)
+            debug_draw_circle(self._body.position, self.shape.radius, color, line_thickness)
         else:
-            center = self.position
-            angle = self.angle
             ''' costs a lot. optimize later if needed '''
             if self.multi_shape:
-                debug_draw_multi_shape(self._shape, self.body, color)
-            else : debug_draw_shape(self._shape, self.body, color)
+                debug_draw_multi_shape(self._shape, self._body, color, line_thickness)
+            else : debug_draw_shape(self._shape, self._body, color, line_thickness)
     
     def add_pivot(self, target:physics_types.body, *positions):
         if target is None: PhysicsException('target body is None. check spawnned')
@@ -598,9 +598,11 @@ class PhysicsEngine:
             # poly = sprite.get_adjusted_hit_box()
             poly = sprite.get_hit_box()
             scaled_poly = [[x * sprite.scale for x in z] for z in poly].reverse()
-            if hasattr(sprite, 'is_concave') and sprite.is_concave:
+            if not pymunk.util.is_convex(scaled_poly):
+            # if hasattr(sprite, 'is_concave') and sprite.is_concave:
                 shape:list[pymunk.Poly] = []
-                triangles = pymunk.util.triangulate(scaled_poly)
+                # triangles = pymunk.util.triangulate(scaled_poly)
+                triangles = pymunk.util.convexise(pymunk.util.triangulate(scaled_poly))
                 for triangle in triangles:
                     shape.append(pymunk.Poly(body, triangle, radius=radius))
             else:    
@@ -642,7 +644,8 @@ class PhysicsEngine:
     
     def add_to_space(self, sprite:Sprite) -> None:
         physics_object = self.objects[sprite]
-        if hasattr(sprite, 'is_concave') and sprite.is_concave:
+        if isinstance(physics_object._shape, list):
+        # if hasattr(sprite, 'is_concave') and sprite.is_concave:
             self.space.add(physics_object._body, *physics_object._shape)
         else:
             self.space.add(physics_object._body, physics_object.shape)

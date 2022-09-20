@@ -98,7 +98,7 @@ class PhysicsTestView(View):
         self.test_box.spawn(self.debris_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
 
-        fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed', is_concave=True),
+        fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
                                      physics_shape=physics_types.poly, 
                                      shape_edge_radius=1)
         
