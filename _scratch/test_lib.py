@@ -151,3 +151,7 @@ for member_name, member_object in inspect.getmembers(eah):
     # if inspect.isdatadescriptor(member_object):
         # print(member_object)
         print('weapons hot!')
+
+
+ww = World()
+ww.load_map('tiled/test_map2.json')

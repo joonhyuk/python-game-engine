@@ -8,7 +8,7 @@ import gc
 
 VERSION = Version()
 
-SPRITE_SCALING_PLAYER = 0.5
+SPRITE_SCALING_TILES = 0.5
 PLAYER_MOVE_FORCE = 4000
 PLAYER_ATTACK_RANGE = 500
 PHYSICS_TEST_DEBRIS_NUM = 100
@@ -174,21 +174,21 @@ class PhysicsTestView(View):
         
         '''
         for x in range(0, CONFIG.screen_size.x + 1, 64):
-            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES),
                               Vector(x, 0), 
                               elasticity=0.75,
                               spawn_to = layer)
-            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES),
                               Vector(x, CONFIG.screen_size.y), 
                               elasticity=0.75,
                               spawn_to = layer)
         
         for y in range(64, CONFIG.screen_size.y, 64):
-            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES),
                               Vector(0, y), 
                               elasticity=0.75,
                               spawn_to = layer)
-            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_PLAYER),
+            wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES),
                               Vector(CONFIG.screen_size.x, y), 
                               elasticity=0.75,
                               spawn_to = layer)
@@ -372,7 +372,31 @@ class PhysicsTestView(View):
         
         APP.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
         
+
+class PlatformerTestView(View):
+    
+    def __init__(self, window: Client = None):
+        super().__init__(window)
         
+        self.physics_engine = PhysicsEngine((0, -980), 1.0)
+        self.wall_layer:ObjectLayer = ObjectLayer(self.physics_engine)
+        self.debris_layer:ObjectLayer = ObjectLayer(self.physics_engine)
+        self.character_layer:ObjectLayer = ObjectLayer(self.physics_engine)
+        self.kinematic_layer:ObjectLayer = ObjectLayer(self.physics_engine)
+        self.ladder_layer:ObjectLayer = ObjectLayer(self.physics_engine)
+        
+        self.player:PlatformerPlayer = None
+        
+        arcade.set_background_color(arcade.color.AMAZON)
+    
+    def setup(self):
+        map_name = ":resources:/tiled_maps/pymunk_test_map.json"
+        tile_map = arcade.load_tilemap(map_name, SPRITE_SCALING_TILES)
+        
+        # self.wall_layer = tile_map.
+        
+        
+    
 def main():
     CLOCK.use_engine_tick = True
     view = PhysicsTestView()
