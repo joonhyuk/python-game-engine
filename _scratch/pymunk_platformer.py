@@ -276,8 +276,8 @@ class GameWindow(arcade.Window):
         # self.player_sprite.pymunk.gravity = (0,0)
         
         
-        self.fan_blade_sprite = arcade.Sprite('/Users/mash/Projects/PyArcadeTest/resources/art/test_fan_blade2.png', hit_box_algorithm="Detailed")
-        self.fan_blade_sprite.position = (220,500)
+        # self.fan_blade_sprite = arcade.Sprite('/Users/mash/Projects/PyArcadeTest/resources/art/test_fan_blade2.png', hit_box_algorithm="Detailed")
+        # self.fan_blade_sprite.position = (220,500)
         
         # Set player location
         grid_x = 1
@@ -286,7 +286,7 @@ class GameWindow(arcade.Window):
         self.player_sprite.center_y = SPRITE_SIZE * grid_y + SPRITE_SIZE / 2
         # Add to player sprite list
         self.player_list.append(self.player_sprite)
-        self.player_list.append(self.fan_blade_sprite)
+        # self.player_list.append(self.fan_blade_sprite)
 
         # --- Pymunk Physics Engine Setup ---
 
@@ -343,12 +343,12 @@ class GameWindow(arcade.Window):
                                        max_horizontal_velocity=PLAYER_MAX_HORIZONTAL_SPEED,
                                        max_vertical_velocity=PLAYER_MAX_VERTICAL_SPEED)
 
-        self.polygons = self.physics_engine.add_concave(self.fan_blade_sprite,
-                                       friction=PLAYER_FRICTION,
-                                       mass=PLAYER_MASS,
-                                       collision_type="wall",
-                                       )
-        self.physics_engine.add_joint(self.fan_blade_sprite, (220, 500))
+        # self.polygons = self.physics_engine.add_concave(self.fan_blade_sprite,
+        #                                friction=PLAYER_FRICTION,
+        #                                mass=PLAYER_MASS,
+        #                                collision_type="wall",
+        #                                )
+        # self.physics_engine.add_joint(self.fan_blade_sprite, (220, 500))
         # self.physics_engine.
         # Create the walls.
         # By setting the body type to PymunkPhysicsEngine.STATIC the walls can't
@@ -538,14 +538,14 @@ class GameWindow(arcade.Window):
         self.item_list.draw()
         self.player_list.draw()
         self.player_sprite.draw_hit_box()
-        self.fan_blade_sprite.draw_hit_box(color=(255, 192, 0, 255))
+        # self.fan_blade_sprite.draw_hit_box(color=(255, 192, 0, 255))
         
-        for ply in self.polygons:
+        # for ply in self.polygons:
             
-            # for point in ply:
-            #     arcade.draw_circle_filled(point[0]+220, point[1]+500, 1, (255, 0,0,255))
-            drw = [[pt[0]+220, pt[1]+500] for pt in ply]
-            arcade.draw_polygon_outline(drw, (255, 0, 0, 255))
+        #     # for point in ply:
+        #     #     arcade.draw_circle_filled(point[0]+220, point[1]+500, 1, (255, 0,0,255))
+        #     drw = [[pt[0]+220, pt[1]+500] for pt in ply]
+        #     arcade.draw_polygon_outline(drw, (255, 0, 0, 255))
 
         # for item in self.player_list:
         #     item.draw_hit_box(arcade.color.RED)
