@@ -98,7 +98,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     
     def timer_start(self, name:str = 'foo'):
         self[name] = round(CLOCK.timer_start(name),2)
-        
     
     def timer_end(self, name:str = 'foo', remain_time:float = 1.0):
         self[name] = round(CLOCK.timer_remove(name),2)
@@ -1163,7 +1162,7 @@ class ObjectLayer(arcade.SpriteList):
                  physics_instance:PhysicsEngine = None,
                  use_spatial_hash=None, spatial_hash_cell_size=128, is_static=False, atlas: arcade.TextureAtlas = None, capacity: int = 100, lazy: bool = False, visible: bool = True):
         super().__init__(use_spatial_hash, spatial_hash_cell_size, is_static, atlas, capacity, lazy, visible)
-        self.physics_instance = physics_instance
+        self._physics_instance = physics_instance
         
     def add(self, obj:Union[Actor, Body, Sprite, SpriteCircle]):
         sprite:Sprite = None
@@ -1184,12 +1183,17 @@ class ObjectLayer(arcade.SpriteList):
             except ValueError:
                 pass
         
-        if self.physics_instance:
+        if self._physics_instance:
             if body:
                 if body.physics:
-                    self.physics_instance.add_physics_object(sprite, body.physics)  ### add sprite-physics pair to engine for refering
-                    self.physics_instance.add_to_space(sprite)      ### add physics to space
-                    
+                    self._add_to_physics(sprite, body.physics)
+                    # self._physics_instance.add_physics_object(sprite, body.physics)  ### add sprite-physics pair to engine for refering
+                    # self._physics_instance.add_to_space(sprite)      ### add physics to space
+    
+    def _add_to_physics(self, sprite:Sprite, physics:PhysicsObject):
+        self.physics_instance.add_physics_object(sprite, physics)
+        self.physics_instance.add_to_space(sprite)
+    
     def remove(self, obj:Union[Actor, Body, Sprite, SpriteCircle]):
         sprite:Sprite = None
         # body:SimpleBody = None
@@ -1215,7 +1219,17 @@ class ObjectLayer(arcade.SpriteList):
     
     def step(self, delta_time:float = 1/60, sync:bool = True):
         ''' Don't use it usually. For better performance, call directly from physics instance '''
-        self.physics_instance.step(delta_time=delta_time, resync_objects=sync)
+        self._physics_instance.step(delta_time=delta_time, resync_objects=sync)
+    
+    def _get_physics(self):
+        return self._physics_instance
+    
+    def _set_physics(self, physics_instance):
+        #TODO : add feature of registreing sprites to another physics instance
+        
+        self._physics_instance = physics_instance
+    
+    physics_instance:PhysicsEngine = property(_get_physics, _set_physics)
 
 
 class Camera(arcade.Camera):
