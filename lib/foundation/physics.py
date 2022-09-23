@@ -7,6 +7,7 @@ may be coupled with pymunk
 import sys, math
 from typing import Callable, Optional, Union
 from enum import Enum
+from weakref import WeakSet
 
 ### for in-house physics engine
 import arcade, pymunk, pymunk.util
@@ -56,9 +57,8 @@ class physics_types:
     filter_allcategories = pymunk.ShapeFilter(mask = allcategories)
 
 
-def setup_shape(sprite:Sprite,
-                body:physics_types.body,
-                         collision_type = collision.default,
+def setup_shape(body:physics_types.body,
+                collision_type = collision.default,
                 
                 ):
     pass
@@ -157,6 +157,8 @@ def setup_physics_object(sprite:Sprite,
     else:
         hitbox = None
     
+    shape:Union[physics_types.shape, list[physics_types.shape]]
+    
     if isinstance(physics_shape, (physics_types.shape, list)):
         shape = physics_shape
         if isinstance(physics_shape, list):
@@ -175,12 +177,13 @@ def setup_physics_object(sprite:Sprite,
             scaled_poly.reverse()
             if not pymunk.util.is_convex(scaled_poly):
             # if hasattr(sprite, 'is_concave') and sprite.is_concave:
-                shape:list[physics_types.poly] = []
-                # triangles = pymunk.util.triangulate(scaled_poly)
-                triangles = pymunk.util.convexise(pymunk.util.triangulate(scaled_poly))
+                # shape:list[physics_types.poly] = []
+                # # triangles = pymunk.util.triangulate(scaled_poly)
+                # convexes = pymunk.util.convexise(pymunk.util.triangulate(scaled_poly))
                 
-                for triangle in triangles:
-                    shape.append(physics_types.poly(body, triangle, radius=shape_edge_radius))
+                # for convex in convexes:
+                #     shape.append(physics_types.poly(body, convex, radius=shape_edge_radius))
+                shape = convexise_complex(scaled_poly, body, radius = shape_edge_radius)
             else:    
                 shape = physics_types.poly(body, scaled_poly, radius=shape_edge_radius)
 
@@ -194,6 +197,200 @@ def setup_physics_object(sprite:Sprite,
     
     return obj
 
+
+def convexise_complex(points:list[tuple[float, float]], body, **kwargs) -> list[physics_types.poly]:
+    shape:list[physics_types.poly] = []
+    convexes = pymunk.util.convexise(pymunk.util.triangulate(points))
+    for convex in convexes:
+        shape.append(physics_types.poly(body, convex, **kwargs))
+    
+    return shape
+
+def convexise_shape(body:physics_types.body):
+    ''' 결론적으로는 쓸모 없어졌지만... '''
+    shapes = body.shapes
+    triangles = []
+    for shape in shapes:
+        if not isinstance(shape, physics_types.poly):
+            raise PhysicsException('not poly')
+        triangles.extend(pymunk.util.triangulate(shape.get_vertices()))
+    convexes = pymunk.util.convexise(triangles)
+    
+    new_shapes = WeakSet()
+    for convex in convexes:
+        new_shapes.add(physics_types.poly(body, convex))
+    body._shapes = new_shapes
+    body.space.add(*new_shapes)
+    body.space.remove(*shapes)
+
+def build_convex_shape(body:physics_types.body, points_list:set[list]) -> list[physics_types.poly]:
+    
+    triangles = []
+    for points in points_list:
+        # if not isinstance(shape, physics_types.poly):
+            # raise PhysicsException('not poly')
+        # points.reverse()
+        triangles.extend(pymunk.util.triangulate(points))
+    convexes = pymunk.util.convexise(triangles)
+    
+    new_shapes = set()
+    for convex in convexes:
+        new_shapes.add(physics_types.poly(body, convex))
+    # body._shapes = new_shapes
+    
+    body._shapes.union(new_shapes)
+    body.space.add(*new_shapes)
+    # body.space.remove(*shapes)
+    return new_shapes
+
+def build_convex_shape2(body:physics_types.body, points_list:set[list]) -> list[physics_types.poly]:
+    
+    tmp_hull = pymunk.util.convex_hull([y for x in points_list for y in x])
+    bad_boys = check_point_on_segment(tmp_hull)
+    if bad_boys:
+        for bad in bad_boys:
+            points_list.remove(bad)
+    return build_convex_shape(body, points_list)
+
+def check_point_on_segment(points:list[Vector]) -> list[Vector]:
+    
+    print('input__', points)
+    # points = list(set(points))
+    pnts = [Vector(x) for x in points]
+    points = list(dict.fromkeys(pnts))
+    print('phase_1', points)
+    num = len(points)
+    if num < 3:
+        raise AttributeError('need more than 3 points')
+    # points = tuple(points)
+    bad_boys = []
+    
+    for i, point in enumerate(points):
+        ab = point - points[i - 1]
+        bc = points[i + 1 if i < num - 1 else 0] - point
+        if ab.unit == bc.unit:
+            bad_boys.append(point)
+    
+    return bad_boys
+
+    if not bad_boys: return points
+    
+    for bad in bad_boys:
+        points.remove(bad)
+    print('phase_2', points)
+    
+    return points
+
+def _attempt_reduction(hulla:list, hullb:list):
+    inter = [vec for vec in hulla if vec in hullb]
+    if len(inter) == 2:
+        starta = hulla.index(inter[1])
+        tempa = hulla[starta:] + hulla[:starta]
+        tempa = tempa[1:-1]
+        startb = hullb.index(inter[0])
+        tempb = hullb[startb:] + hullb[:startb]
+        tempb = tempb[1:-1]
+        reduced = tempa + tempb
+        if pymunk.util.is_convex(reduced):
+            return reduced
+    # reduction failed, return None
+    return None
+
+def _remove_last_point_and_union(hulla:list, hullb:list):
+    inter = [vec for vec in hulla if vec in hullb]
+    if len(inter) == 1:
+        starta = hulla.index(inter[0])
+        tempa = hulla[starta:] + hulla[:starta]
+        tempa = tempa[1:]
+        startb = hullb.index(inter[0])
+        tempb = hullb[startb:] + hullb[:startb]
+        tempb = tempb[1:]
+        reduced = tempa + tempb
+        return reduced
+    return None
+
+def _reduce_shapes(shapes:list, reduction_func:Callable):
+    count = len(shapes)
+    if count < 2:
+        return shapes, False
+    
+    for ia in range(count - 1):
+        for ib in range(ia + 1, count):
+            reduction = reduction_func(shapes[ia], shapes[ib])
+            if reduction != None:
+                # they can so return a new list of hulls and a True
+                newhulls = [reduction]
+                for j in range(count):
+                    if not (j in (ia, ib)):
+                        newhulls.append(shapes[j])
+                return newhulls, True
+
+    # nothing was reduced, send the original hull list back with a False
+    return shapes, False
+
+def triangulate_all(shapes:list):
+    triangles = []
+    for shape in shapes:
+        triangles.extend(pymunk.util.triangulate(shape))
+    return triangles
+
+def get_convexes(shapes) -> list:
+    """Reduces a list of shapes to a
+    non-optimum list of convex polygons
+
+    :Parameters:
+        triangles
+            list of anticlockwise triangles (a list of three points) to reduce
+    """
+    # fun fact: convexise probably isn't a real word
+    hulls = shapes[:]
+    reduced = True
+    n = 0
+    # keep trying to reduce until it won't reduce any more
+    while reduced:
+        print('step',n,':',hulls)
+        hulls, reduced = _reduce_shapes(hulls, _attempt_reduction)
+        n += 1
+    reduced = True
+    while reduced:
+        print('step',n,':',hulls)
+        hulls, reduced = _reduce_shapes(hulls, _remove_last_point_and_union)
+        n += 1
+    # return reduced hull list
+    
+    return pymunk.util.convexise(triangulate_all(hulls))
+
+def build_shapes_with_convexes(body:physics_types.body, convex_list:list, 
+                               friction = 1.0,
+                               elasticity:float = None,
+                               collision_type = collision.default,
+                               shape_edge_raduis = 0.0,
+                               ):
+    shapes:list[physics_types.poly] = []
+    for convex in convex_list:
+        shape = physics_types.poly(body, convex, radius=shape_edge_raduis)
+        shape.collision_type = collision_type
+        shape.friction = friction
+        if elasticity is not None:
+            shape.elasticity = elasticity
+        shapes.append(shape)
+    return shapes
+
+def add_convex_to_world(convex_list:list, world_physics:"PhysicsEngine",
+                        friction = 1.0,
+                        elasticity:float = None,
+                        collision_type = collision.default,
+                        shape_edge_raduis = 0.0,
+                        ):
+    body = world_physics.space.static_body
+    shapes = build_shapes_with_convexes(body, convex_list, 
+                                        friction=friction,
+                                        elasticity=elasticity,
+                                        collision_type=collision_type,
+                                        shape_edge_raduis=shape_edge_raduis)
+    body._shapes.union(shapes)
+    body.space.add(*shapes)
+    return shapes
 
 class PhysicsObject:
     '''
@@ -270,6 +467,12 @@ class PhysicsObject:
                 debug_draw_multi_shape(self._shape, self._body, color, line_thickness)
             else : debug_draw_shape(self._shape, self._body, color, line_thickness)
     
+    @classmethod
+    def debug_draw_body(body:physics_types.body, color = (255, 255, 0, 128), line_thickness = 1):
+        shapes = body.shapes
+        for shape in shapes:
+            debug_draw_shape(shape, body, color, line_thickness)
+        
     def add_pivot(self, target:physics_types.body, *positions):
         if target is None: PhysicsException('target body is None. check spawnned')
         joint = pymunk.constraints.PivotJoint(self._body, target, *positions)

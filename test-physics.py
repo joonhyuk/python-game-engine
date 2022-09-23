@@ -34,6 +34,8 @@ class PhysicsTestView(View):
         self.test_npc:RollingRock = None
         self.test_box = None
         
+        self.wall_collision_debug_shape = []
+        
         self.camera:CameraHandler = None
         self.camera_gui = Camera(*CONFIG.screen_size)
         
@@ -112,14 +114,17 @@ class PhysicsTestView(View):
         kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
                                                  physics_shape=physics_types.poly,
                                                  shape_edge_radius=1)
-        self.test_rotating_kinematic = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.debris_layer, Vector(800, 550))
+        self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.debris_layer, Vector(800, 550))
         kinematic_fan_blade_body.physics.angular_velocity = 5
         
         
-        circle_body = DynamicBody(SpriteCircle(48),
+        circle_body = DynamicBody(
+            # SpriteCircle(48),
+            Sprite(':resources:images/animated_characters/female_person/femalePerson_idle.png'),
                                             mass = 7,
                                             friction = 1.2,
                                             collision_type=collision.debris,
+                                            physics_shape=physics_types.poly,
                                             )
         # print(fan_blade_body.physics.shape)
         
@@ -168,7 +173,7 @@ class PhysicsTestView(View):
             spawn_rand_pos(debri)
         
     
-    def _setup_walls_onecue(self, layer:ObjectLayer):
+    def _setup_walls_onecue_master(self, layer:ObjectLayer):
         '''
         example of body spawn setting
         
@@ -192,6 +197,46 @@ class PhysicsTestView(View):
                               Vector(CONFIG.screen_size.x, y), 
                               elasticity=0.75,
                               spawn_to = layer)
+        
+    def _setup_walls_onecue(self, layer:ObjectLayer):
+        '''
+        example of body spawn setting
+        
+        '''
+        sprite_list:list[Sprite] = []
+        for x in range(0, CONFIG.screen_size.x + 1, 64):
+            
+            sprite = Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES)
+            sprite.position = Vector(x, 0)
+            sprite_list.append(sprite)
+            
+            sprite = Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES)
+            sprite.position = Vector(x, CONFIG.screen_size.y)
+            sprite_list.append(sprite)
+        
+        for y in range(64, CONFIG.screen_size.y, 64):
+            sprite = Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES)
+            sprite.position = Vector(0, y)
+            sprite_list.append(sprite)
+            
+            sprite = Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES)
+            sprite.position = Vector(x, y)
+            sprite_list.append(sprite)
+        
+        layer.extend(sprite_list)
+        
+        walls_points:list = []
+        for sprite in sprite_list:
+            hit_box = sprite.get_hit_box()
+            pos = sprite.position
+            scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
+            walls_points.append(scaled_poly)
+
+        wall_convexes = get_convexes(walls_points)
+        self.wall_collision_debug_shape = add_convex_to_world(wall_convexes, self.physics_main, elasticity=1.0)
+        
+        ### for presentation, leaving old one.
+        # self.wall_collision_debug_shape = build_convex_shape2(self.physics_main.space.static_body, walls_points)
         
     def _setup_field(self, layer:ObjectLayer):
         '''
@@ -222,6 +267,9 @@ class PhysicsTestView(View):
         if key == keys.RIGHT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
         
+        if key == keys.PLUS:
+            print('convexise!!!')
+            convexise_shape(self.test_box.body.physics.body)
         # if key == keys.SPACE: self.player.test_boost(500)
         
         # if key == keys.H:
@@ -327,9 +375,12 @@ class PhysicsTestView(View):
 
         self.player.draw()
         self.test_npc.body.physics.debug_draw()
+        self.test_box.body.physics.debug_draw()
         self.test_rotating_dynamic.body.physics.debug_draw()
         self.test_rotating_kinematic.body.physics.debug_draw()
-        # self.test_box.body.physics.debug_draw()
+        
+        for shape in self.wall_collision_debug_shape:
+            debug_draw_shape(shape, line_color = (255, 0, 0, 255))
         
         self.camera_gui.use()
         
@@ -359,7 +410,10 @@ class PhysicsTestView(View):
         
         if self.physics_main.non_static_objects:
             total = len(self.physics_main.non_static_objects)
-            sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
+            # sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
+            sleeps = 0
+            for a in self.physics_main.space.bodies:
+                if a.is_sleeping: sleeps += 1
             APP.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
         # APP.debug_text.perf_check('update_empty_physics')

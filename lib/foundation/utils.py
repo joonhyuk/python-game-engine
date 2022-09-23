@@ -167,12 +167,16 @@ def debug_draw_poly(points:list[Tuple[float, float]],
     return arcade.draw_polygon_outline(new_poly, line_color, line_thickness)
 
 def debug_draw_shape(shape:pymunk.Shape,
-                     body:pymunk.Body,
+                     body:pymunk.Body = None,
                      line_color = arcade.color.WHITE, 
                      line_thickness = 1, 
                      fill_color = None,):
-    center = body.position
-    angle = body.angle  # in radian
+    if body is None:
+        center = vectors.zero
+        angle = 0.0
+    else:
+        center = body.position
+        angle = body.angle  # in radian
     if isinstance(shape, pymunk.Poly):
         debug_draw_poly(shape.get_vertices(), center, angle, line_color, line_thickness, fill_color, radian=True)
     if isinstance(shape, pymunk.Circle):
