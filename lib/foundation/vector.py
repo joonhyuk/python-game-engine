@@ -117,6 +117,9 @@ class Vector(tuple):
             raise ValueError('The dot product requires another vector')
         return sum(a * b for a, b in zip(self, other))
     
+    def __hash__(self) -> int:
+        return super().__hash__()
+    
     def __mul__(self, other):
         """ Returns the dot product of self and other if multiplied
             by another Vector.  If multiplied by an int or float,
