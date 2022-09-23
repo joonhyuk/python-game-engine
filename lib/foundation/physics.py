@@ -597,7 +597,8 @@ class PhysicsEngine:
         if shape is None:
             # poly = sprite.get_adjusted_hit_box()
             poly = sprite.get_hit_box()
-            scaled_poly = [[x * sprite.scale for x in z] for z in poly].reverse()
+            scaled_poly = [[x * sprite.scale for x in z] for z in poly]
+            scaled_poly.reverse()
             if not pymunk.util.is_convex(scaled_poly):
             # if hasattr(sprite, 'is_concave') and sprite.is_concave:
                 shape:list[pymunk.Poly] = []
@@ -635,6 +636,7 @@ class PhysicsEngine:
     def add_object(self, sprite:Sprite, body:pymunk.Body, shape:pymunk.Shape):
         physics_object = PhysicsObject(body, shape)
         self.add_physics_object(sprite, physics_object)
+        return physics_object
     
     def add_physics_object(self, sprite:Sprite, physics_object:PhysicsObject):
         self.objects[sprite] = physics_object

@@ -6,11 +6,11 @@ VERSION = Version()
 
 def main():
     CLOCK.use_engine_tick = True
-    app = Client(*CONFIG.screen_size, PROJECT_NAME + ' ' + str(VERSION.full))
+    # app = Client(*CONFIG.screen_size, PROJECT_NAME + ' ' + str(VERSION.full))
     title = TitleScreen()
     
-    app.show_view(title)
-    app.run()
+    APP.show_view(title)
+    APP.run()
 
 if __name__ == '__main__':
     main()
