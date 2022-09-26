@@ -5,6 +5,17 @@ by joonhyuk@me.com
 forked from https://gist.github.com/mcleonard/5351452
 """
 import math
+from typing import Iterable
+
+def _check_valid_iterable(other) -> bool:
+    if isinstance(other, Vector):
+        return True
+    if isinstance(other, (tuple, list, set, Iterable)):
+        """ Validity check for elements(below line) will be on the fly for performance """
+        # assert all(isinstance(x, (float, int)) for x in other), f'Invalid vector object : {other}'
+        return True
+    return False
+    
 
 class Vector(tuple):
     
@@ -12,7 +23,7 @@ class Vector(tuple):
         if not args:
             args = (0, 0)
         elif len(args) == 1:
-            if isinstance(args[0], (tuple, list, Vector)):
+            if _check_valid_iterable(args[0]):
                 args = args[0]
             else: raise ValueError("Single argument should be tuple | list | Vector")
         return tuple.__new__(cls, args)
@@ -113,7 +124,7 @@ class Vector(tuple):
     def inner(self, other):
         """ Returns the dot product (inner product) of self and another vector
         """
-        if not isinstance(other, (tuple, list)):
+        if not _check_valid_iterable(other):
             raise ValueError('The dot product requires another vector')
         return sum(a * b for a, b in zip(self, other))
     
@@ -125,7 +136,7 @@ class Vector(tuple):
             by another Vector.  If multiplied by an int or float,
             multiplies each component by other.
         """
-        if isinstance(other, (tuple, list)):
+        if _check_valid_iterable(other):
             return self.inner(other)
         elif isinstance(other, (int, float)):
             product = tuple( a * other for a in self )
@@ -144,8 +155,7 @@ class Vector(tuple):
         return self.__mul__(-1)
     
     def __truediv__(self, other):
-        if isinstance(other, (tuple, list)):
-            # divided = tuple(self[i] / other[i] for i in range(len(self)))
+        if _check_valid_iterable(other):
             divided = tuple( a / b for a, b in zip(self, other))
         elif isinstance(other, (int, float)):
             divided = tuple( a / other for a in self )
@@ -158,7 +168,7 @@ class Vector(tuple):
         return self.__truediv__(other)
 
     def __floordiv__(self, other):
-        if isinstance(other, (tuple, list)):
+        if _check_valid_iterable(other):
             # divided = tuple(self[i] / other[i] for i in range(len(self)))
             divided = tuple( a // b for a, b in zip(self, other))
         elif isinstance(other, (int, float)):
@@ -173,7 +183,7 @@ class Vector(tuple):
 
     def __add__(self, other):
         """ Returns the vector addition of self and other """
-        if isinstance(other, (tuple, list)):
+        if _check_valid_iterable(other):
             added = tuple( a + b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
             added = tuple( a + other for a in self )
@@ -191,7 +201,7 @@ class Vector(tuple):
     def __sub__(self, other):
         """ Returns the vector difference of self and other """
         if other is None: return self
-        if isinstance(other, (tuple, list)):
+        if _check_valid_iterable(other):
             subbed = tuple( a - b for a, b in zip(self, other) )
         elif isinstance(other, (int, float)):
             subbed = tuple( a - other for a in self )
@@ -208,7 +218,7 @@ class Vector(tuple):
         return self.__sub__(other)
 
     def __eq__(self, other):
-        if isinstance(other, (tuple, list)):
+        if _check_valid_iterable(other):
             return all(a == b for a, b in zip(self, other))
         else:
             return False
@@ -259,7 +269,7 @@ class Vector(tuple):
     def is_close(self, other, precision = 0.001):
         ''' check if nearly equality '''
         if self == other: return True
-        if not isinstance(other, (tuple, list)): 
+        if not _check_valid_iterable(other):
             raise ValueError('nearly_equal requires another vector')
         ''' 차원 수 비교체크는 성능상 생략 '''
         result = all(math.isclose(a, b, abs_tol = precision) for a, b in zip(self, other))
@@ -321,6 +331,7 @@ class Vector(tuple):
 vector_zero = Vector(0, 0)
 vector_right = Vector(1, 0)
 vector_up = Vector(0, 1)
+
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
