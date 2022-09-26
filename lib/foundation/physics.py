@@ -208,6 +208,7 @@ def convexise_complex(points:list[tuple[float, float]], body, **kwargs) -> list[
 
 def convexise_shape(body:physics_types.body):
     ''' 결론적으로는 쓸모 없어졌지만... '''
+    #deprecated
     shapes = body.shapes
     triangles = []
     for shape in shapes:
@@ -224,7 +225,7 @@ def convexise_shape(body:physics_types.body):
     body.space.remove(*shapes)
 
 def build_convex_shape(body:physics_types.body, points_list:set[list]) -> list[physics_types.poly]:
-    
+    #deprecated
     triangles = []
     for points in points_list:
         # if not isinstance(shape, physics_types.poly):
@@ -244,7 +245,7 @@ def build_convex_shape(body:physics_types.body, points_list:set[list]) -> list[p
     return new_shapes
 
 def build_convex_shape2(body:physics_types.body, points_list:set[list]) -> list[physics_types.poly]:
-    
+    #deprecated
     tmp_hull = pymunk.util.convex_hull([y for x in points_list for y in x])
     bad_boys = check_point_on_segment(tmp_hull)
     if bad_boys:
@@ -339,10 +340,9 @@ def get_convexes(shapes) -> list:
     non-optimum list of convex polygons
 
     :Parameters:
-        triangles
-            list of anticlockwise triangles (a list of three points) to reduce
+        shapes
+            list of anticlockwise shapes (a list of more than three points) to reduce
     """
-    # fun fact: convexise probably isn't a real word
     hulls = shapes[:]
     reduced = True
     n = 0
@@ -391,6 +391,7 @@ def add_convex_to_world(convex_list:list, world_physics:"PhysicsEngine",
     body._shapes.union(shapes)
     body.space.add(*shapes)
     return shapes
+
 
 class PhysicsObject:
     '''
@@ -881,6 +882,23 @@ class PhysicsEngine:
                             body_type=body_type,
                             damping=damping,
                             collision_type=collision_type)
+    
+    def add_static_collison(self, sprite_list,
+                            friction = 1.0,
+                            elasticity:float = None,
+                            collision_type = collision.default,
+                            shape_edge_raduis = 0.0,
+                            ):
+        walls_points:list = []
+        for sprite in sprite_list:
+            sprite:Sprite
+            hit_box = sprite.get_hit_box()
+            pos = sprite.position
+            scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
+            walls_points.append(scaled_poly)
+
+        wall_convexes = get_convexes(walls_points)
+        return add_convex_to_world(wall_convexes, self, elasticity=elasticity, collision_type=collision_type, friction=friction, shape_edge_raduis=shape_edge_raduis) 
     
     def remove_sprite(self, sprite:Sprite):
         ''' name coupled with aracde framework. so do not change it'''
