@@ -1,4 +1,4 @@
-arcade==2.6.15
+arcade==2.6.16
 easing-functions==1.0.4
 psutil==5.9.1
-tqdm==4.64.1
+tqdm==4.64.1pi
