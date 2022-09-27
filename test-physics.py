@@ -220,21 +220,13 @@ class PhysicsTestView(View):
             sprite_list.append(sprite)
             
             sprite = Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES)
-            sprite.position = Vector(x, y)
+            sprite.position = Vector(x + 32, y)
+
             sprite_list.append(sprite)
         
         layer.extend(sprite_list)
         
-        walls_points:list = []
-        for sprite in sprite_list:
-            hit_box = sprite.get_hit_box()
-            pos = sprite.position
-            scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
-            walls_points.append(scaled_poly)
-
-        wall_convexes = get_convexes(walls_points)
-        self.wall_collision_debug_shape = add_convex_to_world(wall_convexes, self.physics_main, elasticity=1.0)
-        
+        self.wall_collision_debug_shape = self.physics_main.add_static_collison(layer, elasticity=1.0)
         ### for presentation, leaving old one.
         # self.wall_collision_debug_shape = build_convex_shape2(self.physics_main.space.static_body, walls_points)
         
@@ -281,7 +273,6 @@ class PhysicsTestView(View):
     
     def on_key_release(self, key: int, modifiers: int):
         
-        if key == arcade.key.ESCAPE: arcade.exit()
         return super().on_key_release(key, modifiers)
     
     # def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
@@ -449,13 +440,40 @@ class PlatformerTestView(View):
         
         # self.wall_layer = tile_map.
         
-        
+
+class WorldTestView(View):
     
+    def __init__(self, window: Client = None):
+        super().__init__(window)
+        
+        self.player:EscapePlayer = None
+        ''' will be substitute with spawn object in map '''
+        self.world:World = None
+        ''' 
+        contains everything for game : layers of objects, physics, update() or tick(), draw()
+        '''
+    def setup(self):
+        
+        self.player = EscapePlayer()
+        self.world = World()
+        
+    def on_update(self, delta_time: float):
+        
+        # self.player.tick(delta_time)
+        self.world.tick(delta_time)     ### includes player, physics update
+        
+    def on_draw(self):
+        
+        self.world.draw()       ### includes player draw(in proper layer)
+
+
 def main():
     CLOCK.use_engine_tick = True
-    view = PhysicsTestView()
-    view.setup()
-    APP.show_view(view)
+    
+    scene = PhysicsTestView()
+    # scene = WorldTestView()
+    scene.setup()
+    APP.show_view(scene)
     APP.run()
 
 if __name__ == '__main__':

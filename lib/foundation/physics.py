@@ -272,7 +272,7 @@ def check_point_on_segment(points:list[Vector]) -> list[Vector]:
         if ab.unit == bc.unit:
             bad_boys.append(point)
     
-    return bad_boys
+    # return bad_boys
 
     if not bad_boys: return points
     
@@ -281,6 +281,54 @@ def check_point_on_segment(points:list[Vector]) -> list[Vector]:
     print('phase_2', points)
     
     return points
+
+def _combine_n_reduce(shape_a:list, shape_b:list):
+    assert all((len(shape_a) > 2, len(shape_b) > 2)), 'Hulls need to be more than triangles'
+    
+    intersec = [p for p in shape_a if p in shape_b]
+    inter_num = len(intersec)
+    
+    if inter_num < 2: return None
+    
+    a_nob_in_intersec = shape_a[0] in intersec and shape_a[-1] in intersec
+    '''
+    첫 점과 끝 점이 포함되어 있으면 순서가 꼬이기 때문에 미리 알아둔다.
+    '''
+
+    if inter_num > 2:       ### reduce intersec to each edge
+        if intersec[0] == shape_a[0]:
+            temp_inter = intersec[:]
+            n = 0
+            while shape_a[n + 1] in temp_inter:
+                intersec.remove(shape_a[n])
+                n += 1
+            n = -1
+            while shape_a[n - 1] in temp_inter:
+                intersec.remove(shape_a[n])
+                n -= 1
+    
+    if a_nob_in_intersec:
+        a_start = shape_a.index(intersec[0])
+        a_end = shape_a.index(intersec[-1])
+    else:
+        a_start = shape_a.index(intersec[-1])
+        a_end = shape_a.index(intersec[0])
+    
+    b_start = shape_b.index(shape_a[a_end])
+    b_end = shape_b.index(shape_a[a_start])
+    
+    if a_start < a_end:
+        rest_a = shape_a[a_start:a_end]
+    else:
+        rest_a = shape_a[a_start:] + shape_a[:a_end]
+    
+    if b_start < b_end:
+        rest_b = shape_b[b_start:b_end]
+    else:
+        rest_b = shape_b[b_start:] + shape_b[:b_end]
+    
+    return rest_a + rest_b
+        
 
 def _attempt_reduction(hulla:list, hullb:list):
     inter = [vec for vec in hulla if vec in hullb]
@@ -310,14 +358,14 @@ def _remove_last_point_and_union(hulla:list, hullb:list):
         return reduced
     return None
 
-def _reduce_shapes(shapes:list, reduction_func:Callable):
+def _reduce_shapes(shapes:list):
     count = len(shapes)
     if count < 2:
         return shapes, False
     
     for ia in range(count - 1):
         for ib in range(ia + 1, count):
-            reduction = reduction_func(shapes[ia], shapes[ib])
+            reduction = _combine_n_reduce(shapes[ia], shapes[ib])
             if reduction != None:
                 # they can so return a new list of hulls and a True
                 newhulls = [reduction]
@@ -344,21 +392,24 @@ def get_convexes(shapes) -> list:
             list of anticlockwise shapes (a list of more than three points) to reduce
     """
     hulls = shapes[:]
-    reduced = True
+    reducing = True
     n = 0
     # keep trying to reduce until it won't reduce any more
-    while reduced:
-        print('step',n,':',hulls)
-        hulls, reduced = _reduce_shapes(hulls, _attempt_reduction)
+    while reducing:
+        # print('step',n,':',hulls)
+        hulls, reducing = _reduce_shapes(hulls)
         n += 1
-    reduced = True
-    while reduced:
-        print('step',n,':',hulls)
-        hulls, reduced = _reduce_shapes(hulls, _remove_last_point_and_union)
-        n += 1
+    # reducing = True
+    # while reducing:
+        # print('step',n,':',hulls)
+        # hulls, reducing = _reduce_shapes(hulls, _remove_last_point_and_union)
+        # n += 1
     # return reduced hull list
-    
-    return pymunk.util.convexise(triangulate_all(hulls))
+    new_hulls = []
+    for hull in hulls:
+        new_hulls.append(check_point_on_segment(hull))
+        
+    return pymunk.util.convexise(triangulate_all(new_hulls))
 
 def build_shapes_with_convexes(body:physics_types.body, convex_list:list, 
                                friction = 1.0,
