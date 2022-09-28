@@ -109,7 +109,6 @@ class Version(metaclass=SingletonType):
         return self.__str__()
 
 
-
 def get_path(path):
     """return proper path for packaging platform"""
     if sys.platform == 'darwin': return path

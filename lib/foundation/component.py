@@ -4,6 +4,14 @@ from config.engine import *
 from lib.foundation.engine import *
 
 
+class Attributes(ActorComponent):
+    ''' 각종 스탯 저장 및 관리 '''
+    __slots__ = ['lifetime', 'hp', 'ep']
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        
+
 class SpriteBody(Body):
     
     __slots__ = ()

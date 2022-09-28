@@ -22,6 +22,7 @@ tags: game-dev
 - Windows, Mac, Linux 크로스플랫폼을 유지한다.
 - PIP repo에 등록 가능하도록 표준 요소를 갖춘다.
 
+
 # Game Design
 [[Escape]] 참고
 
@@ -64,6 +65,8 @@ lifetime과 각종 active 상태 관리에 주력했음.
 - tick
 - destroy
 
+현재 겪는 어려움이 무엇인가? 뭐라도 좋아지는게 있어야 바꾸지. 기분만이라도...
+
 
 ## Actor
 - controller : tick마다 무엇을 할지 결정하고 actor에게 명령을 내린다. 정확히는, actor의 각 컴포넌트들에게 명령을 내리는 것. 여전히 컴포넌트를 actor에 융합(?) 시키는 방식이 땡기는데... 보일러플레이팅 노가다가 너무 심하다.
@@ -104,6 +107,7 @@ attack-melee, attack-projectile, evade, open, ...
 ### move
 - `move(direction:Vector, )`
 
+
 # Bugs
 - (SOLVED) physics hide시 해제가 안되는 경우가 있음.
 	- 작은 공과 충돌하는 상황에서는 몇 번 토글하면 정상으로 돌아옴...
@@ -127,6 +131,7 @@ attack-melee, attack-projectile, evade, open, ...
 - [[convex problems.excalidraw]]
 - 결국 원하던 것을 했는데 완벽하지는 않다. tiled map의 그리기 순서를 믿고 간다.
 	- 치명적인 것은, 닫힌 구조를 만들 수 없는 것. 닫힌 블럭을 만들게 되면 통짜 컬리전이 된다. 외각 벽은 이 수단을 통하지 않거나, 수작업 블로킹 볼륨을 넣어주거나, 꼼수(막힌 블럭 중 하나를 별도 처리)를 쓴다.
+	- "...해치웠나!?"만 몇 번째.
 	- 일단 이대로 업데이트.
 
 ## 이동을 위한 힘 구하기

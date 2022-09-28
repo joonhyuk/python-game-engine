@@ -153,5 +153,73 @@ for member_name, member_object in inspect.getmembers(eah):
         print('weapons hot!')
 
 
-ww = World()
-ww.load_map('tiled/test_map2.json')
+class GameEntity(object):
+    '''
+    base class of everything 'in game'
+    
+    define lifecycle of objects.
+    '''
+    
+    def __init__(self) -> None:
+        self._alive = True
+        self.setup()
+        pass
+    
+    def setup(self) -> None:
+        '''
+        Initial setup
+        '''
+        pass
+    
+    def spawn(self) -> GameEntity:
+        '''
+        Put self into the game space
+        '''
+        return self
+    
+    def tick(self, delta_time:float) -> bool:
+        '''
+        Returns true if valid state
+        '''
+        if not self.is_alive: return False
+        return True
+    
+    def destroy(self, delay:float = None) -> None:
+        '''
+        Literally destroy this object. Note that it's not dead, dispawn, etc.
+        
+        For a living character, dead or on_dead method needed for some presentation process. 
+        destroy() should be called as kinda callback after all process of death ends.
+        '''
+        if not delay:
+            self._destroy(0)
+        else:
+            schedule_once(self._destroy, delay)
+    
+    def on_destroy(self):
+        pass
+    
+    def _destroy(self, delta_time:float, *args, **kwargs):
+        self._alive = False
+        self.on_destroy(*args, **kwargs)
+    
+    def is_alive(self) -> bool:
+        return self._alive
+    
+    @property
+    def id(self) -> str:
+        return str(id(self))
+    
+    @property
+    def alive(self) -> bool:
+        return self.is_alive()
+
+
+
+class WorldStatic(GameEntity):
+    
+    def setup(self) -> None:
+        
+        return super().setup()
+
+

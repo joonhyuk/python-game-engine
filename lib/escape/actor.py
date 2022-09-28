@@ -127,15 +127,15 @@ class EscapePlayer(Character):
                                physics_shape = physics_types.circle(None, 16))
         super().__init__(body, hp, **kwargs)
         self.body.physics.filter = pymunk.ShapeFilter(categories=collision.character)
-        self._fire_counter = 0
+        # self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
         self.controller = EscapePlayerController()
         self.movement = EscapePlayerMovement()
         self.actions = EscapeCharacterActionHandler()
         self.projectile = ShrinkingBall
-    
         
+    
     # def tick(self, delta_time: float = None) -> bool:
     #     if not super().tick(delta_time): return False
     #     if self._fire_counter % 5 == 0:
@@ -171,6 +171,19 @@ class EscapePlayer(Character):
             sprite_first_hit:Sprite = ENV.physics_engine.get_object_from_shape(first_hit.shape)
             # sprite_first_hit.color = colors.RED
             # print(sprite_first_hit.owner)
+
+
+class PlatformerPlayer(EscapePlayer):
+    
+    def __init__(self, body: DynamicBody = None, hp: float = 100, **kwargs) -> None:
+        if not body:
+            body = DynamicBody(SpriteCircle(64, colors.AFRICAN_VIOLET),
+                               )
+        super().__init__(body, hp, **kwargs)
+    
+    def on_init(self) -> None:
+        self.controller = 'WASTED!'
+        return super().on_init()
 
 
 class SimpleAIObject(DynamicObject):

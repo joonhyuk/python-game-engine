@@ -7,5 +7,40 @@
         "."
     ],
     "propertyTypes": [
+        {
+            "color": "#ffa0a0a4",
+            "id": 1,
+            "members": [
+                {
+                    "name": "shape",
+                    "propertyType": "physics_shape",
+                    "type": "string",
+                    "value": "poly"
+                }
+            ],
+            "name": "physics",
+            "type": "class",
+            "useAs": [
+                "property",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        },
+        {
+            "id": 2,
+            "name": "physics_shape",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+                "poly",
+                "circle",
+                "segment"
+            ],
+            "valuesAsFlags": false
+        }
     ]
 }

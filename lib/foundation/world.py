@@ -178,7 +178,6 @@ class World:
         }
         
         for layer in self.map.layers:
-            print(layer.name, layer.properties)
             # if (layer.name in self.tile_layers) or (layer.name in self.object_layers):
             #     raise AttributeError(
             #         f"You have a duplicate layer name '{layer.name}' in your Tiled map. "
@@ -209,6 +208,8 @@ class World:
                 # options = new_options
 
         if isinstance(layer, pytiled_parser.TileLayer):
+            if layer.name == 'test':
+                print(layer.class_)
             processed = self._process_tile_layer(layer, **options)
             self.static_layers[layer.name] = processed
         # elif isinstance(layer, pytiled_parser.ObjectLayer):
@@ -233,6 +234,7 @@ class World:
         flipped_horizontally = False
         flipped_vertically = False
 
+        
         if tile_gid & _FLIPPED_HORIZONTALLY_FLAG:
             flipped_horizontally = True
             tile_gid -= _FLIPPED_HORIZONTALLY_FLAG
@@ -266,7 +268,8 @@ class World:
                 if tileset.tiles is None:
                     return None
                 tile_ref = tileset.tiles.get(tile_gid - tileset_key)
-
+            
+            if tile_ref.properties: print('SHOCK!','SHOCK!',tile_ref.properties)
             if tile_ref:
                 my_tile = copy.copy(tile_ref)
                 my_tile.tileset = tileset
@@ -338,9 +341,10 @@ class World:
         if tile.properties is not None and len(tile.properties) > 0:
             for key, value in tile.properties.items():
                 my_sprite.properties[key] = value
-
-        if tile.type:
-            my_sprite.properties["type"] = tile.type
+        
+        if tile.class_:
+            print(tile.class_)
+            my_sprite.properties["class"] = tile.class_
 
         # Add tile ID to sprite properties
         my_sprite.properties["tile_id"] = tile.id
@@ -491,11 +495,17 @@ class World:
         custom_class_args: Dict[str, Any] = {},
     ) -> ObjectLayer:
 
-        if layer.properties.get('physics', False):
-            pass
-        sprite_list: ObjectLayer = ObjectLayer(use_spatial_hash=use_spatial_hash)
-        map_array = layer.data
+        try:    ### set_physics default True, unless set to False manually
+            set_physics = layer.properties.get('physics', False)
+        except:
+            set_physics = True
+        # print(layer.name,'set_physics',set_physics)
         
+        sprite_list: ObjectLayer = ObjectLayer(
+            self.physics if set_physics else None,
+            use_spatial_hash=use_spatial_hash)
+        
+        map_array = layer.data
         # Loop through the layer and add in the list
         for row, rows in enumerate(map_array):
             for col, item in enumerate(rows):
@@ -503,6 +513,8 @@ class World:
                 if item == 0:
                     continue
                 tile = self._get_tile_by_gid(item)
+                if layer.name == 'test':
+                    print(tile.properties)
                 if tile is None:
                     raise ValueError(
                         (
@@ -520,7 +532,7 @@ class World:
                     custom_class=custom_class,
                     custom_class_args=custom_class_args,
                 )
-
+                
                 if my_sprite is None:
                     print(
                         f"Warning: Could not create sprite number {item} in layer '{layer.name}' {tile.image}"
@@ -546,7 +558,7 @@ class World:
                         my_sprite.alpha = int(opacity * 255)
 
                     sprite_list.visible = layer.visible
-                    sprite_list.append(my_sprite)
+                    sprite_list.add(my_sprite)
 
                 if layer.properties:
                     sprite_list.properties = layer.properties
@@ -557,6 +569,12 @@ class World:
     def setup(self):
         
         if not self.map: return False
+        
+    def tick(self, delta_time:float):
+        pass
+    
+    def draw(self):
+        pass
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

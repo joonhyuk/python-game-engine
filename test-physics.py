@@ -171,7 +171,6 @@ class PhysicsTestView(View):
                                              collision_type = collision.debris)
             debri = SimpleAIObject(debri_body)
             spawn_rand_pos(debri)
-        
     
     def _setup_walls_onecue_master(self, layer:ObjectLayer):
         '''

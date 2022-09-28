@@ -368,8 +368,11 @@ class Actor(MObject):
     ''' can have actor components '''
     __slots__ = ('tick_components', )
     
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    # def __init__(self, **kwargs) -> None:
+    #     super().__init__(**kwargs)
+    #     self.tick_components:list[ActorComponent] = []
+
+    def on_init(self):
         self.tick_components:list[ActorComponent] = []
     
     def spawn(self, lifetime: float = None):
@@ -385,17 +388,10 @@ class Actor(MObject):
             components.extend([getattr(self, c) for c in self.__slots__ if isinstance(getattr(self, c), types)])
         return components
     
-    def register_components(self):
-        candidate = (ActorComponent, )
-        components:list[ActorComponent] = []    ### type hinting
+    def register_components(self, candidate = (ActorComponent,)):
+        components:list[candidate] = []    ### type hinting
         
-        def check_component(component:Union(*candidate)):
-            return isinstance(component, candidate)
-        
-        if hasattr(self, '__dict__'):    ### for those have only __slots__
-            components.extend([c for c in self.__dict__.values() if check_component(c)])
-        if hasattr(self, '__slots__'):
-            components.extend([getattr(self, c) for c in self.__slots__ if check_component(getattr(self, c))])
+        components = self.get_components(*candidate)
         
         if components:
             for component in components:
@@ -938,6 +934,9 @@ class Client(arcade.Window):
         if self.player_controller: self.player_controller.on_key_press(key=key, modifiers=modifiers)
         
     def on_key_release(self, key: int, modifiers: int):
+        
+        if key == arcade.key.ESCAPE: arcade.exit()  ### for convenience
+        
         if self.player_controller: self.player_controller.on_key_release(key=key, modifiers=modifiers)
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
