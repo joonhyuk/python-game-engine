@@ -226,9 +226,16 @@ class PhysicsTestView(View):
         
         layer.extend(sprite_list)
         
-        self.wall_collision_debug_shape = self.physics_main.add_static_collison(layer, elasticity=1.0)
-        ### for presentation, leaving old one.
-        # self.wall_collision_debug_shape = build_convex_shape2(self.physics_main.space.static_body, walls_points)
+        # self.wall_collision_debug_shape = self.physics_main.add_static_collison(layer, elasticity=1.0)
+        ### for presentation, leaving old one below
+        walls_points:list = []
+        for sprite in sprite_list:
+            hit_box = sprite.get_hit_box()
+            pos = sprite.position
+            scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
+            walls_points.append(scaled_poly)
+
+        self.wall_collision_debug_shape = build_convex_shape(self.physics_main.space.static_body, walls_points)
         
     def _setup_field(self, layer:ObjectLayer):
         '''
@@ -430,7 +437,7 @@ class PlatformerTestView(View):
         self.kinematic_layer:ObjectLayer = ObjectLayer(self.physics_engine)
         self.ladder_layer:ObjectLayer = ObjectLayer(self.physics_engine)
         
-        self.player:PlatformerPlayer = None
+        # self.player:PlatformerPlayer = None
         
         arcade.set_background_color(arcade.color.AMAZON)
     

@@ -244,15 +244,6 @@ def build_convex_shape(body:physics_types.body, points_list:set[list]) -> list[p
     # body.space.remove(*shapes)
     return new_shapes
 
-def build_convex_shape2(body:physics_types.body, points_list:set[list]) -> list[physics_types.poly]:
-    #deprecated
-    tmp_hull = pymunk.util.convex_hull([y for x in points_list for y in x])
-    bad_boys = check_point_on_segment(tmp_hull)
-    if bad_boys:
-        for bad in bad_boys:
-            points_list.remove(bad)
-    return build_convex_shape(body, points_list)
-
 def check_point_on_segment(points:list[Vector]) -> list[Vector]:
     
     print('input__', points)
