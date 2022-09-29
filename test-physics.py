@@ -3,7 +3,7 @@ from lib.escape import *
 # from config.game import *
 import config
 
-from tqdm import tqdm
+# from tqdm import tqdm
 import gc
 
 VERSION = Version()

@@ -6,6 +6,7 @@ import os, sys, json
 from enum import Enum
 from typing import Iterable, Union
 from collections import deque
+from tqdm import tqdm
 
 from easing_functions import *
 

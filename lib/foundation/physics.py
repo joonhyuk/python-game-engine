@@ -8,7 +8,6 @@ import sys, math
 from typing import Callable, Optional, Union
 from enum import Enum
 from weakref import WeakSet
-
 ### for in-house physics engine
 import arcade, pymunk, pymunk.util
 from .vector import Vector
@@ -16,6 +15,7 @@ from config.engine import *
 from .utils import *
 
 from arcade import Sprite
+
 
 def is_sprite_not_in_zone(sprite:Sprite):
     
@@ -246,11 +246,12 @@ def build_convex_shape(body:physics_types.body, points_list:set[list]) -> list[p
 
 def check_point_on_segment(points:list[Vector]) -> list[Vector]:
     
-    print('input__', points)
+    # print('input__', points)
     # points = list(set(points))
-    pnts = [Vector(x) for x in points]
-    points = list(dict.fromkeys(pnts))
-    print('phase_1', points)
+    points = [Vector(x) for x in points]
+    points = list(dict.fromkeys(points))
+
+    # print('phase_1', points)
     num = len(points)
     if num < 3:
         raise AttributeError('need more than 3 points')
@@ -269,7 +270,7 @@ def check_point_on_segment(points:list[Vector]) -> list[Vector]:
     
     for bad in bad_boys:
         points.remove(bad)
-    print('phase_2', points)
+    # print('phase_2', points)
     
     return points
 
