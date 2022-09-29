@@ -223,18 +223,22 @@ class PhysicsTestView(View):
 
             sprite_list.append(sprite)
         
+        sprite_list.append(StaticBody(
+            Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES), Vector(64,256)
+        ).sprite)
+        
         layer.extend(sprite_list)
         
-        # self.wall_collision_debug_shape = self.physics_main.add_static_collison(layer, elasticity=1.0)
+        self.wall_collision_debug_shape = self.physics_main.add_static_collison(layer, elasticity=1.0)
         ### for presentation, leaving old one below
-        walls_points:list = []
-        for sprite in sprite_list:
-            hit_box = sprite.get_hit_box()
-            pos = sprite.position
-            scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
-            walls_points.append(scaled_poly)
+        # walls_points:list = []
+        # for sprite in sprite_list:
+        #     hit_box = sprite.get_hit_box()
+        #     pos = sprite.position
+        #     scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
+        #     walls_points.append(scaled_poly)
 
-        self.wall_collision_debug_shape = build_convex_shape(self.physics_main.space.static_body, walls_points)
+        # self.wall_collision_debug_shape = build_convex_shape(self.physics_main.space.static_body, walls_points)
         
     def _setup_field(self, layer:ObjectLayer):
         '''
