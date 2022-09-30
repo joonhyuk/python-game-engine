@@ -19,11 +19,17 @@ class Jump(Action):
 
 
 class TestBoost(Action):
+    """ boost + jump """
     
     def do(self, owner: Union[Actor, ActionHandler], direction:Vector, impulse:float):
         # self.lock_global(owner)
-        self.lock_for(owner, 0.5, TestShootBall, TestBoost)
-        owner.body.apply_impulse(direction.unit * impulse)
+        gravity = owner.body.physics.space.gravity
+        if gravity != vectors.zero:
+            if owner.body.physics.is_on_ground:
+                owner.body.apply_impulse(gravity * -0.3)
+        else:
+            self.lock_for(owner, 0.5, TestShootBall, TestBoost)
+            owner.body.apply_impulse(direction.unit * impulse)
         # schedule_once(self.unlock_global, 1, owner)
         # schedule_once(self.unlock, 2, owner)
         
