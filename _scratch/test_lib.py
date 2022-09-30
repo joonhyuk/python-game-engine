@@ -151,6 +151,12 @@ for member_name, member_object in inspect.getmembers(eah):
     # if inspect.isdatadescriptor(member_object):
         # print(member_object)
         print('weapons hot!')
+        
+
+
+
+class Tick(ActorComponent):
+    pass
 
 
 class GameEntity(object):
@@ -180,6 +186,11 @@ class GameEntity(object):
     def tick(self, delta_time:float) -> bool:
         '''
         Returns true if valid state
+        이게 필요할까? tick도 범용 컴포넌트로 만들어버리면? 
+        어차피 tick을 가지고 있는 컴포넌트들만 프로세서에서 돌려주면 되는 일.
+        ECS 모델로 완전히 가게 되면 컴포넌트로 만들어야 한다. 
+        단, 기존에는 액터 단위로 업데이트가 일어났다면 새 방식에서는 개별 프로세서들이 돌아가는 격.
+        필요시 각 컴포넌트에서 생존 체크를 해야 한다.
         '''
         if not self.is_alive: return False
         return True
