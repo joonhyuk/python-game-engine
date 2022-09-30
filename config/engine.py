@@ -1,8 +1,8 @@
-# import arcade
+import math
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto, IntFlag
 from lib.foundation.base import *
-
+from lib.foundation.vector import Vector
 
 PROJECT_NAME = 'mash python game engine'
 SCREEN_TITLE = PROJECT_NAME
@@ -42,6 +42,8 @@ class default_settings:
     debug_f_keys = [False] * 13
     ''' 0: tilde, 1 ~ 12: F1 ~ F12 '''
 
+    walkable_angle = 45
+
 
 @dataclass
 class vectors:
@@ -62,6 +64,8 @@ class vectors:
     lowerright = (down + right).unit
     upperleft = (up + left).unit
     lowerleft = (down + left).unit
+    
+    walkable_limit = right.rotate(default_settings.walkable_angle)
 
 
 class collision(IntFlag):

@@ -223,7 +223,19 @@ class Vector(tuple):
         else:
             return False
             # raise ValueError("Comparison with type {} not supported".format(type(other)))
-        
+    
+    def __lt__(self, other):
+        if _check_valid_iterable(other):
+            return all(a < b for a, b in zip(self, other))
+        else:
+            return False
+    
+    def __le__(self, other):
+        if _check_valid_iterable(other):
+            return all(a <= b for a, b in zip(self, other))
+        else:
+            return False
+    
     def __round__(self, ndigits = None):
         ndigits_list = [ndigits] * self.__len__()
         rounded = tuple(map(round, self, ndigits_list))

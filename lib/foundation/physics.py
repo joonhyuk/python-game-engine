@@ -480,11 +480,6 @@ class PhysicsObject:
         else:
             self.multi_shape = False
             self._shape:pymunk.Shape = shape
-        # if isinstance(shape, pymunk.Shape):
-        #     self.shape: Optional[pymunk.Shape] = shape
-        # else:
-        #     self.shape:list[pymunk.Shape] = shape
-        # self._shape: Union[list[pymunk.Shape], pymunk.Shape] = shape
         ''' main collision '''
         self.hitbox: physics_types.poly = hitbox
         ''' custom hitbox collision if needed '''
@@ -556,6 +551,35 @@ class PhysicsObject:
             if joint.b == target:
                 self.joints.remove(joint)
                 self.space.remove(joint)
+    
+    def check_grounding(self):
+        grounding = {
+            'normal' : vectors.zero,
+            'penetration' : vectors.zero,
+            'impulse' : vectors.zero,
+            'position' : vectors.zero,
+            'body' : None
+        }
+        if self.space.gravity == (0,0): return grounding    ### no gravity, no grounding
+        
+        gravity_direction = Vector(self.space.gravity).unit
+        
+        def f(arbiter: pymunk.Arbiter):
+            
+            norm = Vector(arbiter.contact_point_set.normal)
+            
+            if gravity_direction + vectors.walkable_limit > norm > gravity_direction - vectors.walkable_limit:
+                grounding['normal'] = norm
+                grounding['penetration'] = -arbiter.contact_point_set.points[0].distance
+                grounding['impulse'] = arbiter.total_impulse
+                grounding['position'] = arbiter.contact_point_set.points[0].point_b
+                grounding['body'] = arbiter.shapes[1].body
+        
+        if not self._body:
+            raise PhysicsException('No physics body set.')
+        self._body.each_arbiter(f)
+        
+        return grounding
     
     def destroy(self):
         if self.multi_shape: self.space.remove(*self._shape)
@@ -694,7 +718,6 @@ class PhysicsObject:
         else: self._shape.filter = filter
     
     filter = property(_get_filter, _set_filter)
-        
     
     @property
     def speed(self):
@@ -703,6 +726,10 @@ class PhysicsObject:
     @property
     def space(self):
         return self._body.space
+    
+    @property
+    def is_on_ground(self) -> bool:
+        return self.check_grounding()['body'] is not None
 
 
 class PhysicsException(Exception):

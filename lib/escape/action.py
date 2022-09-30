@@ -8,11 +8,21 @@ class Gaze(Action):
         owner.movement.turn_toward(target_pos - owner.body.position)
 
 
+class Jump(Action):
+    
+    def do(self, owner: Union[Actor, ActionHandler], *args, **kwargs):
+        # self.lock_for(owner, )
+        if owner.body.physics.is_on_ground:
+            gravity = owner.body.physics.body.space.gravity
+            
+            owner.body.apply_impulse(gravity * -0.5)
+
+
 class TestBoost(Action):
     
     def do(self, owner: Union[Actor, ActionHandler], direction:Vector, impulse:float):
         # self.lock_global(owner)
-        self.lock_for(owner, 2, TestShootBall)
+        self.lock_for(owner, 0.5, TestShootBall, TestBoost)
         owner.body.apply_impulse(direction.unit * impulse)
         # schedule_once(self.unlock_global, 1, owner)
         # schedule_once(self.unlock, 2, owner)

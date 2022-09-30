@@ -79,6 +79,7 @@ class EscapeCharacterActionHandler(ActionHandler):
     toggle_ball = ToggleFireAction2()
     test_boost = TestBoost()
     test_projectile = TestShootBall()
+    jump = Jump()
     
     body:DynamicBody = None
     
