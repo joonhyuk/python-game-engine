@@ -249,7 +249,7 @@ def check_point_on_segment(points:list[Vector]) -> list[Vector]:
     # print('input__', points)
     # points = list(set(points))
     points = [Vector(x) for x in points]
-    points = list(dict.fromkeys(points))
+    # points = list(dict.fromkeys(points))      ### 중복 포인트는 제거하지 않는다. 혹시라도 concave에서 겹치는게 있을 수 있음.
 
     # print('phase_1', points)
     num = len(points)
@@ -279,25 +279,52 @@ def _combine_n_reduce(shape_a:list, shape_b:list):
     
     intersec = [p for p in shape_a if p in shape_b]
     inter_num = len(intersec)
+    len_shape_a = len(shape_a)
     
     if inter_num < 2: return None
+    
+    for p in intersec:      ### 접점이 연속되지 않으면 병합 취소
+        idx = shape_a.index(p)
+        if shape_a[idx - 1] in intersec or shape_a[(idx + 1) % len_shape_a] in intersec:
+            continue
+        return None
     
     a_nob_in_intersec = shape_a[0] in intersec and shape_a[-1] in intersec
     '''
     첫 점과 끝 점이 포함되어 있으면 순서가 꼬이기 때문에 미리 알아둔다.
     '''
+    for_debug = check_point_on_segment(shape_b)
 
     if inter_num > 2:       ### reduce intersec to each edge
         if intersec[0] == shape_a[0]:
             temp_inter = intersec[:]
-            n = 0
-            while shape_a[n + 1] in temp_inter:
-                intersec.remove(shape_a[n])
+            n = 1
+            l_e, r_e = True, True
+            idx = 0
+            while intersec and (l_e or r_e):       ### I AM GENIUS
+                if l_e and shape_a[n] not in temp_inter:
+                    l_e = False
+                if r_e and shape_a[-n] not in temp_inter:
+                    r_e = False
+                if l_e and shape_a[n - 1] in intersec:
+                    intersec.remove(shape_a[n - 1])
+                if r_e and shape_a[1 - n] in intersec:
+                    intersec.remove(shape_a[1 - n])
                 n += 1
-            n = -1
-            while shape_a[n - 1] in temp_inter:
-                intersec.remove(shape_a[n])
-                n -= 1
+    
+            if not intersec:
+                # intersec = [temp_inter[0], temp_inter[-1]]
+                return None
+                
+                
+            # n = 0
+            # while shape_a[(n + 1) % len_shape_a] in temp_inter:
+            #     intersec.remove(shape_a[n])
+            #     n += 1
+            # n = -1
+            # while shape_a[n - 1] in temp_inter:
+            #     intersec.remove(shape_a[n])
+            #     n -= 1
     
     if a_nob_in_intersec:
         a_start = shape_a.index(intersec[0])
@@ -309,15 +336,8 @@ def _combine_n_reduce(shape_a:list, shape_b:list):
     b_start = shape_b.index(shape_a[a_end])
     b_end = shape_b.index(shape_a[a_start])
     
-    if a_start < a_end:
-        rest_a = shape_a[a_start:a_end]
-    else:
-        rest_a = shape_a[a_start:] + shape_a[:a_end]
-    
-    if b_start < b_end:
-        rest_b = shape_b[b_start:b_end]
-    else:
-        rest_b = shape_b[b_start:] + shape_b[:b_end]
+    rest_a = rearrange(shape_a, a_start, a_end)
+    rest_b = rearrange(shape_b, b_start, b_end)
     
     return rest_a + rest_b
         
@@ -360,11 +380,11 @@ def _reduce_shapes(shapes:list):
             reduction = _combine_n_reduce(shapes[ia], shapes[ib])
             if reduction != None:
                 # they can so return a new list of hulls and a True
-                newhulls = [reduction]
+                new_hulls = [reduction]
                 for j in range(count):
                     if not (j in (ia, ib)):
-                        newhulls.append(shapes[j])
-                return newhulls, True
+                        new_hulls.append(shapes[j])
+                return new_hulls, True
 
     # nothing was reduced, send the original hull list back with a False
     return shapes, False
@@ -383,7 +403,8 @@ def get_convexes(shapes) -> list:
         shapes
             list of anticlockwise shapes (a list of more than three points) to reduce
     """
-    hulls = shapes[:]
+    # hulls = shapes[:]
+    hulls = triangulate_all(shapes)
     reducing = True
     n = 0
     # keep trying to reduce until it won't reduce any more
@@ -932,8 +953,9 @@ class PhysicsEngine:
                             collision_type = collision.default,
                             shape_edge_raduis = 0.0,
                             ):
+        print('world static collision building')
         walls_points:list = []
-        for sprite in sprite_list:
+        for sprite in tqdm(sprite_list):
             sprite:Sprite
             hit_box = sprite.get_hit_box()
             pos = sprite.position

@@ -199,7 +199,7 @@ class PhysicsTestView(View):
         
     def _setup_walls_onecue(self, layer:ObjectLayer):
         '''
-        example of body spawn setting
+        make walls without actor or physics body.
         
         '''
         sprite_list:list[Sprite] = []
@@ -219,8 +219,7 @@ class PhysicsTestView(View):
             sprite_list.append(sprite)
             
             sprite = Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES)
-            sprite.position = Vector(x + 32, y)
-
+            sprite.position = Vector(x, y)
             sprite_list.append(sprite)
         
         sprite_list.append(StaticBody(

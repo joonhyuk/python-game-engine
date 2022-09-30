@@ -289,5 +289,13 @@ def avg_generator(value, num_limit:int = 10):
         #     _values.pop(0)
         # print(value, _values)
 
+def rearrange(arr:list, start:int, end:int):
+    '''
+    Rearrange iterable with first, end element index
+    '''
+    if start < end:
+        return arr[start:end]
+    return arr[start:] + arr[:end]
+
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
