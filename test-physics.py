@@ -400,6 +400,9 @@ class PhysicsTestView(View):
         
         APP.debug_text.perf_check('update_physics')
         self.physics_main.step(resync_objects=False)
+        if CONFIG.debug_f_keys[3]:
+            grounding = self.player.body.physics.check_grounding()
+            # print(self.player.body.physics.check_grounding())
         APP.debug_text.perf_check('update_physics')
         APP.debug_text.perf_check('resync_objects')
         self.physics_main.resync_objects()

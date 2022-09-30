@@ -41,7 +41,7 @@ class default_settings:
     
     debug_f_keys = [False] * 13
     ''' 0: tilde, 1 ~ 12: F1 ~ F12 '''
-
+    
     walkable_angle = 45
 
 
