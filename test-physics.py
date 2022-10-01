@@ -17,7 +17,7 @@ PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 class PhysicsTestView(View):
     
-    def __init__(self, window: Client = None):
+    def __init__(self, window: Window = None):
         super().__init__(window)
         
         self.physics_main = PhysicsEngine()
@@ -37,7 +37,7 @@ class PhysicsTestView(View):
         self.wall_collision_debug_shape = []
         
         self.camera:CameraHandler = None
-        self.camera_gui = Camera(*CONFIG.screen_size)
+        GAME.viewport = Camera(*CONFIG.screen_size)
         
         self._tmp = None
         
@@ -286,7 +286,7 @@ class PhysicsTestView(View):
     
     # def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
     #     ENV.last_mouse_lb_hold_time = CLOCK.perf
-    #     APP.debug_text.timer_start('mouse_lb_hold')
+    #     ENV.debug_text.timer_start('mouse_lb_hold')
         
     #     self.player.test_directional_attack(distance=PLAYER_ATTACK_RANGE)
 
@@ -294,7 +294,7 @@ class PhysicsTestView(View):
     
     # def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
     #     ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
-    #     APP.debug_text.timer_end('mouse_lb_hold', 3)
+    #     ENV.debug_text.timer_end('mouse_lb_hold', 3)
         
     #     self._tmp = self.player.test_projectile(map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
     #     # delay_run(2, self._tmp.destroy)
@@ -340,7 +340,7 @@ class PhysicsTestView(View):
             add_sprite_timeout(SpriteCircle(5, (255, 64, 0, 128)), query_first.point, self.debris_layer, 3)
     
     def on_draw(self):
-        APP.debug_text.perf_check('on_draw')
+        GAME.debug_text.perf_check('on_draw')
         super().on_draw()
         
         self.camera.use()
@@ -364,8 +364,8 @@ class PhysicsTestView(View):
         debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         
         self.shader.program['activated'] = CONFIG.debug_f_keys[0]
-        self.shader.program['lightPosition'] = self.player.screen_position * ENV.render_scale
-        self.shader.program['lightSize'] = 500 * ENV.render_scale
+        self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
+        self.shader.program['lightSize'] = 500 * GAME.render_scale
         self.shader.program['lightAngle'] = 75.0
         self.shader.program['lightDirectionV'] = self.player.body.forward_vector
         
@@ -382,34 +382,34 @@ class PhysicsTestView(View):
         for shape in self.wall_collision_debug_shape:
             debug_draw_shape(shape, line_color = (255, 0, 0, 255))
         
-        self.camera_gui.use()
+        GAME.viewport.use()
         
-        APP.debug_text.perf_check('on_draw')
+        GAME.debug_text.perf_check('on_draw')
     
     def on_update(self, delta_time: float):
-        APP.debug_text.perf_check('update_game')
+        GAME.debug_text.perf_check('update_game')
         super().on_update(delta_time)
         
         self.player.tick(delta_time)
         self.test_npc.tick(delta_time)
         self.test_rotating_dynamic.tick(delta_time)
         
-        for ai_pawn in ENV.ai_controllers:
+        for ai_pawn in GAME.ai_controllers:
             ai_pawn.target = self.player
             ai_pawn.owner.tick(delta_time)
         
-        APP.debug_text.perf_check('update_physics')
+        GAME.debug_text.perf_check('update_physics')
         self.physics_main.step(resync_objects=False)
         if CONFIG.debug_f_keys[3]:
             grounding = self.player.body.physics.check_grounding()
             # print(self.player.body.physics.check_grounding())
-        APP.debug_text.perf_check('update_physics')
-        APP.debug_text.perf_check('resync_objects')
+        GAME.debug_text.perf_check('update_physics')
+        GAME.debug_text.perf_check('resync_objects')
         self.physics_main.resync_objects()
-        APP.debug_text.perf_check('resync_objects')
+        GAME.debug_text.perf_check('resync_objects')
         # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
-        # APP.debug_text['distance'] = rowund(self.player.position.length, 1)
+        # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
         
         if self.physics_main.non_static_objects:
             total = len(self.physics_main.non_static_objects)
@@ -417,22 +417,22 @@ class PhysicsTestView(View):
             sleeps = 0
             for a in self.physics_main.space.bodies:
                 if a.is_sleeping: sleeps += 1
-            APP.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
+            GAME.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
-        # APP.debug_text.perf_check('update_empty_physics')
+        # ENV.debug_text.perf_check('update_empty_physics')
         # for pe in self.test_physics_layers:
         #     pe.physics_instance.step(delta_time)
-        # APP.debug_text.perf_check('update_empty_physics')
-        APP.debug_text.show_timer('mouse_lb_hold')
-        APP.debug_text.perf_check('update_game')
+        # ENV.debug_text.perf_check('update_empty_physics')
+        GAME.debug_text.show_timer('mouse_lb_hold')
+        GAME.debug_text.perf_check('update_game')
         
         
-        APP.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
+        GAME.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
         
 
 class PlatformerTestView(View):
     
-    def __init__(self, window: Client = None):
+    def __init__(self, window: Window = None):
         super().__init__(window)
         
         self.physics_engine = PhysicsEngine((0, -980), 1.0)
@@ -455,7 +455,7 @@ class PlatformerTestView(View):
 
 class WorldTestView(View):
     
-    def __init__(self, window: Client = None):
+    def __init__(self, window: Window = None):
         super().__init__(window)
         
         self.player:EscapePlayer = None
@@ -481,12 +481,9 @@ class WorldTestView(View):
 
 def main():
     CLOCK.use_engine_tick = True
-    
-    scene = PhysicsTestView()
-    # scene = WorldTestView()
-    scene.setup()
-    APP.show_view(scene)
-    APP.run()
+    GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
+    GAME.set_scene(PhysicsTestView)
+    GAME.run()
 
 if __name__ == '__main__':
     main()

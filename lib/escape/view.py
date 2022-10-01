@@ -45,15 +45,15 @@ class TitleScreen(View):
         self.window.show_view(game)
 
 class EscapeGameView(View):
-    def __init__(self, window: Client = None):
+    def __init__(self, window: Window = None):
         super().__init__(window)
         # self.window.set_mouse_visible(True)
         # Sprites and sprite lists
         self.field_list = ObjectLayer()
-        self.wall_list = ObjectLayer(ENV.physics_engine)
-        self.player_list = ObjectLayer(ENV.physics_engine)
-        self.npc_list = ObjectLayer(ENV.physics_engine)
-        self.bomb_list = ObjectLayer(ENV.physics_engine)
+        self.wall_list = ObjectLayer(GAME.physics_engine)
+        self.player_list = ObjectLayer(GAME.physics_engine)
+        self.npc_list = ObjectLayer(GAME.physics_engine)
+        self.bomb_list = ObjectLayer(GAME.physics_engine)
         self.movable_list = ObjectLayer()
         self.physics_simple = None
         
@@ -105,7 +105,7 @@ class EscapeGameView(View):
         
         # self._setup_pathfinding()
         
-        ENV.physics_engine.add_sprite_list(self.bomb_list, 
+        GAME.physics_engine.add_sprite_list(self.bomb_list, 
                                      friction = 1.0, 
                                      body_type = PhysicsEngine.DYNAMIC, 
                                      collision_type = collision.enemy)
@@ -114,7 +114,7 @@ class EscapeGameView(View):
             print(wall)
             return True
         
-        ENV.physics_engine.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
+        GAME.physics_engine.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
         
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2
@@ -208,7 +208,7 @@ class EscapeGameView(View):
         # print('view_draw')
         self.camera.use()
         
-        APP.debug_text.perf_check('draw_layer')
+        GAME.debug_text.perf_check('draw_layer')
         
         self.channels[0].use()
         self.channels[0].clear()
@@ -228,31 +228,31 @@ class EscapeGameView(View):
         self.window.use()
         
         self.clear()
-        APP.debug_text.perf_check('draw_layer')
+        GAME.debug_text.perf_check('draw_layer')
         
         
-        APP.debug_text.perf_check('draw_shader')
+        GAME.debug_text.perf_check('draw_shader')
         self.shader.program['activated'] = CONFIG.fog_of_war
-        self.shader.program['lightPosition'] = self.player.screen_position * ENV.render_scale
-        self.shader.program['lightSize'] = 500 * ENV.render_scale
+        self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
+        self.shader.program['lightSize'] = 500 * GAME.render_scale
         self.shader.program['lightAngle'] = 75.0
         self.shader.program['lightDirectionV'] = self.player.body.forward_vector
         
         # with self.light_layer:
         self.shader.render()
-        APP.debug_text.perf_check('draw_shader')
+        GAME.debug_text.perf_check('draw_shader')
         
         self.player_list.draw()
         
         # self.light_layer.draw(ambient_color=(128,128,128))
         
         
-        APP.debug_text.perf_check('draw_debug')
+        GAME.debug_text.perf_check('draw_debug')
         if CONFIG.debug_draw:
             self.player_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
             self.npc_list.draw_hit_boxes(color=(255,255,255,255), line_thickness=1)
         # self.wall_list.draw_hit_boxes(color=(128,128,255,128), line_thickness=1)
-            debug_draw_circle(ENV.abs_cursor_position, line_thickness=1, line_color = (0, 255, 0, 128), fill_color= (255, 0, 0, 128))
+            debug_draw_circle(GAME.abs_cursor_position, line_thickness=1, line_color = (0, 255, 0, 128), fill_color= (255, 0, 0, 128))
         # ''' put debug marker to absolute position of mouse cursor '''
         # debug_draw_marker(self.player.rel_position, 16, arcade.color.YELLOW)
             debug_draw_segment(self.player.position, (self.player.position + self.player.body.forward_vector * 500), (512, 0, 0, 128))
@@ -263,7 +263,7 @@ class EscapeGameView(View):
             # self.enemy.controller.move_path = path
         
         # print(ENV.abs_cursor_position)
-        APP.debug_text.perf_check('draw_debug')
+        GAME.debug_text.perf_check('draw_debug')
         
         self.camera_gui.use()
         
@@ -273,18 +273,18 @@ class EscapeGameView(View):
             view = GameOverScreen()
             self.window.show_view(view)
         
-        # APP.debug_text.perf_start('update_physics')
+        # ENV.debug_text.perf_start('update_physics')
         # self.physics_simple.update()
-        # APP.debug_text.perf_end('update_physics')
+        # ENV.debug_text.perf_end('update_physics')
         
         # direction = ENV.direction_input
         # if direction: self.player.movement.turn_toward(ENV.direction_input)
         # self.player.movement.move(ENV.move_input)
-        # APP.debug_text['player_pos'] = self.player.position
+        # ENV.debug_text['player_pos'] = self.player.position
         
         # if self.emitter:
         #     self.emitter.update()
-        APP.debug_text.perf_check('update_player')
+        GAME.debug_text.perf_check('update_player')
         
         self.player.tick(delta_time)
         # self.physics_complex.set_velocity(self.player.body, self.player.velocity * 100)
@@ -295,15 +295,15 @@ class EscapeGameView(View):
         # obj = self.physics_complex.get_physics_object(self.player.body)
         # obj.body._set_angular_velocity(-10)
         # obj.rotation = math.radians(self.player.rotation)
-        APP.debug_text.perf_check('update_player')
+        GAME.debug_text.perf_check('update_player')
         
-        APP.debug_text.perf_check('update_physics')
+        GAME.debug_text.perf_check('update_physics')
         self.physics_complex.step(1/60)
-        APP.debug_text.perf_check('update_physics')
+        GAME.debug_text.perf_check('update_physics')
         # print(self.player.position, self.enemy.position, self.physics_complex.objects[self.enemy.body].position)
     
     def raycast_fire_check(self, start:Vector = Vector(), target:Vector = Vector()):
-        target = ENV.abs_cursor_position
+        target = GAME.abs_cursor_position
         # bullet = arcade.SpriteSolidColor(500, 2, arcade.color.ORANGE)
         # bullet:arcade.PointList = [Vector(-2,0).rotate(self.player.rotation), 
         #                             Vector(2,0).rotate(self.player.rotation), 

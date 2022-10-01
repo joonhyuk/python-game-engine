@@ -149,7 +149,7 @@ class DynamicObject(Actor):
     @property
     def screen_position(self) -> Vector:
         ''' relative position in viewport '''
-        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+        return self.position - GAME.abs_screen_center + CONFIG.screen_size / 2
     
     @property
     def forward_vector(self) -> Vector:

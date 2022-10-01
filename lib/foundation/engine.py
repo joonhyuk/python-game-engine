@@ -120,7 +120,7 @@ class DebugTextLayer(dict, metaclass=SingletonType):
 
 
 @dataclass
-class Environment(metaclass = SingletonType):
+class Client(metaclass = SingletonType):
     ''' I/O for game
     
     - 디스플레이 정보
@@ -137,28 +137,34 @@ class Environment(metaclass = SingletonType):
     
     delta_time:float = 0.0
     physics_engine:PhysicsEngine = None
-    window:Client = None
+    window:Window = None
     
     abs_screen_center:Vector = Vector()
     render_scale:float = 1.0
+    screen_shortside = None
+    screen_longside = None
+
+    debug_text:DebugTextLayer = None
+    viewport:Camera = None
+    player_controller:PawnController = None
+    
     mouse_screen_position:Vector = Vector()
     gamepad:arcade.joysticks.Joystick = None
     input_move:Vector = Vector()
     key = arcade.key
     key_inputs = []
-    debug_text:DebugTextLayer = None
     
     last_abs_pos_mouse_lb_pressed:Vector = vectors.zero
     last_abs_pos_mouse_lb_released:Vector = vectors.zero
     last_mouse_lb_hold_time = 0.0
     
-    window_shortside = None
-    window_longside = None
+    walk_key_engaged = False
     
     ai_controllers = []
     
     def __init__(self) -> None:
         self.set_gamepad()
+        self.physics_engine = PhysicsEngine()
     
     def set_gamepad(self):
         ''' 게임패드 접속/해제 대응 필요 '''
@@ -174,15 +180,61 @@ class Environment(metaclass = SingletonType):
             return gamepad
         return None
     
-    def set_screen(self, window:Client):
-        ''' should be called after resizing, fullscreen, etc. '''
-        self.window = window
-        window_x = window.get_size()[0]
-        window_y = window.get_size()[1]
-        self.window_shortside = min(window_x, window_y)
-        self.window_longside = max(window_x, window_y)
+    def set_window(
+        self,
+        size: Vector = CONFIG.screen_size,
+        title: Optional[str] = 'mash arcade framework',
+        fullscreen: bool = False,
+        resizable: bool = True,
+        update_rate: Optional[float] = 1 / 60,
+        antialiasing: bool = True, 
+        gl_version: Tuple[int, int] = (3, 3), 
+        screen: pyglet.canvas.Screen = None,
+        style: Optional[str] = pyglet.window.Window.WINDOW_STYLE_DEFAULT,
+        visible: bool = True,
+        vsync: bool = False,
+        gc_mode: str = "context_gc",
+        center_window: bool = False,
+        samples: int = 4,
+        enable_polling: bool = True
+        ):
         
-        self.render_scale = window.get_framebuffer_size()[0] / self.window_longside
+        self.window = Window(
+            *size, 
+            title = title,
+            fullscreen = fullscreen,
+            resizable = resizable,
+            update_rate = update_rate,
+            antialiasing = antialiasing,
+            gl_version = gl_version,
+            screen = screen,
+            style = style,
+            visible = visible,
+            vsync = vsync,
+            gc_mode = gc_mode,
+            center_window = center_window,
+            samples = samples,
+            enable_polling = enable_polling,
+            )
+        
+        self.set_screen()
+    
+    def set_screen(self):
+        ''' should be called after resizing, fullscreen, etc. '''
+        size = self.window.get_size()
+        self.screen_shortside = min(*size)
+        self.screen_longside = max(*size)
+        CONFIG.screen_size = Vector(size)
+        self.render_scale = self.window.get_framebuffer_size()[0] / size[0]  
+        self.debug_text = DebugTextLayer()
+          
+    def set_scene(self, view_class:View, *args, **kwargs):
+        scene = view_class(*args, **kwargs)
+        scene.setup()
+        self.window.show_view(scene)
+    
+    def run(self):
+        arcade.run()
     
     def on_key_press(self, key:int, modifiers:int):
         self.key_inputs.append(key)
@@ -213,7 +265,7 @@ class Environment(metaclass = SingletonType):
         if self.gamepad:
             return self.lstick
         else:
-            return self.input_move.clamp_length(1) * (0.5 if self.window.lctrl_applied else 1)
+            return self.input_move.clamp_length(1) * (0.5 if self.walk_key_engaged else 1)
 
     move_input:Vector = property(_get_move_input)
     ''' returns movement direction vector (-1, -1) ~ (1, 1) '''
@@ -418,8 +470,6 @@ class Actor(MObject):
         self.tick_components = []
         return super().destroy()
     
-    # def __del__(self):
-    #     print(self, 'actor removed. ciao!')
 
 class Body(ActorComponent):
     
@@ -871,58 +921,34 @@ class TAction(Callable):
         pass
 
 
-class Client(arcade.Window):
-    
-    ### class variables : are they needed?
-    lshift_applied = False
-    lctrl_applied = False
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        ENV.physics_engine = PhysicsEngine()
-        self.debug_text:DebugTextLayer = None
-        self.player_controller:PawnController = None
-    
-    def set_screen(self):
-        ''' should be called after resizing, fullscreen, etc. '''
-        size = self.get_size()
-        self.screen_shortside = min(*size)
-        self.screen_longside = max(*size)
-        
-        self.render_scale = self.get_framebuffer_size()[0] / size[0]
+class Window(arcade.Window):
     
     def on_show(self):
-        ENV.set_screen(self)
-        self.set_screen()
-        if ENV.gamepad: self.set_mouse_visible(False)
-        self.debug_text = DebugTextLayer()
-        self.debug_text['FPS'] = 0
-        self.debug_text['MEMORY_USAGE'] = ""
-        self.debug_text['UPTIME'] = ""
+        if GAME.gamepad: self.set_mouse_visible(False)
+        GAME.debug_text['FPS'] = 0
+        GAME.debug_text['MEMORY_USAGE'] = ""
+        GAME.debug_text['UPTIME'] = ""
         
     def on_update(self, delta_time: float):
-        ENV.delta_time = delta_time
+        GAME.delta_time = delta_time
         
         scheduler_count = pyglet_clock._schedule_interval_items.__len__()
         
         CLOCK.fps_current = 1 / delta_time
-        self.debug_text['FPS'] = CLOCK.fps_average
-        self.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
-        self.debug_text['UPTIME'] = CLOCK.uptime
-        self.debug_text['SCHEDULER'] = scheduler_count
+        GAME.debug_text['FPS'] = CLOCK.fps_average
+        GAME.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
+        GAME.debug_text['UPTIME'] = CLOCK.uptime
+        GAME.debug_text['SCHEDULER'] = scheduler_count
         # if scheduler_count > 600:
             # print(f'WARNING : scheduler count {scheduler_count}')
         # if CLOCK.fps_average < 30:
         #     print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
-        ENV.physics_engine.step(resync_objects=False)
+        # ENV.physics_engine.step(resync_objects=False)
         
-        ENV.physics_engine.resync_objects()
-        
+        # ENV.physics_engine.resync_objects()
         
     def on_draw(self):
-        # print('window_draw')
-        self.debug_text.draw()
-        pass
+        GAME.debug_text.draw()
     
     def on_key_press(self, key: int, modifiers: int):
         if key == keys.F2: CONFIG.debug_draw = not CONFIG.debug_draw    #LEGACY
@@ -931,48 +957,61 @@ class Client(arcade.Window):
         for i in range(13):
             if key == keys.__dict__[f'F{i+1}']: CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
     
-        if self.player_controller: self.player_controller.on_key_press(key=key, modifiers=modifiers)
+        if GAME.player_controller: GAME.player_controller.on_key_press(key=key, modifiers=modifiers)
         
     def on_key_release(self, key: int, modifiers: int):
-        
         if key == arcade.key.ESCAPE: arcade.exit()  ### for convenience
-        
-        if self.player_controller: self.player_controller.on_key_release(key=key, modifiers=modifiers)
+        if GAME.player_controller: 
+            GAME.player_controller.on_key_release(key=key, modifiers=modifiers)
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        ENV.mouse_screen_position = Vector(x, y)
-        if self.player_controller: self.player_controller.on_mouse_motion(x=x, y=y, dx=dx, dy=dy)
+        GAME.mouse_screen_position = Vector(x, y)
+        if GAME.player_controller:
+            GAME.player_controller.on_mouse_motion(x=x, y=y, dx=dx, dy=dy)
 
-        # if self.player_controller:
-        #     self.player_controller.on_input(f'mouse-to-player : ({x,y})')
-    
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        if self.player_controller: self.player_controller.on_mouse_drag(x=x, y=y, dx=dx, dy=dy, buttons=buttons, modifiers=modifiers)
+        if GAME.player_controller:
+            GAME.player_controller.on_mouse_drag(x=x, y=y, dx=dx, dy=dy, buttons=buttons, modifiers=modifiers)
     
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-        if self.player_controller: self.player_controller.on_mouse_scroll(x=x, y=y, scroll_x=scroll_x, scroll_y=scroll_y)
+        if GAME.player_controller: 
+            GAME.player_controller.on_mouse_scroll(x=x, y=y, scroll_x=scroll_x, scroll_y=scroll_y)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
-            ENV.last_abs_pos_mouse_lb_pressed = ENV.abs_cursor_position
-        if self.player_controller: self.player_controller.on_mouse_press(x=x, y=y, button=button, modifiers=modifiers)
+            GAME.last_abs_pos_mouse_lb_pressed = GAME.abs_cursor_position
+        if GAME.player_controller: 
+            GAME.player_controller.on_mouse_press(x=x, y=y, button=button, modifiers=modifiers)
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
-            ENV.last_abs_pos_mouse_lb_released = ENV.abs_cursor_position
-        if self.player_controller: self.player_controller.on_mouse_release(x=x, y=y, button=button, modifiers=modifiers)
-    
-    def run(self):
-        arcade.run()
-    
+            GAME.last_abs_pos_mouse_lb_released = GAME.abs_cursor_position
+        if GAME.player_controller: 
+            GAME.player_controller.on_mouse_release(x=x, y=y, button=button, modifiers=modifiers)
+
+    def on_resize(self, width: float, height: float):
+        ### broken now. maybe arcade bug
+        super().on_resize(width, height)
+        resizing = Vector(width, height)
+        tmp_scale = width / 1024
+        print(self._ctx.projection_2d)
+        GAME.set_screen()
+        GAME.player_controller.owner.camera.camera.scale = 1 / tmp_scale
+        
+        # CLIENT.viewport.resize(*resizing * tmp_scale)
+        GAME.player_controller.owner.camera.on_resize(resizing / tmp_scale)
+
 
 class View(arcade.View):
     
-    def __init__(self, window: Client = None):
+    def __init__(self, window: Window = None):
         super().__init__(window)
         self.fade_out = 0.0
         self.fade_in = 0.0
         self.fade_alpha = 1
+
+    def setup(self):
+        pass
 
     def draw_tint(self, alpha = 0.0, color = (0, 0, 0)):
         arcade.draw_rectangle_filled(self.window.width / 2, self.window.height / 2,
@@ -997,7 +1036,7 @@ class View(arcade.View):
         pass
     
     def on_update(self, delta_time: float):
-        ENV.delta_time = delta_time
+        GAME.delta_time = delta_time
 
 
 class Sprite(arcade.Sprite):
@@ -1311,7 +1350,5 @@ class SoundBank:
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     SOUND = SoundBank(SFX_PATH)
-    ENV = Environment()
-    APP = Client(*CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
-    
-    # DEBUG = DebugTextLayer()
+    GAME = Client()
+    # APP = Window(*CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)

@@ -12,23 +12,23 @@ class EscapePlayerController(PlayerController):
         - input config support (key, mouse, gamepad)
         - action manager component (movement, character action, system action)
         '''
-        if key in (keys.W, keys.UP): ENV.input_move += vectors.up
-        if key in (keys.S, keys.DOWN): ENV.input_move += vectors.down
-        if key in (keys.A, keys.LEFT): ENV.input_move += vectors.left
-        if key in (keys.D, keys.RIGHT): ENV.input_move += vectors.right
+        if key in (keys.W, keys.UP): GAME.input_move += vectors.up
+        if key in (keys.S, keys.DOWN): GAME.input_move += vectors.down
+        if key in (keys.A, keys.LEFT): GAME.input_move += vectors.left
+        if key in (keys.D, keys.RIGHT): GAME.input_move += vectors.right
         
         if key == keys.LSHIFT: self.movement.speed_level = 2
         # if key == keys.LSHIFT: self.lshift_applied = True
         # if key == keys.LCTRL: self.lctrl_applied = True
 
-        if key == keys.SPACE: self.actions.test_boost(ENV.input_move, 500)
+        if key == keys.SPACE: self.actions.test_boost(GAME.input_move, 500)
         if key == keys.ENTER: self.actions.test_attack(self.body.forward_vector, 200)
         if key == keys.H: self.body.hidden = None
         
         if key == keys.Z:
-            APP.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
+            GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
             self.actions.test_action()
-            APP.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
+            GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
         
         if key == keys.X:
             self.actions.test_action_2()
@@ -37,10 +37,10 @@ class EscapePlayerController(PlayerController):
             self.actions.toggle_ball(self.owner.projectile, 1000)
         
     def on_key_release(self, key: int, modifiers: int):
-        if key in (keys.W, keys.UP): ENV.input_move -= vectors.up
-        if key in (keys.S, keys.DOWN): ENV.input_move -= vectors.down
-        if key in (keys.A, keys.LEFT): ENV.input_move -= vectors.left
-        if key in (keys.D, keys.RIGHT): ENV.input_move -= vectors.right
+        if key in (keys.W, keys.UP): GAME.input_move -= vectors.up
+        if key in (keys.S, keys.DOWN): GAME.input_move -= vectors.down
+        if key in (keys.A, keys.LEFT): GAME.input_move -= vectors.left
+        if key in (keys.D, keys.RIGHT): GAME.input_move -= vectors.right
         if key == keys.LSHIFT: self.movement.speed_level = 1
         # if key == keys.LSHIFT: self.lshift_applied = False
         # if key == keys.LCTRL: self.lctrl_applied = False
@@ -52,18 +52,18 @@ class EscapePlayerController(PlayerController):
         - hold support by default (with Client or PlayerController base classes)
         - operate action via action manager component
         '''
-        ENV.last_mouse_lb_hold_time = CLOCK.perf
-        APP.debug_text.timer_start('mouse_lb_hold')
+        GAME.last_mouse_lb_hold_time = CLOCK.perf
+        GAME.debug_text.timer_start('mouse_lb_hold')
         # self.owner.test_directional_attack(distance=500)
-        # APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
+        # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         # self.actions.test_attack()
-        # APP.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
+        # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        ENV.last_mouse_lb_hold_time = CLOCK.perf - ENV.last_mouse_lb_hold_time
-        APP.debug_text.timer_end('mouse_lb_hold', 3)
+        GAME.last_mouse_lb_hold_time = CLOCK.perf - GAME.last_mouse_lb_hold_time
+        GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self._tmp = self.actions.test_projectile(self.owner.projectile, map_range(ENV.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        self._tmp = self.actions.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
         # self._tmp = self.actions.test_shoot_ball()
 
 

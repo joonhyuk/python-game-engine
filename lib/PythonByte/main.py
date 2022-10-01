@@ -56,7 +56,7 @@ class Actor2D(MObject):
         return super().spawn(lifetime)
     
     def tick(self, delta_time:float = None) -> bool:
-        if delta_time is None: delta_time = ENV.delta_time
+        if delta_time is None: delta_time = GAME.delta_time
         if not super().tick(delta_time): return False
         if self.tick_group:
             for ticker in self.tick_group:
@@ -175,7 +175,7 @@ class Actor2D(MObject):
     @property
     def rel_position(self) -> Vector:
         ''' relative position in viewport '''
-        return self.position - ENV.abs_screen_center + CONFIG.screen_size / 2
+        return self.position - GAME.abs_screen_center + CONFIG.screen_size / 2
     
 
 class Player(Actor2D):

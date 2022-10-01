@@ -344,7 +344,7 @@ class SpriteMovement(ActorComponent):
         self._set_movement(delta_time)
         self._set_heading(delta_time)
         
-        APP.debug_text['player_speed'] = self.speed_avg // delta_time
+        GAME.debug_text['player_speed'] = self.speed_avg // delta_time
         # ENV.debug_text['player_heading'] = self.rotation
     
     def _set_movement(self, delta_time:float):
@@ -474,7 +474,7 @@ class SpriteMovement(ActorComponent):
     @property
     def speed(self) -> float:
         ''' speed per sec '''
-        return self.speed_tick / ENV.delta_time   # need to be removed
+        return self.speed_tick / GAME.delta_time   # need to be removed
     
     @property
     def speed_tick(self) -> float:
@@ -547,7 +547,7 @@ class PhysicsMovement(ActorComponent):
         return True
     
     def _get_force(self, direction:Vector, speed:float):
-        damping = pow(ENV.physics_engine.damping, 1/60)
+        damping = pow(GAME.physics_engine.damping, 1/60)
         return direction * speed * (1 - damping) * 60 * self.owner.body.mass
     
     def move(self, direction:Vector = vectors.zero):
@@ -617,7 +617,7 @@ class AIController(PawnController):
         self.target:Actor = None
     
     def on_register(self):
-        ENV.ai_controllers.append(self)
+        GAME.ai_controllers.append(self)
         return super().on_register()
     
     def set_target(self, target):
@@ -627,16 +627,16 @@ class AIController(PawnController):
 class PlayerController(PawnController):
     
     def on_register(self):
-        APP.player_controller = self
+        GAME.player_controller = self
         return super().on_register()
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         
-        self.movement.turn_to_position(ENV.target_point)
+        self.movement.turn_to_position(GAME.target_point)
         # self.movement.move(ENV.move_input)
-        self.movement.move_direction = ENV.move_input
-        APP.debug_text['player_speed'] = round(self.body.speed, 1)
+        self.movement.move_direction = GAME.move_input
+        GAME.debug_text['player_speed'] = round(self.body.speed, 1)
         
         return True
 
@@ -713,15 +713,17 @@ class CameraHandler(ActorComponent):
         # ENV.debug_text.perf_check('update_camera')
         self.center = self.owner.position
         
-        ENV.abs_screen_center = self.center # not cool...
+        GAME.abs_screen_center = self.center # not cool...
         self._spawned = False
         # print('camera_tick')
         # ENV.debug_text.perf_check('update_camera')
         
-
     def use(self):
         self._spawned = True
         self.camera.use()
+        
+    def on_resize(self, new_size:Vector):
+        self.camera.resize(*new_size)
     
     def _get_center(self) -> Vector:
         return self.camera.position + CONFIG.screen_size / 2
@@ -736,13 +738,13 @@ class CameraHandler(ActorComponent):
         if not self.owner_has_position: return vectors.zero
         if not self.dynamic_boom: return self.owner.forward_vector.unit * self.boom_length
         # distv = ENV.cursor_position - ENV.scren_center
-        distv = self.owner.position - ENV.abs_cursor_position
+        distv = self.owner.position - GAME.abs_cursor_position
         # print(self.owner.rel_position, ENV.cursor_position)
         # return Vector()
         alpha = map_range(self.owner.speed, 500, 1000, 1, 0, clamped = True)
         
-        in_min = ENV.window_shortside // 5
-        in_max = ENV.window_shortside // 1.2
+        in_min = GAME.screen_shortside // 5
+        in_max = GAME.screen_shortside // 1.2
         ''' 최적화 필요 need optimization '''
         return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
