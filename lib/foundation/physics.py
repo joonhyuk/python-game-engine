@@ -8,7 +8,9 @@ import sys, math
 from typing import Callable, Optional, Union
 from enum import Enum
 from weakref import WeakSet
+
 ### for in-house physics engine
+
 import arcade, pymunk, pymunk.util
 from .vector import Vector
 from config.engine import *
@@ -200,7 +202,8 @@ def setup_physics_object(sprite:Sprite,
 
 def convexise_complex(points:list[tuple[float, float]], body, **kwargs) -> list[physics_types.poly]:
     shape:list[physics_types.poly] = []
-    convexes = pymunk.util.convexise(pymunk.util.triangulate(points))
+    convexes = get_convexes(points)
+    # convexes = pymunk.util.convexise(pymunk.util.triangulate(points))
     for convex in convexes:
         shape.append(physics_types.poly(body, convex, **kwargs))
     
@@ -391,6 +394,8 @@ def _reduce_shapes(shapes:list):
 
 def triangulate_all(shapes:list):
     triangles = []
+    if len(shapes[0]) < 3:
+        return pymunk.util.triangulate(shapes)
     for shape in shapes:
         triangles.extend(pymunk.util.triangulate(shape))
     return triangles
