@@ -776,10 +776,9 @@ class Window(arcade.Window):
         tmp_scale = width / 1024
         print(self._ctx.projection_2d)
         GAME.set_screen()
-        GAME.player_controller.owner.camera.camera.scale = 1 / tmp_scale
+        # GAME.player_controller.owner.camera.camera.scale = 1 / tmp_scale
         
-        # CLIENT.viewport.resize(*resizing * tmp_scale)
-        GAME.player_controller.owner.camera.on_resize(resizing / tmp_scale)
+        # GAME.player_controller.owner.camera.on_resize(resizing / tmp_scale)
 
 
 class View(arcade.View):
@@ -1246,7 +1245,7 @@ class Client(metaclass = SingletonType):
         size: Vector = CONFIG.screen_size,
         title: Optional[str] = 'mash arcade framework',
         fullscreen: bool = False,
-        resizable: bool = True,
+        resizable: bool = False,
         update_rate: Optional[float] = 1 / 60,
         antialiasing: bool = True, 
         gl_version: Tuple[int, int] = (3, 3), 
@@ -1388,4 +1387,5 @@ if __name__ != "__main__":
     print("include", __name__, ":", __file__)
     SOUND = SoundBank(SFX_PATH)
     GAME = Client()
+    print('GAME initialized')
     # APP = Window(*CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)

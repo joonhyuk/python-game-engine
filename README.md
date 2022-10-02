@@ -61,11 +61,17 @@ tags: game-dev
 	- 렌더링
 
 
-## Inputs - Controller
+## Inputs - PlayerController
 - 키보드, 마우스, 게임패드 입력 처리 구조 및 PlayerController와의 관계.
-	- PlayerController(이하 pc)는 게임 내에서 플레이어가 생성되지 않으면 만들어지지 않는다. 따라서 아웃게임에서의 입력 처리가 필요.
+	- PlayerController(이하 pc)는 게임 내에서 플레이어가 spawn되지 않으면 만들어지지 않는다. 따라서 아웃게임에서의 입력 처리가 필요.
 		- 아웃게임은 scene 단위이므로 client에서 이벤트를 받고 scene에 직접 명령을 내리거나(move_cursor_down() 처럼) 아니면 각 scene에서 ui용 pc를 갖고 있거나.
 		- 나중에 ui 만들때 고민한다.
+- 조작 수단은 키보드+마우스 또는 게임패드 둘 중 하나만 사용 가능.
+	- 컨트롤러 중간에 연결하거나 빼는 것도 나중에 지원. 일단은 게임 시작 시점의 attached 여부로만.
+	- 조작 매핑은 키마, 게임패드 두 가지로 제공.
+		- `{inputs.evade : (keys.SPACE, joybuttons.A)}`
+		- 액션 펑션 매핑 : `{inputs.evade : actions.evade}`
+
 
 ### 입력 매핑
 - 설정을 만들어 지원하는 것은 나중 일이겠지만 간단하게 구조라도 만들어 두면 좋을 듯.
@@ -98,6 +104,10 @@ lifetime과 각종 active 상태 관리에 주력했음.
 
 현재 겪는 어려움이 무엇인가? 뭐라도 좋아지는게 있어야 바꾸지. 기분만이라도...
 
+### spawn structure
+- (방식 1) 액터 오브젝트 생성, 생성시 스폰 혹은 생성 후 스폰.
+- 스폰은, 등록된 각 컴포넌트를 스폰시키는 역할이 핵심.
+- 가장 중요한 body의 경우, body 생성 시점에 트랜스폼을 함께 설정하거나, 스폰시키면서 설정한다.
 
 ## Actor
 - controller : tick마다 무엇을 할지 결정하고 actor에게 명령을 내린다. 정확히는, actor의 각 컴포넌트들에게 명령을 내리는 것. 여전히 컴포넌트를 actor에 융합(?) 시키는 방식이 땡기는데... 보일러플레이팅 노가다가 너무 심하다.
@@ -146,6 +156,11 @@ attack-melee, attack-projectile, evade, open, ...
 
 
 # Dev Issues
+
+## resizing, fullscreen
+- 셰이더때문에 broken. 나중에 챙기자.
+- 의도하는 바는, fov를 지키면서 리사이징 되는 것.
+
 
 ## 물리 컬리전 조정
 - concave를 triangulate한 다음 convexise해서 적절한 컨벡스의 조합으로 변환하는 기능은 구현. 단일 counter-clockwise concave hull은 잘 된다.

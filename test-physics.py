@@ -24,6 +24,7 @@ class PhysicsTestView(View):
         
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(self.physics_main)
+        
         self.debris_layer = ObjectLayer(self.physics_main)
         self.character_layer = ObjectLayer(self.physics_main)
         self.fx_layer = ObjectLayer(self.physics_main)
@@ -48,6 +49,7 @@ class PhysicsTestView(View):
         start_loading_time = CLOCK.get_perf()
         self.channel_static = None
         self.channel_dynamic = None
+        
         self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
         self.shader = load_shader(get_path('data/shader/rtshadow.glsl'), self.window, self.channels)
         
@@ -97,7 +99,7 @@ class PhysicsTestView(View):
                                )
         # box = DynamicObject(box_body)
         self.test_box = ShrinkingToy(box_body)
-        self.test_box.spawn(self.debris_layer, CONFIG.screen_size / 2)
+        self.test_box.spawn(self.wall_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
 
         dynamic_fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
@@ -105,7 +107,7 @@ class PhysicsTestView(View):
                                      mass=20,
                                      shape_edge_radius=2)
         
-        self.test_rotating_dynamic = DynamicRotatingFan(dynamic_fan_blade_body).spawn(self.debris_layer, Vector(800,200))
+        self.test_rotating_dynamic = DynamicRotatingFan(dynamic_fan_blade_body).spawn(self.wall_layer, Vector(800,200))
         dynamic_fan_blade_body.physics.add_world_pivot(dynamic_fan_blade_body.position)
         dynamic_fan_blade_body.damping = 0.1
         
@@ -114,7 +116,7 @@ class PhysicsTestView(View):
         kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
                                                  physics_shape=physics_types.poly,
                                                  shape_edge_radius=1)
-        self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.debris_layer, Vector(800, 550))
+        self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, Vector(800, 550))
         kinematic_fan_blade_body.physics.angular_velocity = 5
         
         
@@ -361,7 +363,6 @@ class PhysicsTestView(View):
         self.channels[0].use()
         self.channels[0].clear()
         self.wall_layer.draw()
-        self.debris_layer.draw()
         
         self.channels[1].use()
         self.channels[1].clear()
@@ -440,7 +441,11 @@ class PhysicsTestView(View):
         
         
         GAME.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
-        
+    
+    # def on_resize(self, width: int, height: int):
+    #     super().on_resize(width, height)
+    #     scale = width / 1024
+    #     self.field_layer.rescale(scale)
 
 class PlatformerTestView(View):
     
