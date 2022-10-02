@@ -315,6 +315,18 @@ class PhysicsTestView(View):
         self.physics_main.activate_objects()
         return
         
+    def change_gravity_body(self, body:DynamicBody, direction:Vector) -> None:
+        
+        if direction == vectors.zero:
+            body.damping = 0.01
+            body.gravity = vectors.zero
+            return
+        
+        body.gravity = direction * DEFAULT_GRAVITY
+        body.damping = 1.0
+        body.activate_objects()
+        return
+        
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
         ''' 초고속 발사체(광학병기, 레일건) 체크용. 화학병기 발사체는 발사체를 직접 날려서 충돌체크.
         '''
@@ -481,6 +493,7 @@ class WorldTestView(View):
 
 def main():
     CLOCK.use_engine_tick = True
+    
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
     GAME.set_scene(PhysicsTestView)
     GAME.run()
