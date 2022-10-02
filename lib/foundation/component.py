@@ -626,8 +626,14 @@ class AIController(PawnController):
 
 class PlayerController(PawnController):
     
+    def __init__(self):
+        super().__init__()
+        self.local_player_id : int = None
+        ''' for local multiplay '''
+    
     def on_register(self):
-        GAME.player_controller = self
+        # GAME.player_controller = self
+        GAME.add_player(self)
         return super().on_register()
     
     def tick(self, delta_time: float) -> bool:
@@ -647,7 +653,11 @@ class PlayerController(PawnController):
         pass
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        pass
+        GAME.mouse_screen_position = Vector(x, y)
+    
+    
+    # def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+    #     pass
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         pass
@@ -660,6 +670,27 @@ class PlayerController(PawnController):
     
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         pass
+    
+    def on_joybutton_press(self, _joystick, button):
+        print("TEST : Button {} down".format(button))
+        GAME.remove_player(self)
+    
+    @property
+    def lstick(self) -> Vector:
+        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
+        if not GAME.gamepads[self.local_player_id]: return None
+        x = map_range_abs(GAME.gamepads[self.local_player_id].x, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True)
+        y = map_range_abs(GAME.gamepads[self.local_player_id].y, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True) * -1
+        return Vector(x, y)
+    
+    @property
+    def rstick(self) -> Vector:
+        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
+        if not GAME.gamepads[self.local_player_id]: return None
+        x = map_range_abs(GAME.gamepads[self.local_player_id].rx, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True)
+        y = map_range_abs(GAME.gamepads[self.local_player_id].ry, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True) * -1
+        return Vector(x, y)
+    
 
 
 class LifeTime(ActorComponent):

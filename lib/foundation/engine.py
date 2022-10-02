@@ -119,182 +119,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
     ''' topleft position of text box '''
 
 
-@dataclass
-class Client(metaclass = SingletonType):
-    ''' I/O for game
-    
-    - 디스플레이 정보
-        - 렌더링 배율
-    - 현재 뷰포트 중앙의 절대 좌표
-    - 이동 조작, 카메라 조작
-    - 게임패드 입력 raw
-    - 마우스 입력 raw
-        - 뷰포트 내 상대좌표
-        - 월드상의 절대 좌표
-    
-    (나중에 Window 클래스에 통합시켜버릴 수도 있음)
-    '''
-    
-    delta_time:float = 0.0
-    physics_engine:PhysicsEngine = None
-    window:Window = None
-    
-    abs_screen_center:Vector = Vector()
-    render_scale:float = 1.0
-    screen_shortside = None
-    screen_longside = None
-
-    debug_text:DebugTextLayer = None
-    viewport:Camera = None
-    player_controller:PawnController = None
-    
-    mouse_screen_position:Vector = Vector()
-    gamepad:arcade.joysticks.Joystick = None
-    input_move:Vector = Vector()
-    key = arcade.key
-    key_inputs = []
-    
-    last_abs_pos_mouse_lb_pressed:Vector = vectors.zero
-    last_abs_pos_mouse_lb_released:Vector = vectors.zero
-    last_mouse_lb_hold_time = 0.0
-    
-    walk_key_engaged = False
-    
-    ai_controllers = []
-    
-    def __init__(self) -> None:
-        self.set_gamepad()
-        self.physics_engine = PhysicsEngine()
-    
-    def set_gamepad(self):
-        ''' 게임패드 접속/해제 대응 필요 '''
-        self.gamepad = self.get_input_device()
-    
-    def get_input_device(self, id:int = 0):
-        joysticks = arcade.get_joysticks()
-        if joysticks:
-            gamepad = joysticks[id]
-            gamepad.open()
-            gamepad.push_handlers(self)
-            print(f'Gamepad[{id}] attached')
-            return gamepad
-        return None
-    
-    def set_window(
-        self,
-        size: Vector = CONFIG.screen_size,
-        title: Optional[str] = 'mash arcade framework',
-        fullscreen: bool = False,
-        resizable: bool = True,
-        update_rate: Optional[float] = 1 / 60,
-        antialiasing: bool = True, 
-        gl_version: Tuple[int, int] = (3, 3), 
-        screen: pyglet.canvas.Screen = None,
-        style: Optional[str] = pyglet.window.Window.WINDOW_STYLE_DEFAULT,
-        visible: bool = True,
-        vsync: bool = False,
-        gc_mode: str = "context_gc",
-        center_window: bool = False,
-        samples: int = 4,
-        enable_polling: bool = True
-        ):
-        
-        self.window = Window(
-            *size, 
-            title = title,
-            fullscreen = fullscreen,
-            resizable = resizable,
-            update_rate = update_rate,
-            antialiasing = antialiasing,
-            gl_version = gl_version,
-            screen = screen,
-            style = style,
-            visible = visible,
-            vsync = vsync,
-            gc_mode = gc_mode,
-            center_window = center_window,
-            samples = samples,
-            enable_polling = enable_polling,
-            )
-        
-        self.set_screen()
-    
-    def set_screen(self):
-        ''' should be called after resizing, fullscreen, etc. '''
-        size = self.window.get_size()
-        self.screen_shortside = min(*size)
-        self.screen_longside = max(*size)
-        CONFIG.screen_size = Vector(size)
-        self.render_scale = self.window.get_framebuffer_size()[0] / size[0]  
-        self.debug_text = DebugTextLayer()
-          
-    def set_scene(self, view_class:View, *args, **kwargs):
-        scene = view_class(*args, **kwargs)
-        scene.setup()
-        self.window.show_view(scene)
-    
-    def run(self):
-        arcade.run()
-    
-    def on_key_press(self, key:int, modifiers:int):
-        self.key_inputs.append(key)
-        if key == keys.GRAVE: CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
-        for i in range(13):
-            if key == keys.__dict__[f'F{i+1}']: CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
-    
-    def on_key_release(self, key:int, modifiers:int):
-        self.key_inputs.remove(key)
-    
-    @property
-    def lstick(self) -> Vector:
-        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
-        if not self.gamepad: return None
-        x = map_range_abs(self.gamepad.x, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True)
-        y = map_range_abs(self.gamepad.y, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True) * -1
-        return Vector(x, y)
-    
-    @property
-    def rstick(self) -> Vector:
-        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
-        if not self.gamepad: return None
-        x = map_range_abs(self.gamepad.rx, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True)
-        y = map_range_abs(self.gamepad.ry, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True) * -1
-        return Vector(x, y)
-    
-    def _get_move_input(self):
-        if self.gamepad:
-            return self.lstick
-        else:
-            return self.input_move.clamp_length(1) * (0.5 if self.walk_key_engaged else 1)
-
-    move_input:Vector = property(_get_move_input)
-    ''' returns movement direction vector (-1, -1) ~ (1, 1) '''
-    
-    def _get_target_point(self):
-        if self.gamepad:
-            if self.rstick.length > 0.5:
-                return (self.rstick.unit * CONFIG.screen_size.y / 2 + self.abs_screen_center) * self.render_scale
-        else:
-            return self.abs_cursor_position
-    
-    target_point:Vector = property(_get_target_point)
-    ''' returns relative target point '''
-    
-    def _get_cursor_position(self) -> Vector:
-        # if not self.mouse_input: return Vector()
-        return self.mouse_screen_position * self.render_scale
-    
-    cursor_position:Vector = property(_get_cursor_position)
-    ''' returns relative mouse cursor point '''
-    
-    def _get_abs_cursor_position(self) -> Vector:
-        return self.mouse_screen_position + self.abs_screen_center - CONFIG.screen_size / 2
-        # return self.mouse_input + self.window.current_camera.position
-    
-    abs_cursor_position:Vector = property(_get_abs_cursor_position)
-    ''' get absolute position in world, pointed by mouse cursor '''
-
-
 class MObject(object):
     __slots__ = ('id', '_alive', '_lifetime', '_update_tick', '_spawned', 'movable')
     
@@ -930,6 +754,7 @@ class Window(arcade.Window):
         GAME.debug_text['UPTIME'] = ""
         
     def on_update(self, delta_time: float):
+        
         GAME.delta_time = delta_time
         
         scheduler_count = pyglet_clock._schedule_interval_items.__len__()
@@ -939,56 +764,11 @@ class Window(arcade.Window):
         GAME.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
         GAME.debug_text['UPTIME'] = CLOCK.uptime
         GAME.debug_text['SCHEDULER'] = scheduler_count
-        # if scheduler_count > 600:
-            # print(f'WARNING : scheduler count {scheduler_count}')
-        # if CLOCK.fps_average < 30:
-        #     print(f"bad thing happened : FPS[{CLOCK.fps_average}] UPTIME[{ENV.debug_text['UPTIME']}] SCHEDULER[{scheduler_count}] BODY[{ENV.debug_text['BODY ALIVE/REMOVED/TRASHED']}]")
-        # ENV.physics_engine.step(resync_objects=False)
-        
-        # ENV.physics_engine.resync_objects()
         
     def on_draw(self):
+        
         GAME.debug_text.draw()
     
-    def on_key_press(self, key: int, modifiers: int):
-        if key == keys.F2: CONFIG.debug_draw = not CONFIG.debug_draw    #LEGACY
-        
-        if key == keys.GRAVE: CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
-        for i in range(13):
-            if key == keys.__dict__[f'F{i+1}']: CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
-    
-        if GAME.player_controller: GAME.player_controller.on_key_press(key=key, modifiers=modifiers)
-        
-    def on_key_release(self, key: int, modifiers: int):
-        if key == arcade.key.ESCAPE: arcade.exit()  ### for convenience
-        if GAME.player_controller: 
-            GAME.player_controller.on_key_release(key=key, modifiers=modifiers)
-    
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        GAME.mouse_screen_position = Vector(x, y)
-        if GAME.player_controller:
-            GAME.player_controller.on_mouse_motion(x=x, y=y, dx=dx, dy=dy)
-
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        if GAME.player_controller:
-            GAME.player_controller.on_mouse_drag(x=x, y=y, dx=dx, dy=dy, buttons=buttons, modifiers=modifiers)
-    
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-        if GAME.player_controller: 
-            GAME.player_controller.on_mouse_scroll(x=x, y=y, scroll_x=scroll_x, scroll_y=scroll_y)
-
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            GAME.last_abs_pos_mouse_lb_pressed = GAME.abs_cursor_position
-        if GAME.player_controller: 
-            GAME.player_controller.on_mouse_press(x=x, y=y, button=button, modifiers=modifiers)
-    
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            GAME.last_abs_pos_mouse_lb_released = GAME.abs_cursor_position
-        if GAME.player_controller: 
-            GAME.player_controller.on_mouse_release(x=x, y=y, button=button, modifiers=modifiers)
-
     def on_resize(self, width: float, height: float):
         ### broken now. maybe arcade bug
         super().on_resize(width, height)
@@ -1012,7 +792,7 @@ class View(arcade.View):
 
     def setup(self):
         pass
-
+        
     def draw_tint(self, alpha = 0.0, color = (0, 0, 0)):
         arcade.draw_rectangle_filled(self.window.width / 2, self.window.height / 2,
                                      self.window.width, self.window.height,
@@ -1345,6 +1125,263 @@ class SoundBank:
         
     def beep(self):
         self.play('beep', 1.0)
+
+
+@dataclass
+class Client(metaclass = SingletonType):
+    ''' I/O for game
+    
+    - 디스플레이 정보
+        - 렌더링 배율
+    - 현재 뷰포트 중앙의 절대 좌표
+    - 이동 조작, 카메라 조작
+    - 게임패드 입력 raw
+    - 마우스 입력 raw
+        - 뷰포트 내 상대좌표
+        - 월드상의 절대 좌표
+    
+    (나중에 Window 클래스에 통합시켜버릴 수도 있음)
+    '''
+    
+    delta_time:float = 0.0
+    physics_engine:PhysicsEngine = None
+    window:Window = None
+    
+    abs_screen_center:Vector = Vector()
+    render_scale:float = 1.0
+    screen_shortside = None
+    screen_longside = None
+
+    debug_text:DebugTextLayer = None
+    viewport:Camera = None
+    _player_controller:PawnController = None
+    local_players = []
+    
+    gamepads : list[pyglet.input.Joystick] = None
+    keyboard : pyglet.window.key.KeyStateHandler = None            ### for later implementation
+    mouse : pyglet.window.mouse.MouseStateHandler = None     ### for later implementation
+    
+    mouse_screen_position:Vector = Vector()
+    gamepad:arcade.joysticks.Joystick = None
+    input_move:Vector = Vector()
+    
+    key = arcade.key
+    key_inputs = []
+    
+    last_abs_pos_mouse_lb_pressed:Vector = vectors.zero
+    last_abs_pos_mouse_lb_released:Vector = vectors.zero
+    last_mouse_lb_hold_time = 0.0
+    
+    walk_key_engaged = False
+    
+    ai_controllers = []
+    
+    def __init__(
+        self,
+        max_local_players : int = 1,
+        ) -> None:
+        super().__init__()
+        self.max_local_players = max_local_players
+        self.local_players:list[PawnController] = []
+        self.gamepads = self.get_gamepads()
+        self.gamepad = self.get_gamepads(0)
+        self.physics_engine = PhysicsEngine()
+    
+    def add_player(self, player_controller : PawnController):
+        
+        if len(self.local_players) >= self.max_local_players:
+            return self.show_alert('Local player max error')
+        
+        self.local_players.append(player_controller)
+        idx = self.local_players.index(player_controller)
+        player_controller.local_player_id = idx
+        
+        self.window.push_handlers(player_controller)
+        
+        if self.gamepads:       ### need to revise logic for kb + gamepad pair.
+            if len(self.local_players) >= len(self.gamepads):
+                return self.show_alert('No more gamepads')
+            self.gamepads[idx].push_handlers(player_controller)
+
+    def remove_player(self, player_controller : PawnController):
+        
+        idx = player_controller.local_player_id
+        self.local_players.remove(player_controller)
+        self.gamepads[idx].remove_handlers(player_controller)
+        self.window.remove_handlers(player_controller)
+        
+    def show_alert(self, message : str = 'ALERT'):
+        #TODO
+        ''' will be implemented later '''
+        print(message)
+    
+    def _get_player_controller(self):
+        return self.local_players[0]
+    
+    # def _set_player_controller(self, player_controller : PawnController):
+    #     self._player_controller = player_controller
+    #     if self.gamepad:
+    #         self.gamepad.push_handlers(self._player_controller)
+    #     self.window.push_handlers(self._player_controller)
+        
+    player_controller = property(_get_player_controller)
+    
+    def get_gamepads(self, id : int = None):
+        if not self.gamepads:
+            gamepads : list[pyglet.input.Joystick] = pyglet.input.get_joysticks()
+            if not gamepads:
+                return None
+            for i, gamepad in enumerate(gamepads):
+                gamepad.open()
+                # gamepad.push_handlers(self)
+                print(f'Gamepad[{i}] attached')
+            # self.gamepads = gamepads
+            return gamepads
+        if id is None:
+            return self.gamepads
+        return self.gamepads[id]
+        
+    def set_window(
+        self,
+        size: Vector = CONFIG.screen_size,
+        title: Optional[str] = 'mash arcade framework',
+        fullscreen: bool = False,
+        resizable: bool = True,
+        update_rate: Optional[float] = 1 / 60,
+        antialiasing: bool = True, 
+        gl_version: Tuple[int, int] = (3, 3), 
+        screen: pyglet.canvas.Screen = None,
+        style: Optional[str] = pyglet.window.Window.WINDOW_STYLE_DEFAULT,
+        visible: bool = True,
+        vsync: bool = False,
+        gc_mode: str = "context_gc",
+        center_window: bool = False,
+        samples: int = 4,
+        enable_polling: bool = False,
+        ):
+        
+        self.window = Window(
+            *size, 
+            title = title,
+            fullscreen = fullscreen,
+            resizable = resizable,
+            update_rate = update_rate,
+            antialiasing = antialiasing,
+            gl_version = gl_version,
+            screen = screen,
+            style = style,
+            visible = visible,
+            vsync = vsync,
+            gc_mode = gc_mode,
+            center_window = center_window,
+            samples = samples,
+            enable_polling = enable_polling,
+            )
+        
+        self.set_screen()
+        self.window.push_handlers(self)
+    
+    def set_screen(self):
+        ''' should be called after resizing, fullscreen, etc. '''
+        size = self.window.get_size()
+        self.screen_shortside = min(*size)
+        self.screen_longside = max(*size)
+        CONFIG.screen_size = Vector(size)
+        self.render_scale = self.window.get_framebuffer_size()[0] / size[0]  
+        self.debug_text = DebugTextLayer()
+          
+    def set_scene(self, view_class:View, *args, **kwargs):
+        scene = view_class(*args, **kwargs)
+        scene.setup()
+        self.window.show_view(scene)
+    
+    def run(self):
+        arcade.run()
+    
+    def on_key_press(self, key:int, modifiers:int):
+        print(f'on key press from CLIENT {key, modifiers}')
+        self.key_inputs.append(key)
+        if key == keys.GRAVE and not modifiers: 
+            CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
+        for i in range(13):
+            if key == keys.__dict__[f'F{i+1}'] and not modifiers: 
+                CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
+    
+    def on_key_release(self, key:int, modifiers:int):
+        self.key_inputs.remove(key)
+        if key == arcade.key.ESCAPE: arcade.exit()  ### for convenience
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        self.mouse_screen_position = Vector(x, y)
+
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
+        pass
+    
+    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
+        pass
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        print('mouse press from window')
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            GAME.last_abs_pos_mouse_lb_pressed = GAME.abs_cursor_position
+        # if GAME.player_controller: 
+            # GAME.player_controller.on_mouse_press(x=x, y=y, button=button, modifiers=modifiers)
+    
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            GAME.last_abs_pos_mouse_lb_released = GAME.abs_cursor_position
+        # if GAME.player_controller: 
+            # GAME.player_controller.on_mouse_release(x=x, y=y, button=button, modifiers=modifiers)
+
+    
+    @property
+    def lstick(self) -> Vector:
+        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
+        if not self.gamepad: return None
+        x = map_range_abs(self.gamepad.x, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True)
+        y = map_range_abs(self.gamepad.y, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True) * -1
+        return Vector(x, y)
+    
+    @property
+    def rstick(self) -> Vector:
+        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
+        if not self.gamepad: return None
+        x = map_range_abs(self.gamepad.rx, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True)
+        y = map_range_abs(self.gamepad.ry, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True) * -1
+        return Vector(x, y)
+    
+    def _get_move_input(self):
+        if self.gamepad:
+            return self.lstick
+        else:
+            return self.input_move.clamp_length(1) * (0.5 if self.walk_key_engaged else 1)
+
+    move_input:Vector = property(_get_move_input)
+    ''' returns movement direction vector (-1, -1) ~ (1, 1) '''
+    
+    def _get_target_point(self):
+        if self.gamepad:
+            if self.rstick.length > 0.5:
+                return (self.rstick.unit * CONFIG.screen_size.y / 2 + self.abs_screen_center) * self.render_scale
+        else:
+            return self.abs_cursor_position
+    
+    target_point:Vector = property(_get_target_point)
+    ''' returns relative target point '''
+    
+    def _get_cursor_position(self) -> Vector:
+        # if not self.mouse_input: return Vector()
+        return self.mouse_screen_position * self.render_scale
+    
+    cursor_position:Vector = property(_get_cursor_position)
+    ''' returns relative mouse cursor point '''
+    
+    def _get_abs_cursor_position(self) -> Vector:
+        return self.mouse_screen_position + self.abs_screen_center - CONFIG.screen_size / 2
+        # return self.mouse_input + self.window.current_camera.position
+    
+    abs_cursor_position:Vector = property(_get_abs_cursor_position)
+    ''' get absolute position in world, pointed by mouse cursor '''
 
 
 if __name__ != "__main__":
