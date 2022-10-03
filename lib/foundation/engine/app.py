@@ -112,7 +112,6 @@ class Window(arcade.Window):
         super().on_resize(width, height)
         resizing = Vector(width, height)
         tmp_scale = width / 1024
-        print(self._ctx.projection_2d)
         GAME.set_screen()
 
 
@@ -343,7 +342,6 @@ class Client(metaclass = SingletonType):
         pass
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        print('mouse press from window')
         if button == arcade.MOUSE_BUTTON_LEFT:
             self.last_abs_pos_mouse_lb_pressed = self.abs_cursor_position
     
