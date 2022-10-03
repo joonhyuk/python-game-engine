@@ -1,7 +1,7 @@
 import math
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto, IntFlag
-from lib.foundation.base import *
+# from lib.foundation.base import *
 from lib.foundation.vector import Vector
 
 PROJECT_NAME = 'mash python game engine'
