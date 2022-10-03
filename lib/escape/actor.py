@@ -130,6 +130,7 @@ class EscapePlayer(Character):
         # self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
+        self.camera = CameraHandler(body = self.body)
         self.movement = EscapePlayerMovement(body=self.body)
         self.actions = EscapeCharacterActionHandler(body=self.body, movement=self.movement)
         self.controller = EscapePlayerController(movement=self.movement, action=self.actions)

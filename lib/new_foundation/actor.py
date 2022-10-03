@@ -211,7 +211,6 @@ class Character(Pawn):
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)
         
-        self.camera = CameraHandler()
         self.controller:Controller = None
         
     # def tick(self, delta_time: float = None) -> bool:

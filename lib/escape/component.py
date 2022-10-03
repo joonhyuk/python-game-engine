@@ -115,16 +115,17 @@ class EscapeAIMovement(TopDownPhysicsMovement):
 
 class TestAIController(AIController):
     #WIP #test
-    target:DynamicObject = None
+    def setup(self):
+        self.target:GameObject = None
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         if CONFIG.debug_f_keys[7]:
-            self.actions.gaze(target_pos = self.target.position)
+            self.action.gaze(target_pos = self.target.position)
         if CONFIG.debug_f_keys[6]:
-            dist = get_distance(*self.body.position, *self.target.position)
+            dist = get_distance(*self.movement.body.position, *self.target.position)
             if dist > 100:
-                self.movement.move(self.body.forward_vector * dist)
+                self.movement.move(self.movement.body.forward_vector * dist)
 
 
 class TestKinematicObject(StaticObject):

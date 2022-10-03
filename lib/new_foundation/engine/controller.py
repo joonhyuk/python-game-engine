@@ -25,11 +25,12 @@ class Controller(Handler):
     def tick(self, delta_time:float) -> bool:
         if not self.spawnned : return False
         if not self.owner.alive : return False
+        return True
         
     def destroy(self) -> None:
         GAME.controllers.remove(self)
         return super().destroy()
-
+    
 
 class PlayerController(Controller):
     
@@ -42,11 +43,11 @@ class PlayerController(Controller):
         return super().on_spawn()
     
     def tick(self, delta_time: float) -> bool:
+        # print(GAME.target_point)
         if not super().tick(delta_time) : return False
-        
         self.movement.turn_to_position(GAME.target_point)
         self.movement.move_direction = GAME.move_input
-        GAME.debug_text['player_speed'] = round(self.body.speed, 1)
+        GAME.debug_text['player_speed'] = round(self.movement.body.speed, 1)
         
         return True
     
@@ -57,7 +58,7 @@ class PlayerController(Controller):
         pass
     
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        GAME.mouse_screen_position = Vector(x, y)
+        pass
     
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         pass

@@ -163,14 +163,14 @@ class Client(metaclass = SingletonType):
         - 뷰포트 내 상대좌표
         - 월드상의 절대 좌표
     
-    (나중에 Window 클래스에 통합시켜버릴 수도 있음)
+    마우스 커서 한 개, 키보드 한 개, 게임패드 n개
     '''
     
     delta_time:float = 0.0
     physics_engine:PhysicsEngine = None
     window:Window = None
     
-    abs_screen_center:Vector = Vector()
+    abs_screen_center:Vector = vectors.zero
     render_scale:float = 1.0
     screen_shortside = None
     screen_longside = None
@@ -403,6 +403,7 @@ class Client(metaclass = SingletonType):
                 return (self.rstick.unit * CONFIG.screen_size.y / 2 + self.abs_screen_center) * self.render_scale
         else:
             return self.abs_cursor_position
+            # return self.abs_cursor_position
     
     target_point:Vector = property(_get_target_point)
     ''' returns relative target point '''

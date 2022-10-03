@@ -404,15 +404,18 @@ class PhysicsTestView(View):
         super().on_update(delta_time)
         
         self.player.controller.tick(delta_time)
+        self.player.camera.tick(delta_time)
         self.player.movement.tick(delta_time)
         
         self.test_npc.tick(delta_time)
         self.test_rotating_dynamic.tick(delta_time)
         
+        GAME.debug_text.perf_check('AI_TICK')
         for ai_pawn in GAME.ai_controllers:
             ai_pawn.target = self.player
             ai_pawn.tick(delta_time)
             ai_pawn.movement.tick(delta_time)
+        GAME.debug_text.perf_check('AI_TICK')
         
         GAME.debug_text.perf_check('update_physics')
         self.physics_main.step(resync_objects=False)

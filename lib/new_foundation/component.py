@@ -204,10 +204,10 @@ class PhysicsMovement(MovementHandler):
         super().__init__(body = body, **kwargs)
         self.stopped = True
     
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        self._set_movement(delta_time)
-        self._set_heading(delta_time)
+    # def tick(self, delta_time: float) -> bool:
+    #     if not super().tick(delta_time): return False
+    #     self._set_movement(delta_time)
+    #     self._set_heading(delta_time)
     
     def _set_movement(self, delta_time:float):
         if not self.move_direction: return False
@@ -274,7 +274,7 @@ class NewSpriteMovement(MovementHandler):
     pass
 
 
-class TopDownPhysicsMovement(PhysicsMovement):
+class TopDownPhysicsMovement(MovementHandler):
     
     walk = 0
     run = 1
@@ -355,6 +355,7 @@ class CameraHandler(Handler):
     should be possesed by engine camera system'''
     
     def __init__(self,
+                 body : Body,
                  offset:Vector = vectors.zero,
                  interp_speed:float = 0.05,
                  boom_length:float = 200,
@@ -362,32 +363,35 @@ class CameraHandler(Handler):
                  max_lag_distance:float = 300,
                  ) -> None:
         super().__init__()
-        self._spawned = False
+        # self._spawned = False
+        self.body = body
         self.offset:Vector = offset
         self.camera = Camera(*CONFIG.screen_size, max_lag_distance=max_lag_distance)
         self.camera_interp_speed = interp_speed
         self.boom_length = boom_length
         self.dynamic_boom = dynamic_boom
         self.max_lag_distance = max_lag_distance
-        self.owner_has_position = True
+        # self.owner_has_position = True
     
-    def on_spawn(self):
-        if not hasattr(self.owner, 'position'):
-            self.owner_has_position = True
-            self.set_update(False)  # failsafe, will be removed
+    # def on_spawn(self):
+        # if not hasattr(self.owner, 'position'):
+            # self.owner_has_position = False
+            # self.set_update(False)  # failsafe, will be removed
     
     def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
+        # if not super().tick(delta_time): return False
+        if not self.spawnned: return False
         # ENV.debug_text.perf_check('update_camera')
-        self.center = self.owner.position
+        self.center = self.body.position
         
         GAME.abs_screen_center = self.center # not cool...
-        self._spawned = False
+        self.spawnned = False
         # print('camera_tick')
         # ENV.debug_text.perf_check('update_camera')
+        return True
         
     def use(self):
-        self._spawned = True
+        self.spawnned = True
         self.camera.use()
         
     def on_resize(self, new_size:Vector):
@@ -403,10 +407,10 @@ class CameraHandler(Handler):
     center:Vector = property(_get_center, _set_center)
     
     def _get_boom_vector(self) -> Vector:
-        if not self.owner_has_position: return vectors.zero
-        if not self.dynamic_boom: return self.owner.forward_vector.unit * self.boom_length
+        # if not self.owner_has_position: return vectors.zero
+        if not self.dynamic_boom: return self.body.forward_vector.unit * self.boom_length
         # distv = ENV.cursor_position - ENV.scren_center
-        distv = self.owner.position - GAME.abs_cursor_position
+        distv = self.body.position - GAME.abs_cursor_position
         # print(self.owner.rel_position, ENV.cursor_position)
         # return Vector()
         alpha = map_range(self.owner.speed, 500, 1000, 1, 0, clamped = True)
@@ -414,6 +418,6 @@ class CameraHandler(Handler):
         in_min = GAME.screen_shortside // 5
         in_max = GAME.screen_shortside // 1.2
         ''' 최적화 필요 need optimization '''
-        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
+        return self.body.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 
