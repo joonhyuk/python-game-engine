@@ -1,4 +1,7 @@
-from lib.foundation import *
+# from lib.foundation import *
+from lib.new_foundation import *
+# from lib.new_foundation.engine import *
+# from lib.new_foundation.actor import *
 
 
 class Gaze(Action):

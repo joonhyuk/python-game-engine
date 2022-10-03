@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lib.foundation.base import *
+# from ..base import *
 
 
 class GameObject(object):

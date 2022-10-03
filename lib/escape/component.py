@@ -1,4 +1,4 @@
-from lib.foundation.component import *
+from lib.new_foundation.component import *
 from .action import *
 
 from config.game import * 

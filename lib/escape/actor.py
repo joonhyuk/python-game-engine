@@ -1,4 +1,4 @@
-from lib.foundation import *
+from lib.new_foundation import *
 from .component import *
 
 class Ball(Pawn):
@@ -130,9 +130,9 @@ class EscapePlayer(Character):
         # self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
-        self.controller = EscapePlayerController()
-        self.movement = EscapePlayerMovement()
-        self.actions = EscapeCharacterActionHandler()
+        self.movement = EscapePlayerMovement(body=self.body)
+        self.actions = EscapeCharacterActionHandler(body=self.body, movement=self.movement)
+        self.controller = EscapePlayerController(movement=self.movement, action=self.actions)
         self.projectile = ShrinkingBall
         
     

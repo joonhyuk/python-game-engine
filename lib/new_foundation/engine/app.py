@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from lib.foundation import *
+from ..clock import *
+from .primitive import *
+# from lib.foundation import *
 
 
 try:
@@ -196,8 +198,8 @@ class Client(metaclass = SingletonType):
     screen_longside = None
 
     debug_text:DebugTextLayer = None
-    viewport:Camera = None
-    _player_controller:PawnController = None
+    viewport = None
+    _player_controller = None
     local_players = []
     
     gamepads : list[pyglet.input.Joystick] = None
