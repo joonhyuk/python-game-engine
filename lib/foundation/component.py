@@ -1,308 +1,13 @@
 from __future__ import annotations
 
 from config.engine import *
-from lib.foundation.engine import *
+from .engine import *
+
+class StaticBody(PhysicsBody):
+    pass
 
 
-class Attributes(ActorComponent):
-    ''' 각종 스탯 저장 및 관리 '''
-    __slots__ = ['lifetime', 'hp', 'ep']
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        
-
-class SpriteBody(Body):
-    
-    __slots__ = ()
-    def __init__(self, 
-                 sprite:Sprite,
-                 position:Vector = None,
-                 angle:float = None,
-                 spawn_to:ObjectLayer = None,
-                 **kwargs) -> None:
-        super().__init__(sprite, position, angle, **kwargs)
-        
-        if spawn_to is not None:
-            ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
-            self.spawn(spawn_to, position, angle)
-
-
-class StaticBody(Body):
-    
-    __slots__ = ('physics', )
-    def __init__(self, 
-                 sprite:Sprite,
-                 position:Vector = None,
-                 angle:float = None,
-                 spawn_to:ObjectLayer = None,
-                 mass = 0,
-                 moment = None,
-                 body_type = physics_types.static,
-                 collision_type = collision.wall,
-                 elasticity:float = None,
-                 friction:float = 0.7,
-                 shape_edge_radius:float = 0.0,
-                 physics_shape:Union[physics_types.shape, type] = physics_types.poly,
-                 offset_circle:Vector = vectors.zero,
-                 max_speed:float = None,
-                 custom_gravity:Vector = None,
-                 custom_damping:float = None,
-                 **kwargs) -> None:
-
-        self.physics:PhysicsObject = None
-        super().__init__(sprite, position, angle, **kwargs)
-        
-        self.physics = setup_physics_object(sprite=sprite,
-                                            mass=mass,
-                                            moment=moment,
-                                            friction=friction,
-                                            elasticity=elasticity,
-                                            body_type=body_type,
-                                            collision_type=collision_type,
-                                            physics_shape=physics_shape,
-                                            shape_edge_radius=shape_edge_radius,
-                                            offset_circle=offset_circle,
-                                            max_speed=max_speed,
-                                            custom_gravity=custom_gravity,
-                                            custom_damping=custom_damping,
-                                            )
-        
-        self.physics._scale = self.sprite.scale
-        ### not working...
-        # if body_type == physics_types.static:
-        #     self._set_position = self.cannot_move
-        #     self._set_angle = self.cannot_move
-        
-        if spawn_to is not None:
-            ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
-            self.spawn(spawn_to)
-    
-    def get_ref(self):
-        return self.physics or self.sprite
-    
-    def cannot_move(self, *args, **kwargs):
-        raise PhysicsException('CAN NOT OVERRIDING POSITION, ANGLE')
-    
-    def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
-        ### need to sync sprite position when _ref_body is physics
-        if position is not None:
-            self.sprite.position = position
-        if angle is not None:
-            self.sprite.angle = angle
-        
-        return super().spawn(spawn_to, position, angle)
-
-    # def draw(self, *args, **kwargs):
-        # super().draw(*args, **kwargs)
-        # if CONFIG.debug_draw:
-            # self.physics.draw()
-    
-    def _hide(self, switch: bool = None) -> bool:
-        #WIP : should revisit filter control
-        switch = super()._hide(switch)
-        # self.physics.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
-        self.physics.hidden = switch
-        print('hide me!',switch)
-        return switch
-    
-    def _get_scale(self) -> float:
-        return self.physics._scale
-    
-    def _set_scale(self, scale: float):
-        self.physics.scale = scale
-        return super()._set_scale(scale)
-    
-    scale = property(_get_scale, _set_scale)
-    
-    def _set_position(self, position) -> None:
-        if not self.physics: self.sprite.position = position
-        else: raise PhysicsException(f'Can\'t move static object by overriding position = {position}. Set position with StaticActor.')
-        
-    position:Vector = property(Body._get_position, _set_position)  
-    
-    def _set_velocity(self, velocity):
-        if not self.physics: self.sprite.velocity = velocity
-        else: raise PhysicsException(f'Can\'t move static object by overriding velocity = {velocity}. Set position with StaticActor.')
-
-    velocity: Vector = property(Body._get_veloticy, _set_velocity)
-    
-    def _set_angle(self, angle: float):
-        if not self.physics: self.sprite.angle = angle
-        else: raise PhysicsException(f'Can\'t rotate static object by set angle = {angle}. Set angle with StaticActor.')
-
-    angle:float = property(Body._get_angle, _set_angle)
-    
-    # def _get_mass(self):
-    #     return self.physics.mass
-    
-    # def _set_mass(self, mass:float):
-    #     self.physics.mass = mass
-    
-    # mass:float = property(_get_mass, _set_mass)
-    mass:float = PropertyFrom('physics')
-    
-    # def _get_elasticity(self):
-    #     return self.physics.elasticity
-    
-    # def _set_elasticity(self, elasticity:float):
-    #     self.physics.elasticity = elasticity
-    
-    # elasticity:float = property(_get_elasticity, _set_elasticity)
-    elasticity:float = PropertyFrom('physics')
-
-    # def _get_friction(self):
-    #     return self.physics.friction
-    
-    # def _set_friction(self, friction:float):
-    #     self.physics.friction = friction
-    
-    # friction:float = property(_get_friction, _set_friction)
-    friction:float = PropertyFrom('physics')
-    
-    def _get_scale(self) -> float:
-        return super()._get_scale()
-    
-    def _set_scale(self, scale: float):
-        # self.physics.
-        return super()._set_scale(scale)
-    
-    @property
-    def is_movable_physics(self) -> bool:
-        return self.movable and True if self.physics else False
-
-
-class DynamicBody(StaticBody):
-
-    __slots__ = ()
-    def __init__(self, 
-                 sprite: Sprite, 
-                 position: Vector = None, 
-                 angle: float = None,
-                 spawn_to: ObjectLayer = None,
-                 mass:float = 1.0,
-                 moment = None,
-                 body_type:int = physics_types.dynamic,
-                 collision_type:int = collision.default,
-                 elasticity: float = None,
-                 friction: float = 0.5,
-                 shape_edge_radius: float = 0,
-                 physics_shape: Union[physics_types.shape, type] = physics_types.circle,
-                 offset_circle: Vector = vectors.zero,
-                 max_speed:float = None,
-                 custom_gravity:Vector = None,
-                 custom_damping:float = None,
-                 **kwargs) -> None:
-        
-        super().__init__(sprite=sprite,
-                         position=position,
-                         angle=angle,
-                         spawn_to=spawn_to,
-                         mass=mass,
-                         moment=moment,
-                         body_type=body_type,
-                         collision_type=collision_type,
-                         elasticity=elasticity,
-                         friction=friction,
-                         shape_edge_radius=shape_edge_radius,
-                         physics_shape=physics_shape,
-                         offset_circle=offset_circle,
-                         max_speed=max_speed,
-                         custom_gravity=custom_gravity,
-                         custom_damping=custom_damping,
-                         **kwargs)
-        self.movable = True
-
-    def on_register(self):
-        self.owner.movable = True
-        return super().on_register()
-    
-    def apply_force_local(self, force:Vector = vectors.zero):
-        return self.physics._body.apply_force_at_local_point(force)
-    
-    def apply_impulse_local(self, impulse:Vector = vectors.zero):
-        return self.physics._body.apply_impulse_at_local_point(impulse)
-    
-    def apply_force_world(self, force:Vector = vectors.zero):
-        return self.physics._body.apply_force_at_world_point(force, self.position)
-    
-    def apply_impulse_world(self, impulse:Vector = vectors.zero):
-        return self.physics._body.apply_impulse_at_world_point(impulse, self.position)
-    
-    def apply_acceleration_world(self, acceleration:Vector):
-        self.apply_force_world(acceleration * self.mass)
-    
-    def apply_force(self, force:Vector):
-        self.apply_force_world(force)
-    
-    def apply_impulse(self, impulse:Vector):
-        self.apply_impulse_world(impulse)
-    
-    def _set_position(self, position) -> None:
-        if self.physics:
-            self.physics._body.position = position
-        self.sprite.position = position
-    
-    position:Vector = property(Body._get_position, _set_position)    
-    
-    def _set_angle(self, angle:float = 0.0):
-        if self.physics:
-            self.physics._body.angle = math.radians(angle)
-        self.sprite.angle = angle
-
-    angle:float = property(Body._get_angle, _set_angle)
-    
-    velocity: Vector = property(Body._get_veloticy, Body._set_velocity)
-    
-    def _get_gravity(self):
-        return self.sprite.pymunk.gravity
-    
-    def _set_gravity(self, gravity:Vector):
-        self.sprite.pymunk.gravity = gravity
-    
-    gravity:float = property(_get_gravity, _set_gravity)
-    
-    def _get_damping(self):
-        return self.sprite.pymunk.damping or self.physics._body.space.damping
-    
-    def _set_damping(self, damping:float = None):
-        self.sprite.pymunk.damping = damping
-    
-    damping:float = property(_get_damping, _set_damping)
-    
-    def _get_max_speed(self):
-        return self.sprite.pymunk.max_velocity
-    
-    def _set_max_speed(self, max_speed:int):
-        self.sprite.pymunk.max_velocity = max_speed
-    
-    max_speed:int = property(_get_max_speed, _set_max_speed)
-
-
-class KinematicBody(DynamicBody):
-    
-    def __init__(self, 
-                 sprite: Sprite,
-                 position: Vector = None,
-                 angle: float = None, 
-                 spawn_to: ObjectLayer = None,
-                 mass=0, moment=None,
-                 body_type=physics_types.kinematic, 
-                 collision_type=collision.wall,
-                 elasticity: float = None, 
-                 friction: float = 0.7, 
-                 shape_edge_radius: float = 0,
-                 physics_shape: Union[physics_types.shape, type] = physics_types.poly,
-                 offset_circle: Vector = vectors.zero, max_speed: float = None,
-                 custom_gravity: Vector = None,
-                 custom_damping: float = None,
-                 **kwargs) -> None:
-        super().__init__(sprite, position, angle, spawn_to, mass, moment, body_type, collision_type, elasticity, friction, shape_edge_radius, physics_shape, offset_circle, max_speed, custom_gravity, custom_damping, **kwargs)
-        
-    velocity: Vector = property(Body._get_veloticy, Body._set_velocity)
-
-
-class SpriteMovement(ActorComponent):
+class SpriteMovement(MovementHandler):
     '''movement component for character'''
     def __init__(self, 
                  capsule_radius = 16, 
@@ -488,20 +193,21 @@ class SpriteMovement(ActorComponent):
         else: return self._braking
     
 
-class PhysicsMovement(ActorComponent):
+class PhysicsMovement(MovementHandler):
     ''' movement handler for actor based on pymunk physics engine '''
-    def __init__(self, acceleration:float = 10,**kwargs) -> None:
-        super().__init__(**kwargs)
-        self.acceleration = acceleration
-        self.move_direction:Vector = None
-        self.desired_angle:float = 0.0
-        self.rotation_interp_speed = 3.0
+    def __init__(
+        self, 
+        body:PhysicsBody,
+        **kwargs
+        ) -> None:
+        
+        super().__init__(body = body, **kwargs)
         self.stopped = True
     
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        self._set_movement(delta_time)
-        self._set_heading(delta_time)
+    # def tick(self, delta_time: float) -> bool:
+    #     if not super().tick(delta_time): return False
+    #     self._set_movement(delta_time)
+    #     self._set_heading(delta_time)
     
     def _set_movement(self, delta_time:float):
         if not self.move_direction: return False
@@ -575,11 +281,12 @@ class TopDownPhysicsMovement(MovementHandler):
     sprint = 2
     
     def __init__(self, 
+                 body:PhysicsBody,
                  max_speeds:tuple = DEFAULT_PAWN_MOVE_SPEEDS,
                  rotation_interp_speed: float = 3,
                  acceleration: float = 4, 
                  **kwargs) -> None:
-        super().__init__(rotation_interp_speed, **kwargs)
+        super().__init__(body = body, rotation_interp_speed = rotation_interp_speed, **kwargs)
         self.max_speeds = max_speeds
         self.speed_level = self.run
         self.acceleration = acceleration
@@ -610,94 +317,24 @@ class TopDownPhysicsMovement(MovementHandler):
         return self._turn_modifier * self.rotation_interp_speed
 
 
-class AIController(PawnController):
+class AIController(Controller):
     
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def setup(self):
         self.target:Actor = None
     
-    def on_register(self):
+    def on_spawn(self):
         GAME.ai_controllers.append(self)
-        return super().on_register()
+        return super().on_spawn()
     
     def set_target(self, target):
         self.target = target
-    
-
-class PlayerController(PawnController):
-    
-    def __init__(self):
-        super().__init__()
-        self.local_player_id : int = None
-        ''' for local multiplay '''
-    
-    def on_register(self):
-        # GAME.player_controller = self
-        GAME.add_player(self)
-        return super().on_register()
-    
-    def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
-        
-        self.movement.turn_to_position(GAME.target_point)
-        # self.movement.move(ENV.move_input)
-        self.movement.move_direction = GAME.move_input
-        GAME.debug_text['player_speed'] = round(self.body.speed, 1)
-        
-        return True
-
-    def on_key_press(self, key: int, modifiers: int):
-        pass
-    
-    def on_key_release(self, key: int, modifiers: int):
-        pass
-    
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        GAME.mouse_screen_position = Vector(x, y)
-    
-    
-    # def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-    #     pass
-    
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        pass
-    
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        pass
-    
-    def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
-        pass
-    
-    def on_joybutton_press(self, _joystick, button):
-        print("TEST : Button {} down".format(button))
-        GAME.remove_player(self)
-    
-    @property
-    def lstick(self) -> Vector:
-        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
-        if not GAME.gamepads[self.local_player_id]: return None
-        x = map_range_abs(GAME.gamepads[self.local_player_id].x, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True)
-        y = map_range_abs(GAME.gamepads[self.local_player_id].y, CONFIG.gamepad_deadzone_lstick, 1, 0, 1, True) * -1
-        return Vector(x, y)
-    
-    @property
-    def rstick(self) -> Vector:
-        ''' returns raw info of left stick (-1, -1) ~ (1, 1) '''
-        if not GAME.gamepads[self.local_player_id]: return None
-        x = map_range_abs(GAME.gamepads[self.local_player_id].rx, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True)
-        y = map_range_abs(GAME.gamepads[self.local_player_id].ry, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True) * -1
-        return Vector(x, y)
-    
 
 
-class LifeTime(ActorComponent):
+class LifeTime(Handler):
     pass
 
 
-class InteractionHandler(ActorComponent):
+class InteractionHandler(Handler):
     '''
     handling interaction for actor
     그냥 언리얼처럼 컬리전에서 하는게 낫지 않을지?
@@ -713,11 +350,12 @@ class InteractionHandler(ActorComponent):
         self.others.remove(other)
     
 
-class CameraHandler(ActorComponent):
+class CameraHandler(Handler):
     '''handling actor camera
     should be possesed by engine camera system'''
     
     def __init__(self,
+                 body : Body,
                  offset:Vector = vectors.zero,
                  interp_speed:float = 0.05,
                  boom_length:float = 200,
@@ -725,32 +363,35 @@ class CameraHandler(ActorComponent):
                  max_lag_distance:float = 300,
                  ) -> None:
         super().__init__()
-        self._spawned = False
+        # self._spawned = False
+        self.body = body
         self.offset:Vector = offset
         self.camera = Camera(*CONFIG.screen_size, max_lag_distance=max_lag_distance)
         self.camera_interp_speed = interp_speed
         self.boom_length = boom_length
         self.dynamic_boom = dynamic_boom
         self.max_lag_distance = max_lag_distance
-        self.owner_has_position = True
+        # self.owner_has_position = True
     
-    def on_spawn(self):
-        if not hasattr(self.owner, 'position'):
-            self.owner_has_position = True
-            self.set_update(False)  # failsafe, will be removed
+    # def on_spawn(self):
+        # if not hasattr(self.owner, 'position'):
+            # self.owner_has_position = False
+            # self.set_update(False)  # failsafe, will be removed
     
     def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
+        # if not super().tick(delta_time): return False
+        if not self.spawnned: return False
         # ENV.debug_text.perf_check('update_camera')
-        self.center = self.owner.position
+        self.center = self.body.position
         
         GAME.abs_screen_center = self.center # not cool...
-        self._spawned = False
+        self.spawnned = False
         # print('camera_tick')
         # ENV.debug_text.perf_check('update_camera')
+        return True
         
     def use(self):
-        self._spawned = True
+        self.spawnned = True
         self.camera.use()
         
     def on_resize(self, new_size:Vector):
@@ -766,10 +407,10 @@ class CameraHandler(ActorComponent):
     center:Vector = property(_get_center, _set_center)
     
     def _get_boom_vector(self) -> Vector:
-        if not self.owner_has_position: return vectors.zero
-        if not self.dynamic_boom: return self.owner.forward_vector.unit * self.boom_length
+        # if not self.owner_has_position: return vectors.zero
+        if not self.dynamic_boom: return self.body.forward_vector.unit * self.boom_length
         # distv = ENV.cursor_position - ENV.scren_center
-        distv = self.owner.position - GAME.abs_cursor_position
+        distv = self.body.position - GAME.abs_cursor_position
         # print(self.owner.rel_position, ENV.cursor_position)
         # return Vector()
         alpha = map_range(self.owner.speed, 500, 1000, 1, 0, clamped = True)
@@ -777,6 +418,6 @@ class CameraHandler(ActorComponent):
         in_min = GAME.screen_shortside // 5
         in_max = GAME.screen_shortside // 1.2
         ''' 최적화 필요 need optimization '''
-        return self.owner.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
+        return self.body.forward_vector.unit * self.boom_length * map_range(distv.length, in_min, in_max, 0, 1, clamped=True) * alpha
 
 

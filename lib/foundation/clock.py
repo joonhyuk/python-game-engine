@@ -6,7 +6,7 @@ maybe it's reinventing the wheel, the goal was reducing dependance on any framew
 """
 import threading
 
-from lib.foundation.base import avg_generator
+from .base import avg_generator
 
 class Clock:
     """SUPER PRECISE timer"""

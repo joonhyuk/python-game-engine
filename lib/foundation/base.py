@@ -11,7 +11,7 @@ from tqdm import tqdm
 from easing_functions import *
 
 # from config import *
-from lib.foundation.vector import Vector
+from .vector import Vector
 
 cubic_easeinout = CubicEaseInOut()
 

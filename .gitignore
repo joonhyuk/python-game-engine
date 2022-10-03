@@ -10,3 +10,9 @@ dist
 *.piko-png
 
 *.tiled-session
+
+lib/foundation-backup/
+
+lib/new_foundation/
+
+lib/foundation/new_engine/

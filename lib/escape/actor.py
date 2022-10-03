@@ -1,4 +1,4 @@
-from lib.new_foundation import *
+from lib.foundation import *
 from .component import *
 
 class Ball(Pawn):

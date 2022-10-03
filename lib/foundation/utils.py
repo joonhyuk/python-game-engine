@@ -8,7 +8,7 @@ from typing import Tuple
 
 import arcade
 from arcade.experimental import Shadertoy, lights
-from lib.foundation.base import *
+from .base import *
 from config.engine import *
 from pyglet.clock import schedule, schedule_once, schedule_interval, schedule_interval_soft, unschedule
 from pyglet.clock import _default as pyglet_clock
