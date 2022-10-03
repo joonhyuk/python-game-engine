@@ -11,7 +11,6 @@ import PIL.ImageOps
 import PIL.ImageDraw
 
 from dataclasses import dataclass
-from typing import Union
 from abc import *
 from functools import partial, partialmethod, update_wrapper
 

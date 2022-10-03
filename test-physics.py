@@ -224,9 +224,9 @@ class PhysicsTestView(View):
             sprite.position = Vector(x, y)
             sprite_list.append(sprite)
         
-        sprite_list.append(StaticBody(
-            Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES), Vector(64,256)
-        ).sprite)
+        sprite_list.append(
+            Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES, position = Vector(64,256))
+        )
         
         layer.extend(sprite_list)
         
@@ -403,13 +403,19 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('update_game')
         super().on_update(delta_time)
         
-        self.player.tick(delta_time)
+        self.player.controller.tick(delta_time)
+        self.player.camera.tick(delta_time)
+        self.player.movement.tick(delta_time)
+        
         self.test_npc.tick(delta_time)
         self.test_rotating_dynamic.tick(delta_time)
         
+        GAME.debug_text.perf_check('AI_TICK')
         for ai_pawn in GAME.ai_controllers:
             ai_pawn.target = self.player
-            ai_pawn.owner.tick(delta_time)
+            ai_pawn.tick(delta_time)
+            ai_pawn.movement.tick(delta_time)
+        GAME.debug_text.perf_check('AI_TICK')
         
         GAME.debug_text.perf_check('update_physics')
         self.physics_main.step(resync_objects=False)

@@ -1,4 +1,4 @@
-from lib.foundation.component import *
+from lib.new_foundation.component import *
 from .action import *
 
 from config.game import * 
@@ -21,20 +21,20 @@ class EscapePlayerController(PlayerController):
         # if key == keys.LSHIFT: self.lshift_applied = True
         # if key == keys.LCTRL: self.lctrl_applied = True
 
-        if key == keys.SPACE: self.actions.test_boost(GAME.input_move, 500)
-        if key == keys.ENTER: self.actions.test_attack(self.body.forward_vector, 200)
+        if key == keys.SPACE: self.action.test_boost(GAME.input_move, 500)
+        if key == keys.ENTER: self.action.test_attack(self.body.forward_vector, 200)
         if key == keys.H: self.body.hidden = None
         
         if key == keys.Z:
             GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
-            self.actions.test_action()
+            self.action.test_action()
             GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
         
         if key == keys.X:
-            self.actions.test_action_2()
+            self.action.test_action_2()
             
         if key == keys.B:
-            self.actions.toggle_ball(self.owner.projectile, 1000)
+            self.action.toggle_ball(self.owner.projectile, 1000)
         
     def on_key_release(self, key: int, modifiers: int):
         if key in (keys.W, keys.UP): GAME.input_move -= vectors.up
@@ -63,7 +63,7 @@ class EscapePlayerController(PlayerController):
         GAME.last_mouse_lb_hold_time = CLOCK.perf - GAME.last_mouse_lb_hold_time
         GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self._tmp = self.actions.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        self._tmp = self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
         # self._tmp = self.actions.test_shoot_ball()
 
 
@@ -115,16 +115,17 @@ class EscapeAIMovement(TopDownPhysicsMovement):
 
 class TestAIController(AIController):
     #WIP #test
-    target:DynamicObject = None
+    def setup(self):
+        self.target:GameObject = None
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
         if CONFIG.debug_f_keys[7]:
-            self.actions.gaze(target_pos = self.target.position)
+            self.action.gaze(target_pos = self.target.position)
         if CONFIG.debug_f_keys[6]:
-            dist = get_distance(*self.body.position, *self.target.position)
+            dist = get_distance(*self.movement.body.position, *self.target.position)
             if dist > 100:
-                self.movement.move(self.body.forward_vector * dist)
+                self.movement.move(self.movement.body.forward_vector * dist)
 
 
 class TestKinematicObject(StaticObject):
