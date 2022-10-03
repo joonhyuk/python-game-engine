@@ -74,7 +74,7 @@ class PlayerController(Controller):
     
     def on_joybutton_press(self, _joystick, button):
         print("TEST : Button {} down".format(button))
-        GAME.remove_player(self)
+        # GAME.remove_player(self)
     
     def on_joybutton_release(self, _joystick, button):
         pass

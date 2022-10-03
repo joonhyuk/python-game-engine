@@ -104,6 +104,9 @@ class DebugTextLayer(dict, metaclass=SingletonType):
 
 class Window(arcade.Window):
     
+    def on_joybutton_press(self, _joystick, button):
+        print("TEST(WINDOW) : Button {} down".format(button))
+    
     def on_resize(self, width: float, height: float):
         ### broken now. maybe arcade bug
         super().on_resize(width, height)
@@ -224,7 +227,7 @@ class Client(metaclass = SingletonType):
         self.window.push_handlers(player_controller)
         
         if self.gamepads:       ### need to revise logic for kb + gamepad pair.
-            if len(self.local_players) >= len(self.gamepads):
+            if len(self.local_players) > len(self.gamepads):
                 return self.show_alert('No more gamepads')
             self.gamepads[idx].push_handlers(player_controller)
 
@@ -370,6 +373,8 @@ class Client(metaclass = SingletonType):
         
         self.debug_text.draw()
     
+    def on_joybutton_press(self, _joystick, button):
+        print("TEST(CLIENT) : Button {} down".format(button))
         
     
     @property
