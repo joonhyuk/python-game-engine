@@ -72,7 +72,7 @@ class GameObject(object):
         members = self.get_members()
         if members:
             for member in members:
-                member.destroy()
+                if member.owner == self : member.destroy()      ### for handlers
         self.spawnned = False
         self._alive = False
     

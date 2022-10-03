@@ -21,20 +21,20 @@ class EscapePlayerController(PlayerController):
         # if key == keys.LSHIFT: self.lshift_applied = True
         # if key == keys.LCTRL: self.lctrl_applied = True
 
-        if key == keys.SPACE: self.actions.test_boost(GAME.input_move, 500)
-        if key == keys.ENTER: self.actions.test_attack(self.body.forward_vector, 200)
+        if key == keys.SPACE: self.action.test_boost(GAME.input_move, 500)
+        if key == keys.ENTER: self.action.test_attack(self.body.forward_vector, 200)
         if key == keys.H: self.body.hidden = None
         
         if key == keys.Z:
             GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
-            self.actions.test_action()
+            self.action.test_action()
             GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
         
         if key == keys.X:
-            self.actions.test_action_2()
+            self.action.test_action_2()
             
         if key == keys.B:
-            self.actions.toggle_ball(self.owner.projectile, 1000)
+            self.action.toggle_ball(self.owner.projectile, 1000)
         
     def on_key_release(self, key: int, modifiers: int):
         if key in (keys.W, keys.UP): GAME.input_move -= vectors.up
@@ -63,7 +63,7 @@ class EscapePlayerController(PlayerController):
         GAME.last_mouse_lb_hold_time = CLOCK.perf - GAME.last_mouse_lb_hold_time
         GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self._tmp = self.actions.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        self._tmp = self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
         # self._tmp = self.actions.test_shoot_ball()
 
 

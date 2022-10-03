@@ -30,11 +30,13 @@ class Sprite(GameObject, arcade.Sprite):
                  hit_box_algorithm: str = "Detailed", hit_box_detail: float = 4.5, 
                  texture: arcade.Texture = None, 
                  angle: float = 0,
+                 position: Vector = None
                  ):
         GameObject.__init__(self)
         arcade.Sprite.__init__(self, filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self._initial_scale = scale
         self._relative_scale = 1.0
+        if position is not None: self.position = position
 
     def scheduled_remove_from_sprite_lists(self, dt):
         # print('REMOVING!')
@@ -130,7 +132,7 @@ class Camera(arcade.Camera):
 class Layer(arcade.SpriteList):
     
     def add(self, obj):
-        pass
+        raise Exception('this object should not be called')
     
     def remove(self, obj):
-        pass
+        raise Exception('this object should not be called')

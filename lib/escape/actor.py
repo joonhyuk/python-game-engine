@@ -55,8 +55,8 @@ class ShrinkingBall(BallProjectile):
         self.shrinking_delay = shrinking_delay
         self.alpha = 1.0
     
-    def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
-        super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
+    def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None) -> None:
+        super().spawn(spawn_to, position, angle, initial_impulse)
         delay_run(self.shrinking_start, self.start_shrink)
         
     def start_shrink(self):
@@ -80,10 +80,10 @@ class ShrinkingToy(DynamicObject):
         super().__init__(body, **kwargs)
         self.shrinking_delay = 3
         
-    def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None, lifetime: float = None) -> None:
+    def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None) -> None:
         # delay_run(self.shrinking_start, self.start_shrink)
         schedule_once(self.start_shrink, self.shrinking_delay)
-        return super().spawn(spawn_to, position, angle, initial_impulse, lifetime)
+        return super().spawn(spawn_to, position, angle, initial_impulse)
     
     scaling = TestScaleToggle()
     
@@ -97,7 +97,7 @@ class RollingRock(ShrinkingToy):
     #     super().__init__(*args, **kwargs)
         
     def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
+        # if not super().tick(delta_time): return False
         if CONFIG.debug_f_keys[5]: self.body.physics._body.angular_velocity = 7
         return True
 
@@ -111,7 +111,7 @@ class KinematicRotatingFan(KinematicObject):
 class DynamicRotatingFan(DynamicObject):
     
     def tick(self, delta_time: float) -> bool:
-        if not super().tick(delta_time): return False
+        # if not super().tick(delta_time): return False
         if CONFIG.debug_f_keys[5]: self.body.physics._body.apply_force_at_local_point((0, 10000), (self.body.size.x, 0))
         return True
 
@@ -190,9 +190,9 @@ class SimpleAIObject(DynamicObject):
     
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
-        self.controller = TestAIController()
-        self.movement = EscapeAIMovement()
-        self.actions = TestAIActionComponent()
+        self.movement = EscapeAIMovement(body=self.body)
+        self.actions = TestAIActionComponent(body=self.body, movement=self.movement)
+        self.controller = TestAIController(movement=self.movement, action=self.actions)
     
     # def get_components(self, *types: ActorComponent):
         # return super().get_components(*types)

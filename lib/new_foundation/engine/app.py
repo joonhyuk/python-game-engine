@@ -104,28 +104,6 @@ class DebugTextLayer(dict, metaclass=SingletonType):
 
 class Window(arcade.Window):
     
-    def on_show(self):
-        if GAME.gamepad: self.set_mouse_visible(False)
-        GAME.debug_text['FPS'] = 0
-        GAME.debug_text['MEMORY_USAGE'] = ""
-        GAME.debug_text['UPTIME'] = ""
-        
-    def on_update(self, delta_time: float):
-        
-        GAME.delta_time = delta_time
-        
-        scheduler_count = pyglet_clock._schedule_interval_items.__len__()
-        
-        CLOCK.fps_current = 1 / delta_time
-        GAME.debug_text['FPS'] = CLOCK.fps_average
-        GAME.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
-        GAME.debug_text['UPTIME'] = CLOCK.uptime
-        GAME.debug_text['SCHEDULER'] = scheduler_count
-        
-    def on_draw(self):
-        
-        GAME.debug_text.draw()
-    
     def on_resize(self, width: float, height: float):
         ### broken now. maybe arcade bug
         super().on_resize(width, height)
@@ -265,12 +243,6 @@ class Client(metaclass = SingletonType):
     def _get_player_controller(self):
         return self.local_players[0]
     
-    # def _set_player_controller(self, player_controller : PawnController):
-    #     self._player_controller = player_controller
-    #     if self.gamepad:
-    #         self.gamepad.push_handlers(self._player_controller)
-    #     self.window.push_handlers(self._player_controller)
-        
     player_controller = property(_get_player_controller)
     
     def get_gamepads(self, id : int = None):
@@ -346,14 +318,14 @@ class Client(metaclass = SingletonType):
         arcade.run()
     
     def on_key_press(self, key:int, modifiers:int):
-        print(f'on key press from CLIENT {key, modifiers}')
+        # print(f'on key press from CLIENT {key, modifiers}')
         self.key_inputs.append(key)
-        if key == keys.GRAVE and not modifiers: 
+        if key == keys.GRAVE: 
             CONFIG.debug_f_keys[0] = not CONFIG.debug_f_keys[0]
         for i in range(13):
-            if key == keys.__dict__[f'F{i+1}'] and not modifiers: 
+            if key == keys.__dict__[f'F{i+1}']: 
                 CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
-    
+        
     def on_key_release(self, key:int, modifiers:int):
         self.key_inputs.remove(key)
         if key == arcade.key.ESCAPE: arcade.exit()  ### for convenience
@@ -370,16 +342,35 @@ class Client(metaclass = SingletonType):
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         print('mouse press from window')
         if button == arcade.MOUSE_BUTTON_LEFT:
-            GAME.last_abs_pos_mouse_lb_pressed = GAME.abs_cursor_position
-        # if GAME.player_controller: 
-            # GAME.player_controller.on_mouse_press(x=x, y=y, button=button, modifiers=modifiers)
+            self.last_abs_pos_mouse_lb_pressed = self.abs_cursor_position
     
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if button == arcade.MOUSE_BUTTON_LEFT:
-            GAME.last_abs_pos_mouse_lb_released = GAME.abs_cursor_position
-        # if GAME.player_controller: 
-            # GAME.player_controller.on_mouse_release(x=x, y=y, button=button, modifiers=modifiers)
+            self.last_abs_pos_mouse_lb_released = self.abs_cursor_position
 
+    def on_show(self):
+        if self.gamepad: self.window.set_mouse_visible(False)
+        self.debug_text['FPS'] = 0
+        self.debug_text['MEMORY_USAGE'] = ""
+        self.debug_text['UPTIME'] = ""
+        
+    def on_update(self, delta_time: float):
+        
+        self.delta_time = delta_time
+        
+        scheduler_count = pyglet_clock._schedule_interval_items.__len__()
+        
+        CLOCK.fps_current = 1 / delta_time
+        self.debug_text['FPS'] = CLOCK.fps_average
+        self.debug_text['MEMORY_USAGE'] = str(round(PROCESS.memory_info()[0]/(1024*1024),2))+" MB"
+        self.debug_text['UPTIME'] = CLOCK.uptime
+        self.debug_text['SCHEDULER'] = scheduler_count
+        
+    def on_draw(self):
+        
+        self.debug_text.draw()
+    
+        
     
     @property
     def lstick(self) -> Vector:

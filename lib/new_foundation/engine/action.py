@@ -17,7 +17,7 @@ class ActionHandler(Handler):
     
     '''
     
-    __slots__ = ['_locked', 'locked_actions']
+    # __slots__ = ['_locked', 'locked_actions']
     
     def __init__(self, body:Body, movement:MovementHandler) -> None:
         super().__init__()

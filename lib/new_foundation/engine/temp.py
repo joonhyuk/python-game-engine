@@ -2,7 +2,7 @@ from .primitive import *
 from .body import *
 
 
-class ObjectLayer(Layer):
+class ObjectLayer(arcade.SpriteList):
     """ extended spritelist with actor, body """
     def __init__(self, 
                  physics_instance:PhysicsEngine = None,

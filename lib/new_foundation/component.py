@@ -4,147 +4,7 @@ from config.engine import *
 from .engine import *
 
 class StaticBody(PhysicsBody):
-    
-    __slots__ = ('physics', )
-    def __init__(self, 
-                 sprite:Sprite,
-                 position:Vector = None,
-                 angle:float = None,
-                 spawn_to:ObjectLayer = None,
-                 mass = 0,
-                 moment = None,
-                 body_type = physics_types.static,
-                 collision_type = collision.wall,
-                 elasticity:float = None,
-                 friction:float = 0.7,
-                 shape_edge_radius:float = 0.0,
-                 physics_shape:Union[physics_types.shape, type] = physics_types.poly,
-                 offset_circle:Vector = vectors.zero,
-                 max_speed:float = None,
-                 custom_gravity:Vector = None,
-                 custom_damping:float = None,
-                 **kwargs) -> None:
-
-        self.physics:PhysicsObject = None
-        super().__init__(sprite, position, angle, **kwargs)
-        
-        self.physics = setup_physics_object(sprite=sprite,
-                                            mass=mass,
-                                            moment=moment,
-                                            friction=friction,
-                                            elasticity=elasticity,
-                                            body_type=body_type,
-                                            collision_type=collision_type,
-                                            physics_shape=physics_shape,
-                                            shape_edge_radius=shape_edge_radius,
-                                            offset_circle=offset_circle,
-                                            max_speed=max_speed,
-                                            custom_gravity=custom_gravity,
-                                            custom_damping=custom_damping,
-                                            )
-        
-        self.physics._scale = self.sprite.scale
-        ### not working...
-        # if body_type == physics_types.static:
-        #     self._set_position = self.cannot_move
-        #     self._set_angle = self.cannot_move
-        
-        if spawn_to is not None:
-            ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
-            self.spawn(spawn_to)
-    
-    def get_ref(self):
-        return self.physics or self.sprite
-    
-    def cannot_move(self, *args, **kwargs):
-        raise PhysicsException('CAN NOT OVERRIDING POSITION, ANGLE')
-    
-    def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
-        ### need to sync sprite position when _ref_body is physics
-        if position is not None:
-            self.sprite.position = position
-        if angle is not None:
-            self.sprite.angle = angle
-        
-        return super().spawn(spawn_to, position, angle)
-
-    # def draw(self, *args, **kwargs):
-        # super().draw(*args, **kwargs)
-        # if CONFIG.debug_draw:
-            # self.physics.draw()
-    
-    def _hide(self, switch: bool = None) -> bool:
-        #WIP : should revisit filter control
-        switch = super()._hide(switch)
-        # self.physics.filter = physics_types.filter_nomask if switch else physics_types.filter_allmask
-        self.physics.hidden = switch
-        print('hide me!',switch)
-        return switch
-    
-    def _get_scale(self) -> float:
-        return self.physics._scale
-    
-    def _set_scale(self, scale: float):
-        self.physics.scale = scale
-        return super()._set_scale(scale)
-    
-    scale = property(_get_scale, _set_scale)
-    
-    def _set_position(self, position) -> None:
-        if not self.physics: self.sprite.position = position
-        else: raise PhysicsException(f'Can\'t move static object by overriding position = {position}. Set position with StaticActor.')
-        
-    position:Vector = property(Body._get_position, _set_position)  
-    
-    def _set_velocity(self, velocity):
-        if not self.physics: self.sprite.velocity = velocity
-        else: raise PhysicsException(f'Can\'t move static object by overriding velocity = {velocity}. Set position with StaticActor.')
-
-    velocity: Vector = property(Body._get_veloticy, _set_velocity)
-    
-    def _set_angle(self, angle: float):
-        if not self.physics: self.sprite.angle = angle
-        else: raise PhysicsException(f'Can\'t rotate static object by set angle = {angle}. Set angle with StaticActor.')
-
-    angle:float = property(Body._get_angle, _set_angle)
-    
-    # def _get_mass(self):
-    #     return self.physics.mass
-    
-    # def _set_mass(self, mass:float):
-    #     self.physics.mass = mass
-    
-    # mass:float = property(_get_mass, _set_mass)
-    mass:float = PropertyFrom('physics')
-    
-    # def _get_elasticity(self):
-    #     return self.physics.elasticity
-    
-    # def _set_elasticity(self, elasticity:float):
-    #     self.physics.elasticity = elasticity
-    
-    # elasticity:float = property(_get_elasticity, _set_elasticity)
-    elasticity:float = PropertyFrom('physics')
-
-    # def _get_friction(self):
-    #     return self.physics.friction
-    
-    # def _set_friction(self, friction:float):
-    #     self.physics.friction = friction
-    
-    # friction:float = property(_get_friction, _set_friction)
-    friction:float = PropertyFrom('physics')
-    
-    def _get_scale(self) -> float:
-        return super()._get_scale()
-    
-    def _set_scale(self, scale: float):
-        # self.physics.
-        return super()._set_scale(scale)
-    
-    @property
-    def is_movable_physics(self) -> bool:
-        return self.movable and True if self.physics else False
+    pass
 
 
 class SpriteMovement(MovementHandler):
@@ -459,13 +319,12 @@ class TopDownPhysicsMovement(PhysicsMovement):
 
 class AIController(Controller):
     
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def setup(self):
         self.target:Actor = None
     
-    def on_register(self):
+    def on_spawn(self):
         GAME.ai_controllers.append(self)
-        return super().on_register()
+        return super().on_spawn()
     
     def set_target(self, target):
         self.target = target
