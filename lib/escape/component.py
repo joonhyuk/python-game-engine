@@ -23,7 +23,7 @@ class EscapePlayerController(PlayerController):
 
         if key == keys.SPACE: self.action.test_boost(GAME.input_move, 500)
         if key == keys.ENTER: self.action.test_attack(self.body.forward_vector, 200)
-        if key == keys.H: self.body.hidden = None
+        if key == keys.H: self.movement.body.hidden = None
         
         if key == keys.Z:
             GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
