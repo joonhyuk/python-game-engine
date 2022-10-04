@@ -4,11 +4,15 @@ from config.engine import *
 from .engine import *
 
 class StaticBody(PhysicsBody):
-    pass
+    
+    __slots__ = ()
 
 
 class SpriteMovement(MovementHandler):
     '''movement component for character'''
+    
+    # __slots__ = 'size', 'max_speed_run', 'max_speed_walk', 'max_rotation_speed', ''
+    
     def __init__(self, 
                  capsule_radius = 16, 
                  max_speed_run = 250, 
@@ -195,6 +199,9 @@ class SpriteMovement(MovementHandler):
 
 class PhysicsMovement(MovementHandler):
     ''' movement handler for actor based on pymunk physics engine '''
+
+    __slots__ = 'stopped', 
+    
     def __init__(
         self, 
         body:PhysicsBody,
@@ -319,6 +326,8 @@ class TopDownPhysicsMovement(MovementHandler):
 
 class AIController(Controller):
     
+    __slots__ = 'target', 
+    
     def setup(self):
         self.target:Actor = None
     
@@ -353,6 +362,8 @@ class InteractionHandler(Handler):
 class CameraHandler(Handler):
     '''handling actor camera
     should be possesed by engine camera system'''
+    
+    # __slots__ = 
     
     def __init__(self,
                  body : Body,

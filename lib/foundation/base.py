@@ -297,5 +297,12 @@ def rearrange(arr:list, start:int, end:int):
         return arr[start:end]
     return arr[start:] + arr[:end]
 
+def get_slots(_obj : object) -> set:
+    ''' Get all slots of obj including super classes '''
+    slots = set()
+    for cls in _obj.__class__.__mro__:
+        slots.update(getattr(cls, '__slots__', []))
+    return slots
+
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

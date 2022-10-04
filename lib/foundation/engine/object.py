@@ -1,40 +1,59 @@
 from __future__ import annotations
 
-# from ..base import *
+from typing import Union
+from ..base import get_slots
 
 
 class GameObject(object):
     '''
     Base class of everything 'in game'
     
-    Defines lifecycle of objects.
+    Defines the lifecycle of an object.
     
+    If kwargs set, they'll pass to `setup(**kwargs)`
+    
+    i.e.
+    ```
+        class Foo(GameObject):
+            def setup(self, **kwargs) -> None:
+                self.hello = get_from_dict(kwargs, 'messsage')
+                
+        f = Foo(message = 'world')
+        print(f.hello) --> world
+    ```
     :Parameters:
-        `id` : str
+        `id : str`
             returns id(self)
-        `alive` : bool
+        `alive : bool`
             not destroyed
-        `spawnned` : bool
+        `spawnned : bool`
             is in game space
-        `owner` : GameObject
+        `owner : GameObject`
             get top owner
+        `members : list[GameObject]`
+            get child GameObjects, read only.
     
     '''
     
-    __slots__ = ['_alive', 'spawnned', '_owner']
+    __slots__ = '_alive', 'spawnned', '_owner', '_members'
     
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         self._alive = True
         ''' Rockbottom switch of alive check '''
         self.spawnned = False
+        ''' Is in game space '''
         self._owner : GameObject = None
-        
-        self.setup()
+        ''' Owner right above '''
+        self._members : list[GameObject] = None
+        ''' Child members of GameObject type, Don't access it directly. Use `_obj.members` instead '''
+        self.setup(**kwargs)
     
-    def setup(self) -> None:
+    def setup(self, **kwargs) -> None:
         '''
         Initial setup, and reset
         
+        Will have additional member variables.
+        So, it's safe to run `super().setup(**kwargs)` for most cases.
         '''
         pass
     
@@ -82,23 +101,45 @@ class GameObject(object):
         '''
         pass
     
-    def get_members(self, types_include = None, types_exclude = None):
-        if not types_include: types_include = GameObject
-        members : list[GameObject] = []
-        if hasattr(self, '__dict__'):    ### for those have only __slots__
-            members.extend([c for c in self.__dict__.values() if isinstance(c, types_include) and c != self._owner])
-        if hasattr(self, '__slots__'):
-            members.extend([getattr(self, c) for c in self.__slots__ if isinstance(getattr(self, c), types_include) and getattr(self, c) != self._owner])
-        # if len(members) == 1: return members[0]
-        return members
+    def get_members(
+        self, 
+        types_include : Union[type, tuple[type]] = None, 
+        types_exclude : Union[type, tuple[type]] = None
+        ) -> list[GameObject] :
+        '''
+        Get members with including types(type or tuple[type])
+        '''
+        if self._members is None:
+            self._members : list[GameObject] = []
+            if hasattr(self, '__dict__'):
+                self._members.extend([c for c in self.__dict__.values() if isinstance(c, GameObject) and c != self._owner])
+            if hasattr(self, '__slots__'):
+                self._members.extend([getattr(self, c) for c in get_slots(self) if isinstance(getattr(self, c), GameObject) and getattr(self, c) != self._owner])
+                ''' 
+                if __slots__ exists, get all slots for member check. 
+                slightly bad for spawn performance, but good for memory, performance
+                '''
+        
+        if not types_include and not types_exclude : return self.members
+        if not self._members : return [None, ]
+        
+        inc, exc = lambda _obj : True, lambda _obj : True
+        if types_include is not None:
+            inc = lambda _obj : isinstance(_obj, types_include) 
+        if types_exclude is not None:
+            exc = lambda _obj : not isinstance(_obj, types_exclude) 
+        
+        result = [m for m in self._members if inc(m) and exc(m)]
+        if not result : return [None, ]
+        return result
     
     def is_alive(self) -> bool:
         ''' Overridable but need retuning super().is_alive()'''
         return self._alive
     
-    def get_owner(self, obj : GameObject) -> GameObject:
-        if obj._owner is None: return obj
-        return self.get_owner(obj._owner)
+    def get_owner(self, _obj : GameObject) -> GameObject:
+        if _obj._owner is None: return _obj
+        return self.get_owner(_obj._owner)
     
     def _get_owner(self) -> GameObject:
         return self.get_owner(self)
@@ -115,6 +156,10 @@ class GameObject(object):
     @property
     def alive(self) -> bool:
         return self.is_alive()
+    
+    @property
+    def members(self) -> list[GameObject]:
+        return self._members
 
 
 class Handler(GameObject):
@@ -122,6 +167,7 @@ class Handler(GameObject):
     GameObjects that should yuji owner's handlers as theirs.
     
     '''
+    __slots__ = ()
     
     def get_owner_member(self, type) -> None:
         owner_members = self.owner.get_members(type)
@@ -130,4 +176,5 @@ class Handler(GameObject):
 
 
 class Actor(GameObject):
-    pass
+    
+    __slots__ = ()

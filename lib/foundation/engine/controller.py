@@ -12,9 +12,10 @@ class Controller(Handler):
         self,
         movement : MovementHandler,
         action : ActionHandler,
+        **kwargs,
         ) -> None:
         
-        super().__init__()
+        super().__init__(**kwargs)
         self.movement = movement
         self.action = action
     
@@ -34,9 +35,10 @@ class Controller(Handler):
 
 class PlayerController(Controller):
     
-    def setup(self) -> None:
+    def setup(self, **kwargs) -> None:
         self.local_player_id : int = None
         ''' for local multiplay '''
+        return super().setup(**kwargs)
     
     def on_spawn(self) -> None:
         GAME.add_player(self)

@@ -19,6 +19,8 @@ def _check_valid_iterable(other) -> bool:
 
 class Vector(tuple):
     
+    __slots__ = ()
+    
     def __new__(cls, *args):
         if not args:
             args = (0, 0)

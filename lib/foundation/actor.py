@@ -80,7 +80,8 @@ class StaticObject(Actor):
 
 class DynamicObject(Actor):
     
-    # __slots__ = ('body', 'apply_force', 'apply_impulse')
+    __slots__ = 'body', 'apply_force', 'apply_impulse', 
+    
     def __init__(self, 
                  body:Union[DynamicBody, KinematicBody],
                  **kwargs) -> None:

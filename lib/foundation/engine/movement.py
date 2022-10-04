@@ -10,24 +10,27 @@ from .body import *
 
 class MovementHandler(Handler):
     
+    __slots__ = 'body', 'rotation_interp_speed', 'move_direction', 'desired_angle', '_move_modifier', '_turn_modifier'
+    
     def __init__(
         self,
         body : Body,
         rotation_interp_speed:float = 3.0,
+        **kwargs,
         ) -> None:
-        
-        super().__init__()
+        super().__init__(**kwargs)
         
         self.body = body
         self.rotation_interp_speed = rotation_interp_speed
-
-    def setup(self):
+    
+    def setup(self, **kwargs):
         self.move_direction:Vector = None
         ''' direction unit vector for movement '''
         self.desired_angle:float = None
         
         self._move_modifier:float = 1.0
         self._turn_modifier:float = 1.0
+        return super().setup(**kwargs)
         
     @property
     def move_lock(self):

@@ -1,47 +1,66 @@
 from __future__ import annotations
 
-from lib.foundation.new_engine import *
+from lib.foundation import *
 
-class TestBodyHandler(Handler):
-    
-    def setup(self) -> None:
-        self.position = 'pos'
-        # self.handler = Handler()
 
-class TestMovementHandler(Handler):
-    
-    def __init__(self, body : TestBodyHandler) -> None:
-        super().__init__()
-        self.body = body
-    
-    def setup(self) -> None:
-        self.max_speed = 100
-    
-    def __del__(self):
-        print('SHHIT', self)
-    # def on_spawn(self) -> None:
-    #     self.body = self.register_owner_member(TestBodyHandler)
-    #     return super().on_spawn()
-
-class ATestMovementHandler(TestMovementHandler):
+class Member(GameObject):
     pass
 
+class Yuji(Member):
+    pass
 
-class TestController(Handler):
+class Biden(GameObject):
     
-    def __init__(self, movement:TestMovementHandler) -> None:
-        super().__init__()
-        self.movement = movement
+    __slots__ = 'hail', 
+    
+    # def __init__(self, **kwargs) -> None:
+    #     super().__init__(**kwargs)
+    #     self.hail = GameObject()
+    
+    def setup(self, **kwargs) -> None:
+        self.hail = GameObject()
+    
+    # def get_slots(self):
+    #     if not hasattr(super(), 'get_slots') : return self.__slots__
+    #     return super().get_slots() + self.__slots__
+
+class Foo(Biden):
+    
+    # __slots__ = 'member', 'yuji', 'biden', 'hello'
+    
+    def setup(self, **kwargs) -> None:
+        self.member = Member()
+        self.yuji = Yuji()
+        self.biden = Biden()
+        self.hello = get_from_dict(kwargs, 'hello')
+        return super().setup(**kwargs)
+    
+    # def get_slots(self):
+    #     if not hasattr(super(), 'get_slots') : return self.__slots__
+    #     return super().get_slots() + self.__slots__
+
+
+class Bar:
+    
+    def __init__(self) -> None:
+        self.bar = 1
         
-class TestActor(GameObject):
+b = Bar()
+s = get_slots(b)
+for a in s:
+    print(a)
+
+f = Foo(hello = 'world')
+print(f.hail.spawnned)
+f.spawn()
+print(f.hail.spawnned)
+
+import time
+
+start = time.perf_counter()
+
+for _ in range(10000):
+    a = Foo().spawn()
+    # a = f.__slots__ + ('hail', 'to', 'the')
     
-    def setup(self) -> None:
-        self.body = TestBodyHandler()
-        self.movement = ATestMovementHandler(self.body)
-        self.controller = TestController(self.movement)
-    
-a = TestActor()
-print('first', a.controller.movement)
-a.spawn()
-print('second', a.controller.movement.body)
-print('hahaha')
+print('time', time.perf_counter() - start)

@@ -13,7 +13,8 @@ class Body(GameObject):
     counter_created = 0 ### for debug. total created
     counter_removed = 0 ### for debug. total destroyed
     counter_gced = 0 ### for debug. total garbage collected
-    __slots__ = ['sprite', '_hidden', '_last_spawn_layer']
+
+    __slots__ = 'sprite', '_hidden', '_last_spawn_layer'
     
     def __init__(self, 
                  sprite:Sprite,
@@ -146,7 +147,8 @@ class Body(GameObject):
 
 class SpriteBody(Body):
     
-    # __slots__ = ()
+    __slots__ = ()
+
     def __init__(self, 
                  sprite:Sprite,
                  position:Vector = None,
@@ -162,7 +164,8 @@ class SpriteBody(Body):
 
 class PhysicsBody(Body):
     
-    # __slots__ = ['physics', ]
+    __slots__ = ('physics', )
+
     def __init__(self, 
                  sprite:Sprite,
                  position:Vector = None,
@@ -278,7 +281,8 @@ class PhysicsBody(Body):
 
 class DynamicBody(PhysicsBody):
 
-    # __slots__ = ()
+    __slots__ = ()
+
     def __init__(self, 
                  sprite: Sprite, 
                  position: Vector = None, 
@@ -379,6 +383,8 @@ class DynamicBody(PhysicsBody):
 
 
 class KinematicBody(DynamicBody):
+    
+    __slots__ = ()
     
     def __init__(self, 
                  sprite: Sprite,
