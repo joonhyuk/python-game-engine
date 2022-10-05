@@ -166,6 +166,24 @@ def debug_draw_poly(points:list[Tuple[float, float]],
     if fill_color is not None: return arcade.draw_polygon_filled(new_poly, fill_color)
     return arcade.draw_polygon_outline(new_poly, line_color, line_thickness)
 
+def debug_draw_physics(
+    body:pymunk.Body,
+    line_color = arcade.color.MAGENTA,
+    line_thickness = 1,
+    fill_color = None,
+    ):
+    center = Vector(body.position)
+    angle = body.angle  ### in radian
+    for shape in body.shapes:
+        if isinstance(shape, pymunk.Circle):
+            center += shape.offset
+            debug_draw_circle(center, shape.radius, line_color, line_thickness, fill_color)
+        elif isinstance(shape, pymunk.Segment):
+            debug_draw_segment(center + shape.a, center + shape.b, line_color, line_thickness)
+        else:
+            debug_draw_poly(shape.get_vertices(), center, angle, line_color, line_thickness, fill_color, radian=True)
+            
+
 def debug_draw_shape(shape:pymunk.Shape,
                      body:pymunk.Body = None,
                      line_color = arcade.color.WHITE, 

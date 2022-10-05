@@ -87,11 +87,13 @@ class GameObject(object):
         For a living character, dead or on_dead method needed for some presentation process. 
         destroy() should be called as kinda callback after all process of death ends.
         '''
+        #TODO add 'remove_from_all_list' to Client for proper GC
         self.on_destroy()
         members = self.get_members()
         if members:
             for member in members:
                 if member.owner == self : member.destroy()      ### for handlers
+        del self._members
         self.spawnned = False
         self._alive = False
     
@@ -120,8 +122,7 @@ class GameObject(object):
                 slightly bad for spawn performance, but good for memory, performance
                 '''
         
-        if not types_include and not types_exclude : return self.members
-        if not self._members : return [None, ]
+        if not types_include and not types_exclude : return self._members
         
         inc, exc = lambda _obj : True, lambda _obj : True
         if types_include is not None:
@@ -129,9 +130,13 @@ class GameObject(object):
         if types_exclude is not None:
             exc = lambda _obj : not isinstance(_obj, types_exclude) 
         
-        result = [m for m in self._members if inc(m) and exc(m)]
-        if not result : return [None, ]
-        return result
+        return [m for m in self._members if inc(m) and exc(m)]
+    
+    def owners(self, type_ : type) -> GameObject:
+        try:
+            return self.owner.get_members(type_)[0]
+        except:
+            raise AttributeError(f'{self.owner} doesn\'t have {type_} member')
     
     def is_alive(self) -> bool:
         ''' Overridable but need retuning super().is_alive()'''

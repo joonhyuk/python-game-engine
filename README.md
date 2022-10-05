@@ -111,6 +111,7 @@ lifetime과 각종 active 상태 관리에 주력했음.
 
 ## Actor
 - controller : tick마다 무엇을 할지 결정하고 actor에게 명령을 내린다. 정확히는, actor의 각 컴포넌트들에게 명령을 내리는 것. 여전히 컴포넌트를 actor에 융합(?) 시키는 방식이 땡기는데... 보일러플레이팅 노가다가 너무 심하다.
+- 최종 변경 : GameObject로 통일. `Actor = GameObject`
 
 ## PlayerController
 - 게임 실행 시 local player controller를 등록?
@@ -147,6 +148,22 @@ attack-melee, attack-projectile, evade, open, ...
 
 ### move
 - `move(direction:Vector, )`
+
+
+## Physics
+- `2022-10-05-Wed` 또다시, 별로 필요없지만 정갈한 구조를 위해 오버홀 계획중.
+
+### as-is
+- sprite 생성, PhysicsBody 생성, set_physics()에 의해 엔진 인스턴스에 추가
+- 너무 복잡
+
+### to-be
+- `PhysicsBody(GameObject)`는 `PhysicsObject(GameObject, pymunk.Body)`를 멤버로 가진다.
+- 스폰 시점에 PhysicsObject를 스폰하면서 각종 프로퍼티를 세팅한다.
+- layer에 add하면서 physics space에도 추가한다.
+- 이렇게 할 경우, sprite를 키로 가지는 기존 피직스 인스턴스를 유지할 필요가 없다. 즉, 완전히 독립된 구조.
+	- 기존 피직스 엔진은 통합된 space 및 애셋 관리자로 남겨둘 수는 있는데, 시스템이 쓰도록 할거면 보다 깔끔한 구조로 오버홀 할 필요가 있음.
+	- 이로서 arcade의 physics_engine과는 완전히 작별 가능. 여전히 sprite.pymunk가 남아있긴 하지만 어차피 physics_object 내의 velocity_callback에서만 돌아가는 프로퍼티이므로 나름 잘 capsulized 되어 있는 셈.
 
 
 # Bugs

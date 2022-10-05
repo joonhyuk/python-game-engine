@@ -16,7 +16,7 @@ class Jump(Action):
     def do(self, owner: Union[Actor, ActionHandler], *args, **kwargs):
         # self.lock_for(owner, )
         if owner.body.physics.is_on_ground:
-            gravity = owner.body.physics.body.space.gravity
+            gravity = owner.body.physics.space.gravity
             
             owner.body.apply_impulse(gravity * -0.5)
 
