@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 import PIL.Image
 import PIL.ImageOps
 import PIL.ImageDraw
@@ -8,7 +10,9 @@ import arcade
 import arcade.key as keys
 import arcade.color as colors
 
-from ..physics import *
+# from ..physics import *
+from ..vector import Vector
+from config import *
 from .object import *
 
 
@@ -23,20 +27,20 @@ class Sprite(GameObject, arcade.Sprite):
     def __init__(self, 
                  filename: str = None, 
                  scale: float = 1, 
-                 image_x: float = 0, image_y: float = 0, image_width: float = 0, image_height: float = 0, 
+                 image_x: float = 0, image_y: float = 0, 
+                 image_width: float = 0, image_height: float = 0, 
                  center_x: float = 0, center_y: float = 0, 
                  repeat_count_x: int = 1, repeat_count_y: int = 1, 
                  flipped_horizontally: bool = False, flipped_vertically: bool = False, flipped_diagonally: bool = False, 
                  hit_box_algorithm: str = "Detailed", hit_box_detail: float = 4.5, 
                  texture: arcade.Texture = None, 
                  angle: float = 0,
-                 position: Vector = None
+                 position: Vector = vectors.zero
                  ):
         GameObject.__init__(self)
         arcade.Sprite.__init__(self, filename, scale, image_x, image_y, image_width, image_height, center_x, center_y, repeat_count_x, repeat_count_y, flipped_horizontally, flipped_vertically, flipped_diagonally, hit_box_algorithm, hit_box_detail, texture, angle)
         self._initial_scale = scale
         self._relative_scale = 1.0
-        if position is not None: self.position = position
 
     def scheduled_remove_from_sprite_lists(self, dt):
         # print('REMOVING!')

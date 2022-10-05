@@ -16,8 +16,8 @@ from .vector import Vector
 from config.engine import *
 from .utils import *
 
-from arcade import Sprite
-
+# from arcade import Sprite
+from .engine.primitive import Sprite
 
 def is_sprite_not_in_zone(sprite:Sprite):
     
@@ -683,6 +683,7 @@ class PhysicsObject:
         self._body.velocity = velocity
     
     velocity:Vector = property(_get_velocity, _set_velocity)
+    # velocity:Vector = PropertyFrom('_body')
     
     def _get_angle(self):
         return math.degrees(self._body.angle)

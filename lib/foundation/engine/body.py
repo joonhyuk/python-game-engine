@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from ..physics import *
 from .object import *
 from .primitive import *
 
@@ -31,7 +32,7 @@ class Body(GameObject):
         if position: self.position = position
         if angle: self.angle = angle
     
-    def get_ref(self):
+    def _get_ref(self):
         return self.sprite
     
     def __del__(self):
@@ -49,7 +50,7 @@ class Body(GameObject):
             raise Exception(f'Spawn layer of {self} is None')
     
     def spawn(self, spawn_to:Layer = None, position:Vector = None, angle:float = None):
-        self.sprite.owner = self.owner  ### will be removed after Sprite converted to GameObject
+        # self.sprite.owner = self.owner  ### will be removed after Sprite converted to GameObject
         self.set_spawn(spawn_to=spawn_to, position=position, angle=angle)
         # spawn_to.add(self)
         return super().spawn()
@@ -91,26 +92,26 @@ class Body(GameObject):
     ''' set None to toggle visibility '''
     
     def _get_position(self):
-        return self.get_ref().position
+        return self._get_ref().position
     
     def _set_position(self, position):
-        self.get_ref().position = position
+        self._get_ref().position = position
     
     position:Vector = property(_get_position, _set_position)
     
     def _get_angle(self) -> float:
-        return self.get_ref().angle
+        return self._get_ref().angle
     
     def _set_angle(self, angle:float = 0.0):
-        self.get_ref().angle = angle
+        self._get_ref().angle = angle
     
     angle:float = property(_get_angle, _set_angle)
     
     def _get_veloticy(self) -> Vector:
-        return self.get_ref().velocity
+        return self._get_ref().velocity
     
     def _set_velocity(self, velocity):
-        self.get_ref().velocity = velocity
+        self._get_ref().velocity = velocity
     
     velocity:Vector = property(_get_veloticy, _set_velocity)
     
@@ -213,7 +214,7 @@ class PhysicsBody(Body):
             ''' sprite_list는 iter 타입이므로 비어있으면 false를 반환. 따라서 is not none으로 체크 '''
             self.spawn(spawn_to)
     
-    def get_ref(self):
+    def _get_ref(self):
         return self.physics or self.sprite
     
     def cannot_move(self, *args, **kwargs):

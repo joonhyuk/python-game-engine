@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from os import getpid
+
 from dataclasses import dataclass
 
+from ..base import *
 from ..clock import *
+from ..physics import *
 from .primitive import *
 # from lib.foundation import *
 
@@ -13,7 +17,7 @@ except:
     pass
 
 import psutil
-PROCESS = psutil.Process(os.getpid())
+PROCESS = psutil.Process(getpid())
 
 
 class DebugTextLayer(dict, metaclass=SingletonType):
