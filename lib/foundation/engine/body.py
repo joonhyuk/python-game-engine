@@ -269,6 +269,14 @@ class PhysicsBody(Body):
 
     angle:float = property(Body._get_angle, _set_angle)
     
+    def _get_gravity(self):
+        return self.sprite.pymunk.gravity or self.physics.gravity
+    
+    def _set_gravity(self, gravity : Vector = None):
+        self.sprite.pymunk.gravity = gravity
+    
+    gravity:Vector = property(_get_gravity, _set_gravity)
+    
     mass:float = PropertyFrom('physics')
     
     elasticity:float = PropertyFrom('physics')

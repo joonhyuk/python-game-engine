@@ -736,6 +736,10 @@ class PhysicsObject:
     @property
     def is_on_ground(self) -> bool:
         return self.check_grounding()['body'] is not None
+    
+    @property
+    def gravity(self) -> Vector:
+        return self._body.space.gravity
 
 
 class PhysicsException(Exception):
