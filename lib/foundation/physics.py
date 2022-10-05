@@ -204,7 +204,7 @@ def convexise_complex(points:list[tuple[float, float]], body, **kwargs) -> list[
     shape:list[physics_types.poly] = []
     convexes = get_convexes(points)
     # convexes = pymunk.util.convexise(pymunk.util.triangulate(points))
-    for convex in convexes:
+    for convex in tqdm(convexes, desc = 'convexise_complex'):
         shape.append(physics_types.poly(body, convex, **kwargs))
     
     return shape
@@ -414,7 +414,7 @@ def get_convexes(shapes) -> list:
     n = 0
     # keep trying to reduce until it won't reduce any more
     while reducing:
-        # print('step',n,':',hulls)
+        # print('step',n)
         hulls, reducing = _reduce_shapes(hulls)
         n += 1
     # reducing = True
@@ -423,6 +423,7 @@ def get_convexes(shapes) -> list:
         # hulls, reducing = _reduce_shapes(hulls, _remove_last_point_and_union)
         # n += 1
     # return reduced hull list
+    print('reducing convex for step', n)
     new_hulls = []
     for hull in hulls:
         new_hulls.append(check_point_on_segment(hull))
@@ -436,7 +437,7 @@ def build_shapes_with_convexes(body:physics_types.body, convex_list:list,
                                shape_edge_raduis = 0.0,
                                ):
     shapes:list[physics_types.poly] = []
-    for convex in convex_list:
+    for convex in tqdm(convex_list, desc = 'building shapes'):
         shape = physics_types.poly(body, convex, radius=shape_edge_raduis)
         shape.collision_type = collision_type
         shape.friction = friction
@@ -994,10 +995,8 @@ class PhysicsEngine:
         walls_points:list = []
         for sprite in tqdm(sprite_list):
             sprite:Sprite
-            hit_box = sprite.get_hit_box()
-            pos = sprite.position
-            scaled_poly = [[int(x * sprite.scale + p) for x, p in zip(z, pos)] for z in hit_box]
-            walls_points.append(scaled_poly)
+            hit_box = sprite.get_adjusted_hit_box()
+            walls_points.append(hit_box)
 
         wall_convexes = get_convexes(walls_points)
         return add_convex_to_world(wall_convexes, self, elasticity=elasticity, collision_type=collision_type, friction=friction, shape_edge_raduis=shape_edge_raduis) 
