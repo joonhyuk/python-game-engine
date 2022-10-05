@@ -22,7 +22,7 @@ class GLTexture(arcade.Texture):
 
 class Sprite(GameObject, arcade.Sprite):
     
-    # __slots__ = ('_initial_scale', '_relative_scale')
+    __slots__ = ('_initial_scale', '_relative_scale')
     
     def __init__(self, 
                  filename: str = None, 
@@ -65,10 +65,23 @@ class Sprite(GameObject, arcade.Sprite):
     
     hidden:bool = property(_get_hidden, _set_hidden)
     
+    def _get_size(self):
+        return Vector(self.width, self.height)
+    
+    def _set_size(self, size : Vector):
+        self.width, self.height = size[0], size[1]
+    
+    size:Vector = property(_get_size, _set_size)
+    
+    @property
+    def scaled_poly(self):
+        return [[x * self.scale for x in z] for z in self.get_hit_box()].reverse()
+    
     
 class SpriteCircle(Sprite):
     ''' If ellipse, make sure to set physics_shape as poly '''
-    # __slots__ = ['owner', 'texture', '_points']   ### sprite not works if set with slots.
+    
+    __slots__ = ()
     
     def __init__(self, 
                  radius: Union[int, Vector], 
@@ -109,7 +122,7 @@ class SpriteCircle(Sprite):
         # apply results to the new sprite
         self.texture = texture
         self._points = self.texture.hit_box_points
-
+        
 
 class Camera(arcade.Camera):
     
