@@ -321,7 +321,7 @@ class PhysicsTestView(View):
         
         body.gravity = direction * DEFAULT_GRAVITY
         body.damping = 1.0
-        body.activate_objects()
+        body.physics.activate()
         return
         
     def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
@@ -353,14 +353,14 @@ class PhysicsTestView(View):
         super().on_draw()
         
         self.camera.use()
-        # self.field_layer.draw()
+        self.field_layer.draw()
         
-        # self.channels[0].use()
-        # self.channels[0].clear()
-        # self.wall_layer.draw()
+        self.channels[0].use()
+        self.channels[0].clear()
+        self.wall_layer.draw()
         
-        # self.channels[1].use()
-        # self.channels[1].clear()
+        self.channels[1].use()
+        self.channels[1].clear()
         self.field_layer.draw()
         self.wall_layer.draw()
         self.debris_layer.draw()
@@ -371,19 +371,21 @@ class PhysicsTestView(View):
         debug_draw_segment(self.player.position, self.player.position + self.player.body.velocity, color = colors.AERO_BLUE)
         debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         
-        # self.shader.program['activated'] = CONFIG.debug_f_keys[0]
-        # self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
-        # self.shader.program['lightSize'] = 500 * GAME.render_scale
-        # self.shader.program['lightAngle'] = 75.0
-        # self.shader.program['lightDirectionV'] = self.player.body.forward_vector
+        self.shader.program['activated'] = CONFIG.debug_f_keys[0]
+        self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
+        self.shader.program['lightSize'] = 500 * GAME.render_scale
+        self.shader.program['lightAngle'] = 75.0
+        self.shader.program['lightDirectionV'] = self.player.body.forward_vector
         
         self.window.use()
-        # self.clear()
-        # self.shader.render()
+        self.clear()
+        self.shader.render()
 
         self.player.draw()
-        self.test_npc.body.physics.draw()
-        self.test_box.body.physics.draw()
+        
+        self.space.debug_draw_collision()
+        # self.test_npc.body.physics.draw()
+        # self.test_box.body.physics.draw()
         # self.test_rotating_dynamic.body.physics.draw()
         # self.test_rotating_kinematic.body.physics.draw()
         
@@ -417,7 +419,7 @@ class PhysicsTestView(View):
         self.space.step(1/60)
         if CONFIG.debug_f_keys[3]:
             grounding = self.player.body.physics.get_grounding()
-            print(self.player.body.physics.check_grounding())
+            # print(self.player.body.physics.get_grounding())
         GAME.debug_text.perf_check('update_physics')
         GAME.debug_text.perf_check('resync_objects')
         # self.physics_main.resync_objects()
@@ -425,7 +427,7 @@ class PhysicsTestView(View):
         # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
         # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
-        non_static_objects = self.space.dynamics
+        non_static_objects = self.space.movables
         if non_static_objects:
             for o in non_static_objects:
                 o.body.tick(delta_time)

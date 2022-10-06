@@ -42,6 +42,10 @@ class Sprite(GameObject, arcade.Sprite):
         self._initial_scale = scale
         self._relative_scale = 1.0
 
+    def destroy(self) -> None:
+        self.remove_from_sprite_lists()
+        return super().destroy()
+    
     def scheduled_remove_from_sprite_lists(self, dt):
         # print('REMOVING!')
         return super().remove_from_sprite_lists()
@@ -76,8 +80,9 @@ class Sprite(GameObject, arcade.Sprite):
     @property
     def scaled_poly(self):
         # scaled_poly = [[int(x * self.scale + p) for x, p in zip(z, self.pos)] for z in hit_box]
-        sp = [[x * self.scale for x in z] for z in self.get_hit_box()]
-        # sp.reverse()
+        hb = self.get_hit_box()
+        sp = [[x * self.scale for x in z] for z in hb]      ### clockwise
+        sp.reverse()
         return sp
     
     

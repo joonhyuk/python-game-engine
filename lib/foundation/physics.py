@@ -6,14 +6,6 @@ import math
 from typing import Callable, Optional, Union
 
 import pymunk, pymunk.util
-from pymunk._chipmunk_cffi import ffi, lib
-
-from pymunk import _chipmunk_cffi, _version
-
-cp = _chipmunk_cffi.lib
-ffi = _chipmunk_cffi.ffi
-lib = _chipmunk_cffi.lib
-
 
 from .base import *
 from .vector import *
@@ -145,7 +137,7 @@ def _reduce_shapes(shapes:list):
 
 def triangulate_all(shapes:list) -> list:
     triangles = []
-    if len(shapes[0]) < 3:
+    if len(shapes[0]) == 2 and all(isinstance(x, (float, int)) for x in shapes[0]):     ### not cool...
         return pymunk.util.triangulate(shapes)
     for shape in shapes:
         triangles.extend(pymunk.util.triangulate(shape))
@@ -159,6 +151,8 @@ def get_convexes(shapes) -> list:
         shapes
             list of anticlockwise shapes (a list of more than three points) to reduce
     """
+
+    
     # hulls = shapes[:]
     hulls = triangulate_all(shapes)
     reducing = True
@@ -173,6 +167,20 @@ def get_convexes(shapes) -> list:
         
     return pymunk.util.convexise(triangulate_all(new_hulls))
 
+def count_first_shape_points(shape, elements:int = 2) -> int:
+    '''
+    useless for now
+    '''
+    if not shape: return 0
+    l1 = len(shape)
+    s0 = shape[0]
+    if l1 == elements and isinstance(s0, (int, float)):
+        ''' get to the point '''
+        return None
+    if count_first_shape_points(s0) is None:
+        return l1
+    return count_first_shape_points(s0)
+
 def setup_shapes(
     body: pymunk.Body,
     collision_type = collision.default,
@@ -185,6 +193,8 @@ def setup_shapes(
     '''
     Note that shape_offset is working only on Circle type so far.
     '''
+    assert shape_data is not None, f'{body} can\'t make shape with empty data'
+    
     def set_shapes_attr(shapes:list[pymunk.Shape]) -> list[pymunk.Shape]:
         for s in shapes:
             s.collision_type = collision_type
@@ -193,28 +203,37 @@ def setup_shapes(
         return shapes
     
     if isinstance(shape_data, list):
-        point_count = len(shape_data)
-        if point_count < 2:
-            raise PhysicsException(f'Shape constructor error : {shape_data}')
-        if point_count == 2:
-            shapes = [pymunk.Segment(body, *shape_data, shape_edge_radius),]
+        first = shape_data[0]
+        if len(first) == 2 and all(isinstance(x, (float, int)) for x in first):
+            point_count = len(shape_data)
+            ### shape should have more than 2 points
+            if point_count < 2:
+                raise PhysicsException(f'Shape constructor error : {shape_data}')
+            ### if segment
+            if point_count == 2:
+                # shapes = [pymunk.Segment(body, *shape_data, shape_edge_radius),]
+                return set_shapes_attr([
+                    pymunk.Segment(
+                        body,
+                        *shape_data, 
+                        shape_edge_radius
+                    )
+                ])
+            ### For concave poly
+            if not pymunk.util.is_convex(shape_data):
+                return set_shapes_attr([
+                    pymunk.Poly(body, c, radius=shape_edge_radius)
+                    for c in pymunk.util.convexise(pymunk.util.triangulate(shape_data))
+                ])
+            ### For convex poly
             return set_shapes_attr([
-                pymunk.Segment(
+                pymunk.Poly(
                     body,
-                    *shape_data, 
-                    shape_edge_radius
+                    shape_data,
+                    radius = shape_edge_radius,
                 )
             ])
-        ### For convex poly
-        # if pymunk.util.is_convex(shape_data):
-        #     return set_shapes_attr([
-        #         pymunk.Poly(
-        #             body,
-        #             shape_data,
-        #             radius = shape_edge_radius,
-        #         )
-        #     ])
-        ### For concave / super complex poly
+        ### For multiple shapes
         convexes = get_convexes(shape_data)
         return set_shapes_attr([
             pymunk.Poly(body, c, radius=shape_edge_radius) 
@@ -229,7 +248,7 @@ def setup_shapes(
                 shape_offset
                 )
         ])
-    raise PhysicsException('Shape setup error')
+    # raise PhysicsException('Shape setup error')
     return None
 
 
@@ -541,7 +560,7 @@ class PhysicsObject(pymunk.Body, GameObject):
     
     def __init__(
         self,
-        mass: float = 0,
+        mass: float = 1,
         moment: float = None,
         body_type: pymunk.body._BodyType = pymunk.Body.DYNAMIC,
         collision_type = collision.default,
@@ -560,6 +579,9 @@ class PhysicsObject(pymunk.Body, GameObject):
         else:
             # if shape_constructor == pymunk.Circle
             pass
+        
+        assert mass != 0, 'mass error'
+        if moment is None: moment = 1
         
         pymunk.Body.__init__(self, mass, moment, body_type)
         GameObject.__init__(self)
@@ -588,9 +610,9 @@ class PhysicsObject(pymunk.Body, GameObject):
         self._last_filter:pymunk.ShapeFilter = None
         self._mass_scaling = mass_scaling
     
-    def spawn(self) -> GameObject:
+    # def spawn(self) -> GameObject:
         
-        return super().spawn()
+    #     return super().spawn()
     
     def spawn_in_space(self, space: pymunk.Space) -> None:
         space.add(self, *self.shapes)
@@ -605,7 +627,7 @@ class PhysicsObject(pymunk.Body, GameObject):
             pymunk.constraints.PivotJoint(self, self.space.static_body, position)
         )
     
-    def draw(self, line_color = None, line_thickness = 1, fill_color = None):
+    def draw(self, line_color = (255,0,255,128), line_thickness = 1, fill_color = None):
         debug_draw_physics(self, line_color=line_color, line_thickness=line_thickness, fill_color=fill_color)
     
     def get_grounding(self):
@@ -635,6 +657,10 @@ class PhysicsObject(pymunk.Body, GameObject):
         
         return grounding
     
+    def destroy(self) -> None:
+        self.space.remove(*self.shapes, self)
+        return GameObject.destroy(self)
+    
     @property
     def is_on_ground(self) -> bool:
         return self.get_grounding()['body'] is not None
@@ -660,25 +686,6 @@ class PhysicsObject(pymunk.Body, GameObject):
         if switch: self._last_filter = self.filter
         self.filter = physics_types.filter_nomask if switch else self._last_filter
         return switch
-    
-    def _set_position(self, pos: Vector) -> None:
-        assert len(pos) == 2
-        lib.cpBodySetPosition(self._body, pos)
-
-    def _get_position(self) -> Vector:
-        v = lib.cpBodyGetPosition(self._body)
-        return Vector(v.x, v.y)
-
-    position = property(
-        _get_position,
-        _set_position,
-        doc="""Position of the body.
-
-        When changing the position you may also want to call
-        :py:func:`Space.reindex_shapes_for_body` to update the collision 
-        detection information for the attached shapes if plan to make any 
-        queries against the space.""",
-    )
     
     def _get_hidden(self):
         return self._hidden
@@ -751,12 +758,17 @@ class PhysicsObject(pymunk.Body, GameObject):
 
 
 class PhysicsSpace(pymunk.Space):
+    '''
+    Extended space object.
     
+    Be careful with `threaded` option. 
+    Will not use for release build because not so effective for its own risk.
+    '''
     def __init__(
         self, 
-        gravity: Vector = vectors.zero,
-        damping: float = 0.01,
-        threaded: bool = True,
+        gravity: Vector = None,
+        damping: float = None,
+        threaded: bool = False,
         sleep_time_threshold: float = 5.0,
         idle_speed_threshold: float = 10.0,
         ) -> None:
@@ -765,6 +777,27 @@ class PhysicsSpace(pymunk.Space):
         if threaded : self.threads = os.cpu_count() // 2  ### will not work above 2
         self.sleep_time_threshold = sleep_time_threshold
         self.idle_speed_threshold = idle_speed_threshold
+        
+        if gravity is not None: self.gravity = gravity
+        if damping is not None: self.damping = damping
+        
+        self._movable_objs: set[PhysicsObject] = set()
+    
+    def add(self, *objs: pymunk.space._AddableObjects) -> None:
+        
+        for o in objs:
+            if isinstance(o, PhysicsObject) and o.body_type in (pymunk.Body.DYNAMIC, pymunk.Body.KINEMATIC):
+                self._movable_objs.add(o)
+                
+        return super().add(*objs)
+    
+    def remove(self, *objs: pymunk.space._AddableObjects) -> None:
+        
+        for o in objs:
+            if isinstance(o, PhysicsObject):
+                self._movable_objs.discard(o)
+        
+        return super().remove(*objs)
     
     def add_static_collison(
         self, sprite_list,
@@ -854,65 +887,28 @@ class PhysicsSpace(pymunk.Space):
         if separate_handler:
             h.separate = handler_separate
     
-    def sync(self):
-        pass
+    def activate_objects(self):
+        for o in self._movable_objs:
+            o.activate()
     
-    def step(self, dt: float) -> None:
-        """Update the space for the given time step.
-
-        Using a fixed time step is highly recommended. Doing so will increase
-        the efficiency of the contact persistence, requiring an order of
-        magnitude fewer iterations to resolve the collisions in the usual case.
-
-        It is not the same to call step 10 times with a dt of 0.1 and
-        calling it 100 times with a dt of 0.01 even if the end result is
-        that the simulation moved forward 100 units. Performing  multiple
-        calls with a smaller dt creates a more stable and accurate
-        simulation. Therefor it sometimes make sense to have a little for loop
-        around the step call, like in this example:
-
-        >>> import pymunk
-        >>> s = pymunk.Space()
-        >>> steps = 10
-        >>> for x in range(steps): # move simulation forward 0.1 seconds:
-        ...     s.step(0.1 / steps)
-
-        :param dt: Time step length
-        """
-        def dp():
-            db = self.dynamics
-            for d in db:
-                print(d, d.body.position)
-        try:
-            self._locked = True
-            dp()
-            if self.threaded:
-                cp.cpHastySpaceStep(self._space, dt)
-            else:
-                cp.cpSpaceStep(self._space, dt)
-            dp()
-            self._removed_shapes = {}
-        finally:
-            self._locked = False
-
-        self.add(*self._add_later)
-        self._add_later.clear()
-        for obj in self._remove_later:
-            self.remove(obj)
-        self._remove_later.clear()
-
-        for key in self._post_step_callbacks:
-            self._post_step_callbacks[key](self)
-
-        self._post_step_callbacks = {}
+    def debug_draw_collision(self):
+        for o in self._movable_objs:
+            o.draw()
+    
+    def sync(self):
+        
+        for o in self._movable_objs:
+            o._owner._sync()
+    
+    @property
+    def movables(self) -> list[GameObject]:
+        ''' Returns GameObjects which have DYNAMIC body. Fast, recommended for use. '''
+        return [o.owner for o in self._movable_objs]
     
     @property
     def dynamics(self) -> list[GameObject]:
-        ''' Returns GameObjects which have DYNAMIC body. 
-        
-        Not recommended to use frequently
-        '''
-        return [b.owner for b in self.bodies if b.body_type == pymunk.Body.DYNAMIC and hasattr(b, 'owner')]
+        ''' Returns GameObjects which have DYNAMIC body. '''
+        return [o.owner for o in self._movable_objs if o.body_type == pymunk.Body.DYNAMIC]
     
     @property
     def statics(self) -> list[GameObject]:
@@ -920,12 +916,9 @@ class PhysicsSpace(pymunk.Space):
         
         Not recommended to use frequently
         '''
-        return [b.owner for b in self.bodies if b.body_type == pymunk.Body.STATIC and hasattr(b, 'owner')]
+        return [o.owner for o in self.bodies if o.body_type == pymunk.Body.STATIC and hasattr(o, 'owner')]
     
     @property
     def kinematics(self) -> list[GameObject]:
-        ''' Returns GameObjects which have KINEMATIC body. 
-        
-        Not recommended to use frequently
-        '''
-        return [b.owner for b in self.bodies if b.body_type == pymunk.Body.KINEMATIC and hasattr(b, 'owner')]
+        ''' Returns GameObjects which have KINEMATIC body. '''
+        return [o.owner for o in self._movable_objs if o.body_type == pymunk.Body.KINEMATIC]
