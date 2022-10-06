@@ -1,3 +1,4 @@
+from __future__ import annotations
 '''
 (only coupled with pymunk in this file)
 '''
@@ -19,18 +20,34 @@ from config.engine import *
 def get_all_points_from_shapes(shapes):
     return [point for shape in shapes for point in shape]
 
+def build_convex_shape(body:physics_types.body, points_list:set[list]) -> list[physics_types.poly]:
+    #DEPRECATED
+    triangles = []
+    for points in points_list:
+        # if not isinstance(shape, physics_types.poly):
+            # raise PhysicsException('not poly')
+        # points.reverse()
+        triangles.extend(pymunk.util.triangulate(points))
+    convexes = pymunk.util.convexise(triangles)
+    
+    new_shapes = set()
+    for convex in convexes:
+        new_shapes.add(physics_types.poly(body, convex))
+    # body._shapes = new_shapes
+    
+    body._shapes.union(new_shapes)
+    body.space.add(*new_shapes)
+    # body.space.remove(*shapes)
+    return new_shapes
+
 def _reduce_points(points:list[Vector]) -> list[Vector]:
     
-    # print('input__', points)
-    # points = list(set(points))
     points = [Vector(x) for x in points]
     # points = list(dict.fromkeys(points))      ### 중복 포인트는 제거하지 않는다. 혹시라도 concave에서 겹치는게 있을 수 있음.
 
-    # print('phase_1', points)
     num = len(points)
     if num < 3:
         raise AttributeError('need more than 3 points')
-    # points = tuple(points)
     bad_boys = []
     
     for i, point in enumerate(points):
@@ -40,12 +57,10 @@ def _reduce_points(points:list[Vector]) -> list[Vector]:
             bad_boys.append(point)
     
     # return bad_boys
-
     if not bad_boys: return points
     
     for bad in bad_boys:
         points.remove(bad)
-    # print('phase_2', points)
     
     return points
 
@@ -181,8 +196,26 @@ def count_first_shape_points(shape, elements:int = 2) -> int:
         return l1
     return count_first_shape_points(s0)
 
+def get_owner(
+    obj: Union[PhysicsObject, pymunk.Body, pymunk.Shape, Sprite]
+    ) -> Union[GameObject, PhysicsSpace, None]:
+    
+    if isinstance(obj, pymunk.Shape):
+        obj = obj.body
+    
+    if isinstance(obj, GameObject):
+        return obj.owner
+    
+    if hasattr(obj, 'owner'):
+        return getattr(obj, 'owner')
+    
+    if isinstance(obj, pymunk.Body) and obj.body_type == physics_types.static:
+        return obj.space
+    
+    return None
+
 def setup_shapes(
-    body: pymunk.Body,
+    body: PhysicsObject,
     collision_type = collision.default,
     shape_data: Union[float, list[Vector]] = None,
     shape_edge_radius: float = 0.0,
@@ -200,6 +233,7 @@ def setup_shapes(
             s.collision_type = collision_type
             if friction: s.friction = friction
             if elasticity: s.elasticity = elasticity
+            PhysicsSpace._temp_shapes.add(s)
         return shapes
     
     if isinstance(shape_data, list):
@@ -239,7 +273,7 @@ def setup_shapes(
             pymunk.Poly(body, c, radius=shape_edge_radius) 
             for c in convexes
         ])
-    
+    ### for circle shape
     if isinstance(shape_data, (int, float)):
         return set_shapes_attr([
             pymunk.Circle(
@@ -413,8 +447,9 @@ class __PhysicsObject(GameObject):
             if isinstance(self._shape, pymunk.Segment):
                 return (self._shape.a - self._shape.b).length
             return None
+
         cv = []
-        for shape in self._body.shapes:
+        for shape in self.shapes:
             if isinstance(shape, pymunk.Poly):
                 cv.append(shape.get_vertices())
         bb = pymunk.Poly(body = physics_types.void_body, vertices = pymunk.util.convex_hull(get_all_points_from_shapes(cv))).bb
@@ -556,7 +591,7 @@ class PhysicsObject(pymunk.Body, GameObject):
             raw data for shape. if it's float, shape will be circle with radius of it, else if list, will be poly
     '''
     
-    # __slots__ = '_initial_size', '_initial_mass', '_shape', '_scale', '_hidden', '_last_filter', '_original_poly', 
+    __slots__ = '_initial_size', '_initial_mass', '_shape', '_scale', '_hidden', '_last_filter', '_original_poly', 
     
     def __init__(
         self,
@@ -591,7 +626,7 @@ class PhysicsObject(pymunk.Body, GameObject):
         if angle:
             self.angle = angle
         
-        ts = setup_shapes(
+        setup_shapes(
             body = self,
             collision_type = collision_type,
             shape_data = shape_data,
@@ -601,18 +636,14 @@ class PhysicsObject(pymunk.Body, GameObject):
             elasticity = elasticity,
         )
         ''' Just making shapes will be added to `self.shapes` '''
-        self._shape = ts[0]
+        self._shape = list(self.shapes)[0]
         self._original_poly = shape_data if isinstance(shape_data, list) else None
         self._scale = 1.0
         self._hidden = False
-        self._initial_size = self.size
         self._initial_mass = self.mass
         self._last_filter:pymunk.ShapeFilter = None
+        self._initial_size = self.size
         self._mass_scaling = mass_scaling
-    
-    # def spawn(self) -> GameObject:
-        
-    #     return super().spawn()
     
     def __repr__(self) -> str:
         return f'PhysicsObject({self._id})'
@@ -671,6 +702,7 @@ class PhysicsObject(pymunk.Body, GameObject):
     @property
     def size(self) -> Union[float, Vector]:
         if not self.shapes: return 0
+        # return Vector(abs(self.bb.right - self.bb.left), abs(self.bb.top - self.bb.bottom))
         if len(self.shapes) == 1:
             if isinstance(self._shape, pymunk.Circle):
                 return self._shape.radius
@@ -680,9 +712,18 @@ class PhysicsObject(pymunk.Body, GameObject):
         cv = []
         for shape in self.shapes:
             if isinstance(shape, pymunk.Poly):
-                cv.append(shape.get_vertices())
-        bb = pymunk.Poly(body = physics_types.void_body, vertices = pymunk.util.convex_hull(get_all_points_from_shapes(cv))).bb
-        return Vector(bb.left + bb.right, bb.top + bb.bottom)
+                cv.extend(shape.get_vertices())
+        cp = pymunk.util.calc_center(pymunk.util.convex_hull(cv))
+        mxl = 0
+        for p in cv:
+            mxl = max(mxl, get_distance(*cp, *p))
+        mnl = mxl
+        for p in cv:
+            mnl = min(mnl, get_distance(*cp, *p))
+        return Vector().diagonal((mnl + mxl) / 2)
+        
+        # bb = pymunk.Poly(body = physics_types.void_body, vertices = pymunk.util.convex_hull(cv)).bb
+        # return Vector(bb.left + bb.right, bb.top + bb.bottom)
     
     def _hide(self, switch:bool = None):
         if switch is None: switch = not self._hidden
@@ -711,7 +752,7 @@ class PhysicsObject(pymunk.Body, GameObject):
         return self._scale
     
     def _set_scale(self, scale:float):
-        ''' unsafe for real physics '''
+        ''' UNSAFE for real physics, NOT working with multi-shape body '''
         # if scale <= 0: raise PhysicsException     ## need something
         self._scale = scale
         
@@ -726,7 +767,7 @@ class PhysicsObject(pymunk.Body, GameObject):
             if self._mass_scaling: self.mass = self._initial_mass * scale
     
     scale:float = property(_get_scale, _set_scale)
-    ''' EXPERIMENTAL
+    ''' EXPERIMENTAL, UNSAFE
     
     Scaling is not yet supported for multi-shape object.
     '''
@@ -767,6 +808,15 @@ class PhysicsSpace(pymunk.Space):
     Be careful with `threaded` option. 
     Will not use for release build because not so effective for its own risk.
     '''
+    
+    _temp_shapes: set[pymunk.Shape] = set()
+    '''
+    Maybe since the weakref of body and shape, 
+    `body.shapes` can't retain its shapes unless add to space
+    right after they're made.
+    
+    So add them to temp set and remove(discard) while adding to space.
+    '''
     def __init__(
         self, 
         gravity: Vector = None,
@@ -788,16 +838,29 @@ class PhysicsSpace(pymunk.Space):
         self._static_objs: set[PhysicsObject] = set()
     
     def add(self, *objs: pymunk.space._AddableObjects) -> None:
+
+        if not objs: return
+        '''
+        For better performance (not quite much though)
+        If adding problem raised, remove a line above
+        '''
+        
+        if self._locked:
+            self._add_later.update(objs)
+            return
         
         for o in objs:
             if isinstance(o, PhysicsObject) and o.body_type in (pymunk.Body.DYNAMIC, pymunk.Body.KINEMATIC):
                 self._movable_objs.add(o)
             if isinstance(o, PhysicsObject) and o.body_type == pymunk.Body.STATIC:
                 self._static_objs.add(o)
+            if isinstance(o, pymunk.Shape):
+                self._temp_shapes.discard(o)
         
         return super().add(*objs)
     
     def remove(self, *objs: pymunk.space._AddableObjects) -> None:
+        print("PHY RMV JOB")
         
         for o in objs:
             if isinstance(o, PhysicsObject):
@@ -831,11 +894,12 @@ class PhysicsSpace(pymunk.Space):
         return shapes
     
     def get_owners_from_arbiter(self, arbiter: pymunk.Arbiter) -> tuple[Optional[GameObject], Optional[GameObject]]:
-        """ Given a collision arbiter, return the sprites associated with the collision. """
-        shape1, shape2 = arbiter.shapes
-        actor1 = shape1.body.owner
-        actor2 = shape2.body.owner
-        return actor1, actor2
+        """ Given a collision arbiter, return the shapes associated with the collision. """
+        return arbiter.shapes
+        # shape1, shape2 = arbiter.shapes
+        # actor1 = shape1.body.owner if hasattr(shape1.body, 'owner') else self.static_body
+        # actor2 = shape2.body.owner if hasattr(shape1.body, 'owner') else self.static_body
+        # return actor1, actor2
     
     def add_collision_handler(
         self, 
@@ -866,24 +930,24 @@ class PhysicsSpace(pymunk.Space):
         """
         
         def handler_begin(arbiter, space, data):
-            actor1, actor2 = self.get_owners_from_arbiter(arbiter)
-            should_process_collision = begin_handler(actor1, actor2, arbiter, space, data)
+            shape1, shape2 = self.get_owners_from_arbiter(arbiter)
+            should_process_collision = begin_handler(shape1, shape2, arbiter, space, data)
             return should_process_collision
 
         def handler_post(arbiter, space, data):
-            actor1, actor2 = self.get_owners_from_arbiter(arbiter)
-            if actor1 is not None and actor2 is not None:
-                post_handler(actor1, actor2, arbiter, space, data)
+            shape1, shape2 = self.get_owners_from_arbiter(arbiter)
+            if shape1 is not None and shape2 is not None:
+                return post_handler(shape1, shape2, arbiter, space, data)
 
         def handler_pre(arbiter, space, data):
-            actor1, actor2 = self.get_owners_from_arbiter(arbiter)
-            return pre_handler(actor1, actor2, arbiter, space, data)
+            shape1, shape2 = self.get_owners_from_arbiter(arbiter)
+            return pre_handler(shape1, shape2, arbiter, space, data)
 
         def handler_separate(arbiter, space, data):
-            actor1, actor2 = self.get_owners_from_arbiter(arbiter)
-            separate_handler(actor1, actor2, arbiter, space, data)
+            shape1, shape2 = self.get_owners_from_arbiter(arbiter)
+            return separate_handler(shape1, shape2, arbiter, space, data)
         
-        h = self.add_collision_handler(first_type, second_type)
+        h = super().add_collision_handler(first_type, second_type)
         
         if begin_handler:
             h.begin = handler_begin
@@ -929,7 +993,6 @@ class PhysicsSpace(pymunk.Space):
                 line_thickness=line_thickness,
                 fill_color=fill_color
             )
-    
     
     def sync(self):
         

@@ -98,26 +98,16 @@ class PhysicsTestView(View):
         self.test_box = ShrinkingToy(box_body)
         self.test_box.spawn(self.wall_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
-        print('---')
-        print('---')
-        print('---')
-        print('---')
-        print('---')
-        dynamic_fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
-                                     shape_type=physics_types.poly, 
-                                     mass=20,
-                                     shape_edge_radius=2)
+        dynamic_fan_blade_body = DynamicBody(
+            Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
+            collision_type=collision.wall,
+            shape_type=physics_types.poly, 
+            mass=20,
+            shape_edge_radius=2)
         
         self.test_rotating_dynamic = DynamicRotatingFan(dynamic_fan_blade_body).spawn(self.wall_layer, Vector(800,200))
         dynamic_fan_blade_body.physics.add_world_pivot(dynamic_fan_blade_body.position)
         dynamic_fan_blade_body.damping = 0.1
-        print('---')
-        print('---')
-        print('---')
-        print('---')
-        print('---')
-        
-        
         
         kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
                                                  shape_type=physics_types.poly,
@@ -142,21 +132,21 @@ class PhysicsTestView(View):
         ### DynamicObject.spawn test
         
         def begin_player_hit_wall(player, wall, arbiter, space, data):
-            print('begin_hit')
+            print(get_owner(player), 'begin_hit', get_owner(wall))
             return True
         def pre_player_hit_wall(player, wall, arbiter, space, data):
-            print('pre_hit')
+            print(player, 'pre_hit', wall)
             return True
         def post_player_hit_wall(player, wall, arbiter, space, data):
-            print('post_hit')
+            print(player, 'post_hit', wall)
         def seperate_player_hit_wall(player, wall, arbiter, space, data):
-            print('seperate_hit')
+            print(player, 'seperate_hit', wall)
         
-        # self.physics_main.add_collision_handler(collision.character, collision.wall, 
-        #                                           begin_handler=begin_player_hit_wall, 
-        #                                           pre_handler=pre_player_hit_wall,
-        #                                           separate_handler=seperate_player_hit_wall,
-        #                                           post_handler=post_player_hit_wall)
+        self.space.add_collision_handler(collision.character, collision.wall, 
+                                                  begin_handler=begin_player_hit_wall, 
+                                                  pre_handler=pre_player_hit_wall,
+                                                  separate_handler=seperate_player_hit_wall,
+                                                  post_handler=post_player_hit_wall)
 
         print(f'INITIAL LOADING TIME : {round(CLOCK.perf - start_loading_time, 2)} sec')
         
@@ -237,7 +227,10 @@ class PhysicsTestView(View):
         
         layer.extend(sprite_list)
         
-        self.wall_collision_debug_shape = self.space.add_static_collison(layer, elasticity=1.0)
+        self.wall_collision_debug_shape = self.space.add_static_collison(
+            layer, 
+            collision_type = collision.wall,
+            elasticity=1.0)
         ### for presentation, leaving old one below
         # walls_points:list = []
         # for sprite in sprite_list:
@@ -263,18 +256,20 @@ class PhysicsTestView(View):
                 layer.add(ground)
     
     def on_key_press(self, key: int, modifiers: int):
-        # print(modifiers, keys.MOD_OPTION)
+        print('key, mod', key, modifiers, keys.DOWN, keys.MOD_OPTION)
         if key == keys.G: 
             self.change_gravity(vectors.zero)
             gc.collect()    ### garbage collect manually
         
-        if key == keys.UP and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
+        mod_alt = modifiers & keys.MOD_COMMAND or modifiers & keys.MOD_ALT
+        
+        if key == keys.UP:
             self.change_gravity(vectors.up)
-        if key == keys.DOWN and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.DOWN:
             self.change_gravity(vectors.down)
-        if key == keys.LEFT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.LEFT:
             self.change_gravity(vectors.left)
-        if key == keys.RIGHT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
+        if key == keys.RIGHT:
             self.change_gravity(vectors.right)
         
         # if key == keys.SPACE: self.player.test_boost(500)
@@ -404,17 +399,19 @@ class PhysicsTestView(View):
             # debug_draw_shape(shape, line_color = (255, 0, 0, 255))
         
         GAME.viewport.use()
-        GAME.debug_text['PLAYER_POS'] = self.player.position
-        GAME.debug_text['CAMERA_POS'] = self.camera.center
+        # GAME.debug_text['PLAYER_POS'] = self.player.position
+        # GAME.debug_text['CAMERA_POS'] = self.camera.center
         GAME.debug_text.perf_check('on_draw')
     
     def on_update(self, delta_time: float):
+        # print('-------------->UPDATE',self)
         GAME.debug_text.perf_check('update_game')
         super().on_update(delta_time)
-        
+        GAME.debug_text.perf_check('PLAYER_TICK')
         self.player.controller.tick(delta_time)
         self.player.camera.tick(delta_time)
         self.player.movement.tick(delta_time)
+        GAME.debug_text.perf_check('PLAYER_TICK')
         
         self.test_npc.tick(delta_time)
         self.test_rotating_dynamic.tick(delta_time)
@@ -432,15 +429,16 @@ class PhysicsTestView(View):
             grounding = self.player.body.physics.get_grounding()
             # print(self.player.body.physics.get_grounding())
         GAME.debug_text.perf_check('update_physics')
+        
         GAME.debug_text.perf_check('resync_objects')
         # self.physics_main.resync_objects()
         # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
         # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
-        non_static_objects = self.space.movables
+        non_static_objects = self.space._movable_objs
         if non_static_objects:
             for o in non_static_objects:
-                o.body.tick(delta_time)
+                o.owner.body.tick(delta_time)
             total = len(non_static_objects)
             # sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
             sleeps = 0
@@ -454,7 +452,6 @@ class PhysicsTestView(View):
         #     pe.physics_instance.step(delta_time)
         # ENV.debug_text.perf_check('update_empty_physics')
         GAME.debug_text.show_timer('mouse_lb_hold')
-        GAME.debug_text.perf_check('update_game')
         
         
         GAME.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{BodyHandler.counter_created - BodyHandler.counter_removed}/{BodyHandler.counter_removed - BodyHandler.counter_gced}/{BodyHandler.counter_gced}'
@@ -463,6 +460,7 @@ class PhysicsTestView(View):
     #     super().on_resize(width, height)
     #     scale = width / 1024
     #     self.field_layer.rescale(scale)
+        GAME.debug_text.perf_check('update_game')
 
 class PlatformerTestView(View):
     

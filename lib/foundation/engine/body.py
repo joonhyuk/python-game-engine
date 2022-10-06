@@ -33,7 +33,7 @@ class BodyHandler(GameObject):
     counter_removed = 0 ### for debug. total destroyed
     counter_gced = 0 ### for debug. total garbage collected
 
-    # __slots__ = 'sprite', '_hidden', '_last_spawn_layer'
+    __slots__ = 'sprite', '_hidden', '_last_spawn_layer'
     
     def __init__(
         self, 
@@ -191,7 +191,7 @@ class PhysicsBody(BodyHandler):
     
     '''
     
-    # __slots__ = 'physics', 
+    __slots__ = 'physics', 
     
     def __init__(
         self,
@@ -269,7 +269,7 @@ class PhysicsBody(BodyHandler):
             elasticity = elasticity,
             position = position,
             angle = angle,
-            mass_scaling = False
+            mass_scaling = False,
         )
         
         self.physics._scale = self.sprite.scale     ### should set directly
@@ -348,6 +348,8 @@ class PhysicsBody(BodyHandler):
 
 
 class DynamicBody(PhysicsBody):
+    
+    __slots__ = ()
     
     def __init__(
         self,
@@ -519,7 +521,7 @@ class DynamicBody(PhysicsBody):
 
 class KinematicBody(DynamicBody):
     
-    # __slots__ = ()
+    __slots__ = ()
     
     def __init__(
         self,
