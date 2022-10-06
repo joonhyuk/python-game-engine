@@ -59,6 +59,9 @@ class ShrinkingBall(BallProjectile):
         super().spawn(spawn_to, position, angle, initial_impulse)
         delay_run(self.shrinking_start, self.start_shrink)
         
+    def destroy(self) -> None:
+        return super().destroy()
+    
     def start_shrink(self):
         delay_cancel(self.start_shrink)
         schedule_interval(self._shrink, 1/60)
@@ -112,7 +115,8 @@ class DynamicRotatingFan(DynamicObject):
     
     def tick(self, delta_time: float) -> bool:
         # if not super().tick(delta_time): return False
-        if CONFIG.debug_f_keys[5]: self.body.physics._body.apply_force_at_local_point((0, 10000), (self.body.size.x, 0))
+        if CONFIG.debug_f_keys[5]: 
+            self.body.physics.apply_force_at_local_point((0, 10000), (self.body.size.x, 0))
         return True
 
 
@@ -124,7 +128,8 @@ class EscapePlayer(Character):
         if not body:
             body = DynamicBody(sprite = Sprite(get_path(IMG_PATH + 'player_handgun_original.png')),
                                collision_type = collision.character,
-                               shape_type = physics_types.circle)
+                               shape_type = pymunk.Circle,
+                               shape_edge_radius = -16)
         super().__init__(body, hp, **kwargs)
         self.body.physics.filter = pymunk.ShapeFilter(categories=collision.character)
         self.max_energy = 100

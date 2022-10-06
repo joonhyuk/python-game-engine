@@ -12,7 +12,7 @@ def _check_valid_iterable(other) -> bool:
         return True
     if isinstance(other, (tuple, list, set, Iterable)):
         """ Validity check for elements(below line) will be on the fly for performance """
-        assert all(isinstance(x, (float, int)) for x in other), f'Invalid vector object : {other}'
+        # assert all(isinstance(x, (float, int)) for x in other), f'Invalid vector object : {other}'
         return True
     return False
     

@@ -98,7 +98,7 @@ class BodyHandler(GameObject):
     
     def destroy(self) -> bool:
         BodyHandler.counter_removed += 1
-        self.sprite.remove_from_sprite_lists()
+        # self.sprite.remove_from_sprite_lists()
         return super().destroy()
     
     def _get_visibility(self) -> bool:
@@ -197,7 +197,7 @@ class PhysicsBody(BodyHandler):
     def __init__(
         self,
         sprite: Sprite,
-        mass: float = 0,
+        mass: float = 1,
         moment: float = None,
         body_type: pymunk.body._BodyType = pymunk.Body.STATIC,
         collision_type = collision.default,
@@ -229,14 +229,17 @@ class PhysicsBody(BodyHandler):
         if shape_type is None:
             if isinstance(sprite, SpriteCircle):
                 shape_type = pymunk.Circle
-                shape_data = sprite.size[0]
+                # shape_data = sprite.size[0] // 2
             else:
                 shape_type = pymunk.Poly
-                shape_data = sprite.scaled_poly
-        elif shape_type == pymunk.Circle:
+                # shape_data = sprite.scaled_poly
+                # shape_data.reverse()
+        
+        if shape_type == pymunk.Circle:
             shape_data = sprite.size[0] // 2
         elif shape_type == pymunk.Poly:
             shape_data = sprite.scaled_poly
+            # shape_data.reverse()
             
         if body_type == physics_types.static:
             _moment = physics_types.infinite
@@ -248,8 +251,8 @@ class PhysicsBody(BodyHandler):
                     outer_radius = min(size.x, size.y) / 2 + shape_edge_radius, 
                     offset = shape_offset
                     )
-            elif shape_type == physics_types.box or isinstance(shape_type, physics_types.box):
-                _moment = pymunk.moment_for_box(mass, size)
+            # elif shape_type == physics_types.box or isinstance(shape_type, physics_types.box):
+                # _moment = pymunk.moment_for_box(mass, size)
             else:
                 _moment = pymunk.moment_for_poly(mass, sprite.scaled_poly, shape_offset, radius=shape_edge_radius)
         
@@ -272,7 +275,7 @@ class PhysicsBody(BodyHandler):
         
         self.physics._scale = self.sprite.scale     ### should set directly
     
-    def sync(self) -> None:
+    def _sync(self) -> None:
         if self.physics.is_sleeping:
             return False
         
@@ -345,7 +348,7 @@ class DynamicBody(PhysicsBody):
     def __init__(
         self,
         sprite: Sprite,
-        mass: float = 0,
+        mass: float = 1,
         moment: float = None,
         body_type: pymunk.body._BodyType = pymunk.Body.DYNAMIC,
         collision_type=collision.default,
@@ -388,7 +391,7 @@ class DynamicBody(PhysicsBody):
         if not self.alive: return False
         if not self.spawnned: return False
         # print(self.owner, 'POWSITION!', self.position)
-        self.sync()
+        self._sync()
     
     def setup_velocity_callback(
         self,
@@ -517,7 +520,7 @@ class KinematicBody(DynamicBody):
     def __init__(
         self,
         sprite: Sprite,
-        mass: float = 0,
+        mass: float = 1,
         moment: float = None,
         collision_type=collision.default,
         shape_type: type = None,

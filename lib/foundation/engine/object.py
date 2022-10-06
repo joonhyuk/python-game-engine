@@ -35,7 +35,7 @@ class GameObject(object):
     
     '''
     
-    # __slots__ = '_alive', 'spawnned', '_owner', '_members'
+    __slots__ = '_alive', 'spawnned', '_owner', '_members'
     
     def __init__(self, **kwargs) -> None:
         self._alive = True
