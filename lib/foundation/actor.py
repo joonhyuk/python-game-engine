@@ -120,6 +120,7 @@ class DynamicObject(Actor):
     
     angle:float = PropertyFrom('body')
     velocity:Vector = PropertyFrom('body')
+    speed:float = PropertyFrom('body')
     
     @property
     def screen_position(self) -> Vector:

@@ -5,6 +5,10 @@ from config.game import *
 
 class EscapePlayerController(PlayerController):
     
+    def tick(self, delta_time: float) -> bool:
+        print("shshshshsh",self.movement.body.position)
+        return super().tick(delta_time)
+    
     def on_key_press(self, key: int, modifiers: int):
         #TODO
         '''

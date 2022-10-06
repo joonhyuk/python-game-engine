@@ -101,16 +101,16 @@ class World:
         hit_box_algorithm: str = "Simple",
         hit_box_detail: float = 4.5,
         offset: Vector = vectors.zero,
-        physics:PhysicsEngine = None,
+        space:PhysicsSpace = None,
         ) -> None:
         
-        if physics is None:
+        if space is None:
             try:
-                physics = getattr(self, 'physics')
+                space = getattr(self, 'physics')
             except:
-                self.physics:PhysicsEngine = PhysicsEngine()
+                self.physics:PhysicsSpace = PhysicsSpace()
         else:
-            self.physics = physics
+            self.physics = space
         
         self.map:pytiled_parser.TiledMap= None
         ''' map data '''

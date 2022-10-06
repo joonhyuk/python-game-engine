@@ -75,7 +75,10 @@ class Sprite(GameObject, arcade.Sprite):
     
     @property
     def scaled_poly(self):
-        return [[x * self.scale for x in z] for z in self.get_hit_box()].reverse()
+        # scaled_poly = [[int(x * self.scale + p) for x, p in zip(z, self.pos)] for z in hit_box]
+        sp = [[x * self.scale for x in z] for z in self.get_hit_box()]
+        # sp.reverse()
+        return sp
     
     
 class SpriteCircle(Sprite):

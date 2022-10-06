@@ -98,7 +98,7 @@ class Coontroller(GameObject):
 
 SPC = pymunk.Space()
 
-from lib.foundation.new_physics import *
+from lib.foundation.physics import *
 
 class TestActor(GameObject):
     
