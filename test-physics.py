@@ -392,8 +392,9 @@ class PhysicsTestView(View):
 
         self.player.draw()
         
-        self.space.debug_draw_movable_collision()
-        self.space.debug_draw_static_collision()
+        if CONFIG.debug_f_keys[2]:
+            self.space.debug_draw_movable_collision()
+            self.space.debug_draw_static_collision()
         # self.test_npc.body.physics.draw()
         # self.test_box.body.physics.draw()
         # self.test_rotating_dynamic.body.physics.draw()
@@ -433,7 +434,6 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('update_physics')
         GAME.debug_text.perf_check('resync_objects')
         # self.physics_main.resync_objects()
-        GAME.debug_text.perf_check('resync_objects')
         # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
         # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
@@ -446,7 +446,8 @@ class PhysicsTestView(View):
             sleeps = 0
             for a in self.space.bodies:
                 if a.is_sleeping: sleeps += 1
-            GAME.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
+            GAME.debug_text['MOVABLE TOTAL/SLEEP'] = f'{total}/{sleeps}'
+        GAME.debug_text.perf_check('resync_objects')
         
         # ENV.debug_text.perf_check('update_empty_physics')
         # for pe in self.test_physics_layers:

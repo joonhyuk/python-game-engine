@@ -320,6 +320,11 @@ class PhysicsBody(BodyHandler):
     
     position:Vector = property(BodyHandler._get_position, _set_position)    
     
+    def _get_angle(self):
+        if self.physics:
+            return math.degrees(self.physics.angle)
+        return super()._get_angle()
+    
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
             self.physics.angle = math.radians(angle)
@@ -327,7 +332,7 @@ class PhysicsBody(BodyHandler):
                 self.physics.space.reindex_shapes_for_body(self.physics)
         self.sprite.angle = angle
 
-    angle:float = property(BodyHandler._get_angle, _set_angle)
+    angle:float = property(_get_angle, _set_angle)
     
     def _set_velocity(self, velocity):
         if not self.physics: self.sprite.velocity = velocity
@@ -483,7 +488,7 @@ class DynamicBody(PhysicsBody):
             self.physics.angle = math.radians(angle)
         self.sprite.angle = angle
 
-    angle:float = property(BodyHandler._get_angle, _set_angle)
+    angle:float = property(PhysicsBody._get_angle, _set_angle)
     
     velocity: Vector = property(BodyHandler._get_veloticy, BodyHandler._set_velocity)
     
