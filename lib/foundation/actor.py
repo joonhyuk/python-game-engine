@@ -13,10 +13,10 @@ from .component import *
 
 class BodyObject(Actor):
     def __init__(self, 
-                 body:Body,
+                 body:BodyHandler,
                  **kwargs) -> None:
         super().__init__(**kwargs)
-        self.body:Body = body
+        self.body:BodyHandler = body
     
     def spawn(self, 
               spawn_to:ObjectLayer, 

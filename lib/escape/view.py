@@ -82,7 +82,7 @@ class EscapeGameView(View):
     
     def setup(self):
         
-        self.physics_complex = PhysicsEngine()
+        self.space = PhysicsSpace()
         
         self.player = EscapePlayer()
         self.player.spawn(self.player_list, Vector(100,100))
@@ -105,10 +105,10 @@ class EscapeGameView(View):
         
         # self._setup_pathfinding()
         
-        GAME.default_space.add_sprite_list(self.bomb_list, 
-                                     friction = 1.0, 
-                                     body_type = PhysicsEngine.DYNAMIC, 
-                                     collision_type = collision.enemy)
+        # GAME.default_space.add_sprite_list(self.bomb_list, 
+        #                              friction = 1.0, 
+        #                              body_type = PhysicsEngine.DYNAMIC, 
+        #                              collision_type = collision.enemy)
 
         def player_hit_wall(player, wall, arbiter, space, data):
             print(wall)
@@ -196,7 +196,7 @@ class EscapeGameView(View):
             self.player.camera.camera.position = self.window.current_camera.position
         if key == arcade.key.F:
             # self.player.body.change_x = -100
-            self.physics_complex.apply_force(self.player.body, (10000,0)) 
+            self.space.apply_force(self.player.body, (10000,0)) 
     
     def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
         self.raycast_fire_check(self.player.position, Vector(x, y))
@@ -298,7 +298,7 @@ class EscapeGameView(View):
         GAME.debug_text.perf_check('update_player')
         
         GAME.debug_text.perf_check('update_physics')
-        self.physics_complex.step(1/60)
+        self.space.step(1/60)
         GAME.debug_text.perf_check('update_physics')
         # print(self.player.position, self.enemy.position, self.physics_complex.objects[self.enemy.body].position)
     

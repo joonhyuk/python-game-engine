@@ -127,7 +127,6 @@ class EscapePlayer(Character):
                                shape_type = physics_types.circle)
         super().__init__(body, hp, **kwargs)
         self.body.physics.filter = pymunk.ShapeFilter(categories=collision.character)
-        # self._fire_counter = 0
         self.max_energy = 100
         self.energy = self.max_energy
         self.camera = CameraHandler(body = self.body)

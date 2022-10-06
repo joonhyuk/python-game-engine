@@ -35,7 +35,7 @@ class GameObject(object):
     
     '''
     
-    __slots__ = '_alive', 'spawnned', '_owner', '_members'
+    # __slots__ = '_alive', 'spawnned', '_owner', '_members'
     
     def __init__(self, **kwargs) -> None:
         self._alive = True
@@ -154,9 +154,9 @@ class GameObject(object):
     
     owner : GameObject = property(_get_owner, _set_owner)
     
-    @property
-    def id(self) -> str:
-        return str(id(self))
+    # @property
+    # def id(self) -> str:
+    #     return str(id(self))
     
     @property
     def alive(self) -> bool:
@@ -165,6 +165,13 @@ class GameObject(object):
     @property
     def members(self) -> list[GameObject]:
         return self._members
+
+    # def __getstate__(self):
+    #     return dict([(k, getattr(self,k,None)) for k in self.__slots__])
+
+    # def __setstate__(self,data):
+    #     for k,v in data.items():
+    #         setattr(self,k,v)
 
 
 class Handler(GameObject):

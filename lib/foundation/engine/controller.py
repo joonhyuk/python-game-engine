@@ -17,6 +17,7 @@ class Controller(Handler):
         
         super().__init__(**kwargs)
         self.movement = movement
+        self.body = self.movement.body
         self.action = action
     
     def spawn(self) -> GameObject:

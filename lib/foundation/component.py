@@ -366,7 +366,7 @@ class CameraHandler(Handler):
     # __slots__ = 
     
     def __init__(self,
-                 body : Body,
+                 body : BodyHandler,
                  offset:Vector = vectors.zero,
                  interp_speed:float = 0.05,
                  boom_length:float = 200,

@@ -5,8 +5,16 @@ from config.game import *
 
 class EscapePlayerController(PlayerController):
     
+    def on_spawn(self) -> None:
+        self.tmp_pos: Vector = self.body.position
+        return super().on_spawn()
+    
     def tick(self, delta_time: float) -> bool:
-        print("shshshshsh",self.movement.body.position)
+        print("before",self.tmp_pos)
+        if self.body.position != Vector(100, 100):
+            raise Exception('ERR')
+        print("shshshshsh",self.body.position)
+        self.tmp_pos = self.body.position
         return super().tick(delta_time)
     
     def on_key_press(self, key: int, modifiers: int):

@@ -12,26 +12,26 @@ class ObjectLayer(arcade.SpriteList):
     
     def _get_obj_tree(self, obj):
         actor:GameObject = None
-        body:Body = None
+        body:BodyHandler = None
         sprite:Sprite = None
         
         if isinstance(obj, (Sprite, SpriteCircle)):
             sprite = obj
         
-        elif isinstance(obj, (Body, )):
+        elif isinstance(obj, (BodyHandler, )):
             body = obj
             sprite = body.get_members(Sprite)[0]
         
         elif isinstance(obj, GameObject):
             actor = obj
-            body = obj.get_members(Body)[0]
+            body = obj.get_members(BodyHandler)[0]
             sprite = body.get_members(Sprite)[0]
         
         else: raise Exception('ObjectLayer only accept Sprite, Body, Actor')
         
         return actor, body, sprite
         
-    def add(self, obj:Union[GameObject, Body, Sprite, SpriteCircle]):
+    def add(self, obj:Union[GameObject, BodyHandler, Sprite, SpriteCircle]):
         
         actor, body, sprite = self._get_obj_tree(obj)
         
@@ -55,7 +55,7 @@ class ObjectLayer(arcade.SpriteList):
     #     self.physics_instance.add_physics_object(sprite, physics)
     #     self.physics_instance.add_to_space(sprite)
     
-    def remove(self, obj:Union[GameObject, Body, Sprite, SpriteCircle]):
+    def remove(self, obj:Union[GameObject, BodyHandler, Sprite, SpriteCircle]):
         
         actor, body, sprite = self._get_obj_tree(obj)
         

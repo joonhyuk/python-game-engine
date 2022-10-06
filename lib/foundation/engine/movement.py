@@ -14,7 +14,7 @@ class MovementHandler(Handler):
     
     def __init__(
         self,
-        body : Body,
+        body : BodyHandler,
         rotation_interp_speed:float = 3.0,
         **kwargs,
         ) -> None:
