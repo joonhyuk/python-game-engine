@@ -8,6 +8,13 @@ from typing import Callable, Optional, Union
 import pymunk, pymunk.util
 from pymunk._chipmunk_cffi import ffi, lib
 
+from pymunk import _chipmunk_cffi, _version
+
+cp = _chipmunk_cffi.lib
+ffi = _chipmunk_cffi.ffi
+lib = _chipmunk_cffi.lib
+
+
 from .base import *
 from .vector import *
 from .utils import *
@@ -264,6 +271,261 @@ class PhysicsException(Exception):
     pass
 
 
+class __PhysicsObject(GameObject):
+    '''
+    Base physics object class coupled with pymunk body.
+    
+    Should be tested in case of removed : shapes, constraints should be removed also.
+    
+    :Parameter:
+        `shape_data -> Union[float, list[Vector]]`
+            raw data for shape. if it's float, shape will be circle with radius of it, else if list, will be poly
+    '''
+    
+    __slots__ = '_body', '_initial_size', '_initial_mass', '_shape', '_scale', '_hidden', '_last_filter', '_original_poly', 
+    
+    def __init__(
+        self,
+        mass: float = 0,
+        moment: float = None,
+        body_type: pymunk.body._BodyType = pymunk.Body.DYNAMIC,
+        collision_type = collision.default,
+        shape_data: Union[float, list[Vector]] = None,
+        shape_edge_radius: float = 0.0,
+        shape_offset:Vector = vectors.zero,
+        friction: float = 1.0,
+        elasticity: float = None,
+        position:Vector = None,
+        angle:float = None,
+        mass_scaling:bool = True,
+        ) -> None:
+        
+        if body_type == pymunk.Body.STATIC:
+            moment = physics_types.infinite
+        else:
+            # if shape_constructor == pymunk.Circle
+            pass
+        
+        self._body = pymunk.Body(mass, moment, body_type)
+        
+        super().__init__()
+        
+        if position:
+            self.position = position
+        if angle:
+            self.angle = angle
+        
+        ts = setup_shapes(
+            body = self._body,
+            collision_type = collision_type,
+            shape_data = shape_data,
+            shape_edge_radius = shape_edge_radius,
+            shape_offset = shape_offset,
+            friction = friction,
+            elasticity = elasticity,
+        )
+        ''' Just making shapes will be added to `self.shapes` '''
+        self._shape = ts[0]
+        self._original_poly = shape_data if isinstance(shape_data, list) else None
+        self._scale = 1.0
+        self._hidden = False
+        self._initial_size = self.size
+        self._initial_mass = self.mass
+        self._last_filter:pymunk.ShapeFilter = None
+        self._mass_scaling = mass_scaling
+    
+    def spawn(self) -> GameObject:
+        
+        return super().spawn()
+    
+    def spawn_in_space(self, space: pymunk.Space) -> None:
+        space.add(self._body, *self._body.shapes)
+    
+    def add_world_pivot(self, position : Vector) -> None:
+        '''
+        Example feature for dealing with constraints.
+        '''
+        if not self._body.space: 
+            raise PhysicsException('Not yet added to space')
+        self._body.space.add(
+            pymunk.constraints.PivotJoint(self._body, self._body.space.static_body, position)
+        )
+    
+    def draw(self, line_color = None, line_thickness = 1, fill_color = None):
+        debug_draw_physics(self._body, line_color=line_color, line_thickness=line_thickness, fill_color=fill_color)
+    
+    def get_grounding(self):
+        grounding = {
+            'normal' : vectors.zero,
+            'penetration' : vectors.zero,
+            'impulse' : vectors.zero,
+            'position' : vectors.zero,
+            'body' : None
+        }
+        if self._body.space.gravity == (0,0): return grounding    ### no gravity, no grounding
+        
+        gravity_direction = Vector(self._body.space.gravity).unit
+        
+        def f(arbiter: pymunk.Arbiter):
+            
+            norm = Vector(arbiter.contact_point_set.normal)
+            
+            if gravity_direction + vectors.walkable_limit > norm > gravity_direction - vectors.walkable_limit:
+                grounding['normal'] = norm
+                grounding['penetration'] = -arbiter.contact_point_set.points[0].distance
+                grounding['impulse'] = arbiter.total_impulse
+                grounding['position'] = arbiter.contact_point_set.points[0].point_b
+                grounding['body'] = arbiter.shapes[1].body
+        
+        self._body.each_arbiter(f)
+        
+        return grounding
+    
+    @property
+    def is_on_ground(self) -> bool:
+        return self.get_grounding()['body'] is not None
+
+    @property
+    def size(self) -> Union[float, Vector]:
+        if not self._body.shapes: return 0
+        if len(self._body.shapes) == 1:
+            if isinstance(self._shape, pymunk.Circle):
+                return self._shape.radius
+            if isinstance(self._shape, pymunk.Segment):
+                return (self._shape.a - self._shape.b).length
+            return None
+        cv = []
+        for shape in self._body.shapes:
+            if isinstance(shape, pymunk.Poly):
+                cv.append(shape.get_vertices())
+        bb = pymunk.Poly(body = physics_types.void_body, vertices = pymunk.util.convex_hull(get_all_points_from_shapes(cv))).bb
+        return Vector(bb.left + bb.right, bb.top + bb.bottom)
+    
+    def _hide(self, switch:bool = None):
+        if switch is None: switch = not self._hidden
+        if switch: self._last_filter = self.filter
+        self.filter = physics_types.filter_nomask if switch else self._last_filter
+        return switch
+    
+    def _get_mass(self):
+        return self._body.mass
+    
+    def _set_mass(self, mass:float):
+        self._body.mass = mass
+    
+    mass:float = property(_get_mass, _set_mass)
+    
+    def _set_position(self, pos: Vector) -> None:
+        self._body.position = pos
+
+    def _get_position(self) -> Vector:
+        return Vector(self._body.position)
+
+    position = property(
+        _get_position,
+        _set_position,
+        doc="""Position of the body.
+
+        When changing the position you may also want to call
+        :py:func:`Space.reindex_shapes_for_body` to update the collision 
+        detection information for the attached shapes if plan to make any 
+        queries against the space.""",
+    )
+    
+    def _get_angle(self):
+        return math.degrees(self._body.angle)
+    
+    def _set_angle(self, angle:float):
+        self._body.angle = math.radians(angle)
+    
+    angle:float = property(_get_angle, _set_angle)
+    
+    def _get_velocity(self):
+        return Vector(self._body.velocity)
+    
+    def _set_velocity(self, velocity:tuple[float, float]):
+        self._body.velocity = velocity
+    
+    velocity:Vector = property(_get_velocity, _set_velocity)
+    
+    def _get_hidden(self):
+        return self._hidden
+    
+    def _set_hidden(self, switch:bool = None):
+        self._hidden = self._hide(switch)
+        
+    hidden:bool = property(_get_hidden, _set_hidden)
+    
+    def _get_filter(self):
+        return self._shape.filter
+    
+    def _set_filter(self, filter):
+        for shape in self._body.shapes:
+            shape.filter = filter
+    
+    filter = property(_get_filter, _set_filter)
+    
+    def _get_scale(self):
+        return self._scale
+    
+    def _set_scale(self, scale:float):
+        ''' unsafe for real physics '''
+        # if scale <= 0: raise PhysicsException     ## need something
+        self._scale = scale
+        
+        if isinstance(self._shape, physics_types.circle):
+            self._shape.unsafe_set_radius(self._initial_size * scale)
+        else:
+            ### totally unsafe...
+            # self.shape.update(pymunk.Transform.scaling(scale))
+            # if not self.hitbox: return False
+            st = pymunk.Transform.scaling(scale)
+            self._shape.unsafe_set_vertices(self._original_poly, st)
+            if self._mass_scaling: self.mass = self._initial_mass * scale
+    
+    scale:float = property(_get_scale, _set_scale)
+    ''' EXPERIMENTAL
+    
+    Scaling is not yet supported for multi-shape object.
+    '''
+    
+    def _get_elasticity(self):
+        return self._shape.elasticity
+    
+    def _set_elasticity(self, elasticity:float):
+        for shape in self.shapes:
+            shape.elasticity = elasticity
+    
+    elasticity:float = property(_get_elasticity, _set_elasticity)
+    
+    def _get_friction(self):
+        return self._shape.friction
+    
+    def _set_friction(self, friction:float):
+        for shape in self.shapes:
+            shape.friction = friction
+    
+    friction:float = property(_get_friction, _set_friction)
+
+    def _get_collision_type(self):
+        ''' movement or hitbox? '''
+        return self._shape.collision_type
+    
+    def _set_collision_type(self, collision_type:int):
+        for shape in self._shape:
+            shape.collision_type = collision_type
+    
+    collision_type = property(_get_collision_type, _set_collision_type)
+    
+    @property
+    def speed(self):
+        return self.velocity.length
+    
+    @property
+    def space(self):
+        return self._body.space
+    
+
 class PhysicsObject(pymunk.Body, GameObject):
     '''
     Base physics object class coupled with pymunk body.
@@ -275,7 +537,7 @@ class PhysicsObject(pymunk.Body, GameObject):
             raw data for shape. if it's float, shape will be circle with radius of it, else if list, will be poly
     '''
     
-    __slots__ = '_initial_size', '_initial_mass', '_shape', '_scale', '_hidden', '_last_filter', '_original_poly', 
+    # __slots__ = '_initial_size', '_initial_mass', '_shape', '_scale', '_hidden', '_last_filter', '_original_poly', 
     
     def __init__(
         self,
@@ -494,7 +756,7 @@ class PhysicsSpace(pymunk.Space):
         self, 
         gravity: Vector = vectors.zero,
         damping: float = 0.01,
-        threaded: bool = False,
+        threaded: bool = True,
         sleep_time_threshold: float = 5.0,
         idle_speed_threshold: float = 10.0,
         ) -> None:
@@ -594,6 +856,55 @@ class PhysicsSpace(pymunk.Space):
     
     def sync(self):
         pass
+    
+    def step(self, dt: float) -> None:
+        """Update the space for the given time step.
+
+        Using a fixed time step is highly recommended. Doing so will increase
+        the efficiency of the contact persistence, requiring an order of
+        magnitude fewer iterations to resolve the collisions in the usual case.
+
+        It is not the same to call step 10 times with a dt of 0.1 and
+        calling it 100 times with a dt of 0.01 even if the end result is
+        that the simulation moved forward 100 units. Performing  multiple
+        calls with a smaller dt creates a more stable and accurate
+        simulation. Therefor it sometimes make sense to have a little for loop
+        around the step call, like in this example:
+
+        >>> import pymunk
+        >>> s = pymunk.Space()
+        >>> steps = 10
+        >>> for x in range(steps): # move simulation forward 0.1 seconds:
+        ...     s.step(0.1 / steps)
+
+        :param dt: Time step length
+        """
+        def dp():
+            db = self.dynamics
+            for d in db:
+                print(d, d.body.position)
+        try:
+            self._locked = True
+            dp()
+            if self.threaded:
+                cp.cpHastySpaceStep(self._space, dt)
+            else:
+                cp.cpSpaceStep(self._space, dt)
+            dp()
+            self._removed_shapes = {}
+        finally:
+            self._locked = False
+
+        self.add(*self._add_later)
+        self._add_later.clear()
+        for obj in self._remove_later:
+            self.remove(obj)
+        self._remove_later.clear()
+
+        for key in self._post_step_callbacks:
+            self._post_step_callbacks[key](self)
+
+        self._post_step_callbacks = {}
     
     @property
     def dynamics(self) -> list[GameObject]:

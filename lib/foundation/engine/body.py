@@ -22,7 +22,7 @@ class Transform:
         self.visible: bool = False
 
 
-class Body(GameObject):
+class BodyHandler(GameObject):
     
     """
     Base class of 'body'. Combined with transform component.
@@ -33,7 +33,7 @@ class Body(GameObject):
     counter_removed = 0 ### for debug. total destroyed
     counter_gced = 0 ### for debug. total garbage collected
 
-    __slots__ = 'sprite', '_hidden', '_last_spawn_layer'
+    # __slots__ = 'sprite', '_hidden', '_last_spawn_layer'
     
     def __init__(
         self, 
@@ -43,7 +43,7 @@ class Body(GameObject):
         **kwargs
         ) -> None:
         super().__init__(**kwargs)
-        Body.counter_created += 1 ### for debug
+        BodyHandler.counter_created += 1 ### for debug
         
         self.sprite:Sprite = sprite
         self._hidden:bool = False
@@ -56,7 +56,7 @@ class Body(GameObject):
         return self.sprite
     
     def __del__(self):
-        Body.counter_gced += 1
+        BodyHandler.counter_gced += 1
     
     def set_spawn(self, spawn_to:Layer = None, position:Vector = None, angle:float = None) -> None:
         if spawn_to is not None:
@@ -97,7 +97,7 @@ class Body(GameObject):
     hidden:bool = property(_get_hidden, _set_hidden)
     
     def destroy(self) -> bool:
-        Body.counter_removed += 1
+        BodyHandler.counter_removed += 1
         self.sprite.remove_from_sprite_lists()
         return super().destroy()
     
@@ -166,7 +166,7 @@ class Body(GameObject):
         return self.sprite.sprite_lists
 
 
-class SpriteBody(Body):
+class SpriteBody(BodyHandler):
     
     __slots__ = ()
 
@@ -186,13 +186,13 @@ class SpriteBody(Body):
 from lib.foundation.physics import PhysicsObject
 
 
-class PhysicsBody(Body):
+class PhysicsBody(BodyHandler):
     '''
     PhysicsBody starts with STATIC body.
     
     '''
     
-    __slots__ = 'physics', 
+    # __slots__ = 'physics', 
     
     def __init__(
         self,
@@ -242,9 +242,12 @@ class PhysicsBody(Body):
             _moment = physics_types.infinite
         else:
             if shape_type == physics_types.circle or isinstance(shape_type, physics_types.circle):
-                _moment = pymunk.moment_for_circle(mass, 0, 
-                                                    min(size.x, size.y) / 2 + shape_edge_radius, 
-                                                    shape_offset)
+                _moment = pymunk.moment_for_circle(
+                    mass, 
+                    inner_radius = 0,
+                    outer_radius = min(size.x, size.y) / 2 + shape_edge_radius, 
+                    offset = shape_offset
+                    )
             elif shape_type == physics_types.box or isinstance(shape_type, physics_types.box):
                 _moment = pymunk.moment_for_box(mass, size)
             else:
@@ -287,7 +290,7 @@ class PhysicsBody(Body):
         self.sprite.pymunk_moved(self, dx, dy, d_angle)
     
     def _get_ref(self):
-        print('friends', self.physics.position)
+        # print('friends', self.physics.position)
         return self.physics or self.sprite
         
     def _hide(self, switch: bool = None) -> bool:
@@ -313,7 +316,7 @@ class PhysicsBody(Body):
                 self.physics.space.reindex_shapes_for_body(self.physics)
         self.sprite.position = position
     
-    position:Vector = property(Body._get_position, _set_position)    
+    position:Vector = property(BodyHandler._get_position, _set_position)    
     
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
@@ -322,13 +325,13 @@ class PhysicsBody(Body):
                 self.physics.space.reindex_shapes_for_body(self.physics)
         self.sprite.angle = angle
 
-    angle:float = property(Body._get_angle, _set_angle)
+    angle:float = property(BodyHandler._get_angle, _set_angle)
     
     def _set_velocity(self, velocity):
         if not self.physics: self.sprite.velocity = velocity
         else: raise PhysicsException(f'Can\'t move static object by overriding velocity = {velocity}. Set position with StaticActor.')
 
-    velocity: Vector = property(Body._get_veloticy, _set_velocity)
+    velocity: Vector = property(BodyHandler._get_veloticy, _set_velocity)
     
     mass:float = PropertyFrom('physics')
     
@@ -443,7 +446,7 @@ class DynamicBody(PhysicsBody):
         if custom_damping is not None:
             sprite.pymunk.damping = custom_damping
 
-        self.physics.velocity_func = velocity_callback
+        # self.physics.velocity_func = velocity_callback
     
     def apply_force_local(self, force:Vector = vectors.zero):
         return self.physics.apply_force_at_local_point(force)
@@ -471,16 +474,16 @@ class DynamicBody(PhysicsBody):
             self.physics.position = position
         self.sprite.position = position
     
-    position:Vector = property(Body._get_position, _set_position)    
+    position:Vector = property(BodyHandler._get_position, _set_position)    
     
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
             self.physics.angle = math.radians(angle)
         self.sprite.angle = angle
 
-    angle:float = property(Body._get_angle, _set_angle)
+    angle:float = property(BodyHandler._get_angle, _set_angle)
     
-    velocity: Vector = property(Body._get_veloticy, Body._set_velocity)
+    velocity: Vector = property(BodyHandler._get_veloticy, BodyHandler._set_velocity)
     
     def _get_gravity(self):
         return self.sprite.pymunk.gravity or self.physics.space.gravity
@@ -509,7 +512,7 @@ class DynamicBody(PhysicsBody):
 
 class KinematicBody(DynamicBody):
     
-    __slots__ = ()
+    # __slots__ = ()
     
     def __init__(
         self,

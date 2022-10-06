@@ -20,16 +20,16 @@ class PhysicsTestView(View):
     def __init__(self, window: Window = None):
         super().__init__(window)
         
-        self.physics_main = PhysicsSpace()
+        self.space = PhysicsSpace()
         
         self.field_layer = ObjectLayer()
-        self.wall_layer = ObjectLayer(self.physics_main)
+        self.wall_layer = ObjectLayer(self.space)
         
-        self.debris_layer = ObjectLayer(self.physics_main)
-        self.character_layer = ObjectLayer(self.physics_main)
-        self.fx_layer = ObjectLayer(self.physics_main)
+        self.debris_layer = ObjectLayer(self.space)
+        self.character_layer = ObjectLayer(self.space)
+        self.fx_layer = ObjectLayer(self.space)
         
-        self.test_layer = ObjectLayer(self.physics_main)
+        self.test_layer = ObjectLayer(self.space)
         
         self.player:EscapePlayer = None
         self.test_npc:RollingRock = None
@@ -53,7 +53,7 @@ class PhysicsTestView(View):
         self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
         self.shader = load_shader(get_path('data/shader/rtshadow.glsl'), self.window, self.channels)
         
-        self.physics_main.damping = 0.01
+        self.space.damping = 0.01
         
         self.player = EscapePlayer()
         self.player.spawn(self.character_layer, Vector(100, 100))
@@ -228,7 +228,7 @@ class PhysicsTestView(View):
         
         layer.extend(sprite_list)
         
-        self.wall_collision_debug_shape = self.physics_main.add_static_collison(layer, elasticity=1.0)
+        self.wall_collision_debug_shape = self.space.add_static_collison(layer, elasticity=1.0)
         ### for presentation, leaving old one below
         # walls_points:list = []
         # for sprite in sprite_list:
@@ -303,13 +303,13 @@ class PhysicsTestView(View):
     def change_gravity(self, direction:Vector) -> None:
         
         if direction == vectors.zero:
-            self.physics_main.damping = 0.01
-            self.physics_main.gravity = vectors.zero
+            self.space.damping = 0.01
+            self.space.gravity = vectors.zero
             return
         
-        self.physics_main.gravity = direction * DEFAULT_GRAVITY
-        self.physics_main.damping = 1.0
-        self.physics_main.activate_objects()
+        self.space.gravity = direction * DEFAULT_GRAVITY
+        self.space.damping = 1.0
+        self.space.activate_objects()
         return
         
     def change_gravity_body(self, body:DynamicBody, direction:Vector) -> None:
@@ -329,8 +329,8 @@ class PhysicsTestView(View):
         '''
         self.player.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
         sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
-        query = self.physics_main.space.segment_query(origin, end, thickness / 2, sf)
-        query_first = self.physics_main.space.segment_query_first(origin, end, thickness / 2, sf)
+        query = self.space.space.segment_query(origin, end, thickness / 2, sf)
+        query_first = self.space.space.segment_query_first(origin, end, thickness / 2, sf)
         # if query:
         #     for sq in query:
         #         shape = sq.shape
@@ -414,10 +414,10 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('AI_TICK')
         
         GAME.debug_text.perf_check('update_physics')
-        self.physics_main.step(1/60)
+        self.space.step(1/60)
         if CONFIG.debug_f_keys[3]:
-            grounding = self.player.body.physics.check_grounding()
-            # print(self.player.body.physics.check_grounding())
+            grounding = self.player.body.physics.get_grounding()
+            print(self.player.body.physics.check_grounding())
         GAME.debug_text.perf_check('update_physics')
         GAME.debug_text.perf_check('resync_objects')
         # self.physics_main.resync_objects()
@@ -425,14 +425,14 @@ class PhysicsTestView(View):
         # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
         # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
-        non_static_objects = self.physics_main.dynamics
+        non_static_objects = self.space.dynamics
         if non_static_objects:
             for o in non_static_objects:
                 o.body.tick(delta_time)
             total = len(non_static_objects)
             # sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
             sleeps = 0
-            for a in self.physics_main.bodies:
+            for a in self.space.bodies:
                 if a.is_sleeping: sleeps += 1
             GAME.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
@@ -444,7 +444,7 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('update_game')
         
         
-        GAME.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{Body.counter_created - Body.counter_removed}/{Body.counter_removed - Body.counter_gced}/{Body.counter_gced}'
+        GAME.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{BodyHandler.counter_created - BodyHandler.counter_removed}/{BodyHandler.counter_removed - BodyHandler.counter_gced}/{BodyHandler.counter_gced}'
     
     # def on_resize(self, width: int, height: int):
     #     super().on_resize(width, height)
