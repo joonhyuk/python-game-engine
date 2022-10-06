@@ -173,7 +173,7 @@ class Client(metaclass = SingletonType):
     '''
     
     delta_time:float = 0.0
-    physics_engine:PhysicsEngine = None
+    default_space:PhysicsSpace = None
     window:Window = None
     
     abs_screen_center:Vector = vectors.zero
@@ -216,7 +216,7 @@ class Client(metaclass = SingletonType):
         self.local_players:list = []
         self.gamepads = self.get_gamepads()
         self.gamepad = self.get_gamepads(0)
-        self.physics_engine = PhysicsEngine()
+        self.default_space = PhysicsSpace()
     
     def add_player(self, player_controller):
         

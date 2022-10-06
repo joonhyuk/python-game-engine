@@ -20,7 +20,7 @@ class PhysicsTestView(View):
     def __init__(self, window: Window = None):
         super().__init__(window)
         
-        self.physics_main = PhysicsEngine()
+        self.physics_main = PhysicsSpace()
         
         self.field_layer = ObjectLayer()
         self.wall_layer = ObjectLayer(self.physics_main)
@@ -75,12 +75,10 @@ class PhysicsTestView(View):
         
         ### test new method!
         test_simplebody = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
-                                     physics_shape = physics_types.circle,
                                      collision_type=collision.none,
                                      elasticity=1.0
                                      )
         test_simplebody2 = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
-                                     physics_shape = physics_types.circle,
                                      collision_type=collision.none,
                                      elasticity=1.0
                                      )
@@ -95,7 +93,6 @@ class PhysicsTestView(View):
         box_body = DynamicBody(Sprite(":resources:images/tiles/grassCenter.png", 1.5),
                                mass = 10, friction=1.0,
                                collision_type=collision.debris,
-                               physics_shape=physics_types.box,
                                )
         # box = DynamicObject(box_body)
         self.test_box = ShrinkingToy(box_body)
@@ -103,7 +100,7 @@ class PhysicsTestView(View):
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
 
         dynamic_fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
-                                     physics_shape=physics_types.poly, 
+                                     shape_type=physics_types.poly, 
                                      mass=20,
                                      shape_edge_radius=2)
         
@@ -114,7 +111,7 @@ class PhysicsTestView(View):
         
         
         kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
-                                                 physics_shape=physics_types.poly,
+                                                 shape_type=physics_types.poly,
                                                  shape_edge_radius=1)
         self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, Vector(800, 550))
         kinematic_fan_blade_body.physics.angular_velocity = 5
@@ -126,7 +123,7 @@ class PhysicsTestView(View):
                                             mass = 7,
                                             friction = 1.2,
                                             collision_type=collision.debris,
-                                            physics_shape=physics_types.poly,
+                                            shape_type=physics_types.poly,
                                             )
         # print(fan_blade_body.physics.shape)
         
@@ -179,6 +176,7 @@ class PhysicsTestView(View):
         example of body spawn setting
         
         '''
+        
         for x in range(0, CONFIG.screen_size.x + 1, 64):
             wall = StaticBody(Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING_TILES),
                               Vector(x, 0), 
@@ -270,9 +268,6 @@ class PhysicsTestView(View):
         if key == keys.RIGHT and modifiers in (20, keys.MOD_ALT, keys.MOD_OPTION + 512):
             self.change_gravity(vectors.right)
         
-        if key == keys.PLUS:
-            print('convexise!!!')
-            convexise_shape(self.test_box.body.physics.body)
         # if key == keys.SPACE: self.player.test_boost(500)
         
         # if key == keys.H:
@@ -360,12 +355,12 @@ class PhysicsTestView(View):
         self.camera.use()
         # self.field_layer.draw()
         
-        self.channels[0].use()
-        self.channels[0].clear()
-        self.wall_layer.draw()
+        # self.channels[0].use()
+        # self.channels[0].clear()
+        # self.wall_layer.draw()
         
-        self.channels[1].use()
-        self.channels[1].clear()
+        # self.channels[1].use()
+        # self.channels[1].clear()
         self.field_layer.draw()
         self.wall_layer.draw()
         self.debris_layer.draw()
@@ -376,27 +371,28 @@ class PhysicsTestView(View):
         debug_draw_segment(self.player.position, self.player.position + self.player.body.velocity, color = colors.AERO_BLUE)
         debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         
-        self.shader.program['activated'] = CONFIG.debug_f_keys[0]
-        self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
-        self.shader.program['lightSize'] = 500 * GAME.render_scale
-        self.shader.program['lightAngle'] = 75.0
-        self.shader.program['lightDirectionV'] = self.player.body.forward_vector
+        # self.shader.program['activated'] = CONFIG.debug_f_keys[0]
+        # self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
+        # self.shader.program['lightSize'] = 500 * GAME.render_scale
+        # self.shader.program['lightAngle'] = 75.0
+        # self.shader.program['lightDirectionV'] = self.player.body.forward_vector
         
         self.window.use()
         # self.clear()
-        self.shader.render()
+        # self.shader.render()
 
         self.player.draw()
-        self.test_npc.body.physics.debug_draw()
-        self.test_box.body.physics.debug_draw()
-        self.test_rotating_dynamic.body.physics.debug_draw()
-        self.test_rotating_kinematic.body.physics.debug_draw()
+        self.test_npc.body.physics.draw()
+        self.test_box.body.physics.draw()
+        # self.test_rotating_dynamic.body.physics.draw()
+        # self.test_rotating_kinematic.body.physics.draw()
         
-        for shape in self.wall_collision_debug_shape:
-            debug_draw_shape(shape, line_color = (255, 0, 0, 255))
+        # for shape in self.wall_collision_debug_shape:
+            # debug_draw_shape(shape, line_color = (255, 0, 0, 255))
         
         GAME.viewport.use()
-        
+        GAME.debug_text['PLAYER_POS'] = self.player.position
+        GAME.debug_text['CAMERA_POS'] = self.camera.center
         GAME.debug_text.perf_check('on_draw')
     
     def on_update(self, delta_time: float):
@@ -418,23 +414,25 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('AI_TICK')
         
         GAME.debug_text.perf_check('update_physics')
-        self.physics_main.step(resync_objects=False)
+        self.physics_main.step(1/60)
         if CONFIG.debug_f_keys[3]:
             grounding = self.player.body.physics.check_grounding()
             # print(self.player.body.physics.check_grounding())
         GAME.debug_text.perf_check('update_physics')
         GAME.debug_text.perf_check('resync_objects')
-        self.physics_main.resync_objects()
+        # self.physics_main.resync_objects()
         GAME.debug_text.perf_check('resync_objects')
         # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
         
         # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
-        
-        if self.physics_main.non_static_objects:
-            total = len(self.physics_main.non_static_objects)
+        non_static_objects = self.physics_main.dynamics
+        if non_static_objects:
+            for o in non_static_objects:
+                o.body.tick(delta_time)
+            total = len(non_static_objects)
             # sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
             sleeps = 0
-            for a in self.physics_main.space.bodies:
+            for a in self.physics_main.bodies:
                 if a.is_sleeping: sleeps += 1
             GAME.debug_text['PHYSICS TOTAL/SLEEP'] = f'{total}/{sleeps}'
         
@@ -458,7 +456,7 @@ class PlatformerTestView(View):
     def __init__(self, window: Window = None):
         super().__init__(window)
         
-        self.physics_engine = PhysicsEngine((0, -980), 1.0)
+        self.physics_engine = PhysicsSpace((0, -980), 1.0)
         self.wall_layer:ObjectLayer = ObjectLayer(self.physics_engine)
         self.debris_layer:ObjectLayer = ObjectLayer(self.physics_engine)
         self.character_layer:ObjectLayer = ObjectLayer(self.physics_engine)

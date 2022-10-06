@@ -50,10 +50,10 @@ class EscapeGameView(View):
         # self.window.set_mouse_visible(True)
         # Sprites and sprite lists
         self.field_list = ObjectLayer()
-        self.wall_list = ObjectLayer(GAME.physics_engine)
-        self.player_list = ObjectLayer(GAME.physics_engine)
-        self.npc_list = ObjectLayer(GAME.physics_engine)
-        self.bomb_list = ObjectLayer(GAME.physics_engine)
+        self.wall_list = ObjectLayer(GAME.default_space)
+        self.player_list = ObjectLayer(GAME.default_space)
+        self.npc_list = ObjectLayer(GAME.default_space)
+        self.bomb_list = ObjectLayer(GAME.default_space)
         self.movable_list = ObjectLayer()
         self.physics_simple = None
         
@@ -105,7 +105,7 @@ class EscapeGameView(View):
         
         # self._setup_pathfinding()
         
-        GAME.physics_engine.add_sprite_list(self.bomb_list, 
+        GAME.default_space.add_sprite_list(self.bomb_list, 
                                      friction = 1.0, 
                                      body_type = PhysicsEngine.DYNAMIC, 
                                      collision_type = collision.enemy)
@@ -114,7 +114,7 @@ class EscapeGameView(View):
             print(wall)
             return True
         
-        GAME.physics_engine.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
+        GAME.default_space.add_collision_handler(collision.character, collision.enemy, player_hit_wall)
         
     def _set_random_level(self, wall_prob = 0.2):
         field_size = CONFIG.screen_size * 2

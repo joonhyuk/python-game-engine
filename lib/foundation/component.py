@@ -260,7 +260,7 @@ class PhysicsMovement(MovementHandler):
         return True
     
     def _get_force(self, direction:Vector, speed:float):
-        damping = pow(GAME.physics_engine.damping, 1/60)
+        damping = pow(GAME.default_space.damping, 1/60)
         return direction * speed * (1 - damping) * 60 * self.owner.body.mass
     
     def move(self, direction:Vector = vectors.zero):
@@ -375,7 +375,7 @@ class CameraHandler(Handler):
                  ) -> None:
         super().__init__()
         # self._spawned = False
-        self.body = body
+        self.body:DynamicBody = body
         self.offset:Vector = offset
         self.camera = Camera(*CONFIG.screen_size, max_lag_distance=max_lag_distance)
         self.camera_interp_speed = interp_speed
@@ -424,7 +424,7 @@ class CameraHandler(Handler):
         distv = self.body.position - GAME.abs_cursor_position
         # print(self.owner.rel_position, ENV.cursor_position)
         # return Vector()
-        alpha = map_range(self.owner.speed, 500, 1000, 1, 0, clamped = True)
+        alpha = map_range(self.body.speed, 500, 1000, 1, 0, clamped = True)
         
         in_min = GAME.screen_shortside // 5
         in_max = GAME.screen_shortside // 1.2

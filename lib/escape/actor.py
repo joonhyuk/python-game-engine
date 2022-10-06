@@ -98,7 +98,7 @@ class RollingRock(ShrinkingToy):
         
     def tick(self, delta_time: float) -> bool:
         # if not super().tick(delta_time): return False
-        if CONFIG.debug_f_keys[5]: self.body.physics._body.angular_velocity = 7
+        if CONFIG.debug_f_keys[5]: self.body.physics.angular_velocity = 7
         return True
 
 
@@ -124,7 +124,7 @@ class EscapePlayer(Character):
         if not body:
             body = DynamicBody(sprite = Sprite(get_path(IMG_PATH + 'player_handgun_original.png')),
                                collision_type = collision.character,
-                               physics_shape = physics_types.circle(None, 16))
+                               shape_type = physics_types.circle)
         super().__init__(body, hp, **kwargs)
         self.body.physics.filter = pymunk.ShapeFilter(categories=collision.character)
         # self._fire_counter = 0
@@ -169,7 +169,7 @@ class EscapePlayer(Character):
         # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         if query:
             first_hit = query[0]
-            sprite_first_hit:Sprite = GAME.physics_engine.get_object_from_shape(first_hit.shape)
+            sprite_first_hit:Sprite = GAME.default_space.get_object_from_shape(first_hit.shape)
             # sprite_first_hit.color = colors.RED
             # print(sprite_first_hit.owner)
 

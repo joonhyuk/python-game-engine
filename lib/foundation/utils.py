@@ -162,7 +162,8 @@ def debug_draw_poly(points:list[Tuple[float, float]],
     for point in points:
         if angle: point = Vector(point).rotate(angle, radian)
         new_poly.append(point + center)
-    
+    if line_color is None: line_color = arcade.color.WHITE
+    assert line_color, "FUCK???"
     if fill_color is not None: return arcade.draw_polygon_filled(new_poly, fill_color)
     return arcade.draw_polygon_outline(new_poly, line_color, line_thickness)
 
