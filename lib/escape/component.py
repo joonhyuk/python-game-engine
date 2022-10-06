@@ -5,6 +5,11 @@ from config.game import *
 
 class EscapePlayerController(PlayerController):
     
+    def setup(self, **kwargs) -> None:
+        self.action:EscapeCharacterActionHandler
+        
+        return super().setup(**kwargs)
+    
     def on_key_press(self, key: int, modifiers: int):
         #TODO
         '''
@@ -54,7 +59,7 @@ class EscapePlayerController(PlayerController):
         '''
         GAME.last_mouse_lb_hold_time = CLOCK.perf
         GAME.debug_text.timer_start('mouse_lb_hold')
-        # self.owner.test_directional_attack(distance=500)
+        self.action.test_directional_attack(distance=500)
         # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         # self.actions.test_attack()
         # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
@@ -99,7 +104,27 @@ class EscapeCharacterActionHandler(ActionHandler):
         
         unschedule(delayed_action)
         schedule_once(delayed_action, 1, direction, range)
-            
+    
+    def test_directional_attack(self, 
+                                target_direction:Vector = None, 
+                                thickness = 1.0,
+                                distance = 500,
+                                muzzle_speed:float = 300,
+                                ):
+        origin = self.body.position
+        if not target_direction: target_direction = Vector.directional(self.body.angle)
+        end = target_direction * distance + origin
+        # self.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
+        
+        query = self.body.physics.space.segment_query(origin, end, thickness / 2, shape_filter)
+        # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
+        if query:
+            first_hit = query[0]
+            sprite_first_hit:Sprite = GAME.physics_engine.get_object_from_shape(first_hit.shape)
+            # sprite_first_hit.color = colors.RED
+            # print(sprite_first_hit.owner)
+    
 
 class EscapePlayerMovement(TopDownPhysicsMovement):
     pass

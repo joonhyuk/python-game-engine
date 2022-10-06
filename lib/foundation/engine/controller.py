@@ -6,22 +6,15 @@ from .movement import *
 from .app import *
 
 
-class Controller(Handler):
-    
-    def __init__(
-        self,
-        movement : MovementHandler,
-        action : ActionHandler,
-        **kwargs,
-        ) -> None:
-        
-        super().__init__(**kwargs)
-        self.movement = movement
-        self.action = action
+class Controller(GameObject):
     
     def spawn(self) -> GameObject:
+        super().spawn()
+        self.body : Body = self.owners(Body)
+        self.movement : MovementHandler = self.owners(MovementHandler)
+        self.action : ActionHandler = self.owners(ActionHandler)
         GAME.controllers.append(self)
-        return super().spawn()
+        return self
     
     def tick(self, delta_time:float) -> bool:
         if not self.spawnned : return False
@@ -38,11 +31,9 @@ class PlayerController(Controller):
     def setup(self, **kwargs) -> None:
         self.local_player_id : int = None
         ''' for local multiplay '''
-        return super().setup(**kwargs)
     
     def on_spawn(self) -> None:
-        GAME.add_player(self)
-        return super().on_spawn()
+        GAME.add_player(self)       ### push handlers to self
     
     def tick(self, delta_time: float) -> bool:
         # print(GAME.target_point)
@@ -97,4 +88,5 @@ class PlayerController(Controller):
         x = map_range_abs(GAME.gamepads[self.local_player_id].rx, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True)
         y = map_range_abs(GAME.gamepads[self.local_player_id].ry, CONFIG.gamepad_deadzone_rstick, 1, 0, 1, True) * -1
         return Vector(x, y)
-    
+
+

@@ -133,8 +133,8 @@ class EscapePlayer(Character):
         self.camera = CameraHandler(body = self.body)
         self.movement = EscapePlayerMovement(body=self.body)
         self.actions = EscapeCharacterActionHandler(body=self.body, movement=self.movement)
-        self.controller = EscapePlayerController(movement=self.movement, action=self.actions)
-        self.projectile = ShrinkingBall
+        self.controller = EscapePlayerController()
+        self.projectile : type = ShrinkingBall
         
     
     # def tick(self, delta_time: float = None) -> bool:
@@ -193,7 +193,7 @@ class SimpleAIObject(DynamicObject):
         super().__init__(body, **kwargs)
         self.movement = EscapeAIMovement(body=self.body)
         self.actions = TestAIActionComponent(body=self.body, movement=self.movement)
-        self.controller = TestAIController(movement=self.movement, action=self.actions)
+        self.controller = TestAIController()
     
     # def get_components(self, *types: ActorComponent):
         # return super().get_components(*types)
