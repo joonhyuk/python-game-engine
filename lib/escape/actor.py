@@ -22,7 +22,7 @@ class Ball(Pawn):
                             mass=mass,
                             collision_type=collision.projectile,
                             elasticity=elasticity,
-                            physics_shape=physics_types.circle) 
+                            shape_type = physics_types.circle) 
         super().__init__(body, hp, **kwargs)
     
     # def destroy(self) -> bool:
@@ -70,8 +70,8 @@ class ShrinkingBall(BallProjectile):
         self.alpha -= dt / self.shrinking_delay
         if self.alpha <= 0:
             unschedule(self._shrink)
-            self.destroy()
-            return
+            return self.destroy()
+            
         alpha = clamp(self.alpha, 0.1, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha

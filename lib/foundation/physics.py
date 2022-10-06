@@ -614,6 +614,9 @@ class PhysicsObject(pymunk.Body, GameObject):
         
     #     return super().spawn()
     
+    def __repr__(self) -> str:
+        return f'PhysicsObject({self._id})'
+    
     def spawn_in_space(self, space: pymunk.Space) -> None:
         space.add(self, *self.shapes)
     
@@ -782,13 +785,16 @@ class PhysicsSpace(pymunk.Space):
         if damping is not None: self.damping = damping
         
         self._movable_objs: set[PhysicsObject] = set()
+        self._static_objs: set[PhysicsObject] = set()
     
     def add(self, *objs: pymunk.space._AddableObjects) -> None:
         
         for o in objs:
             if isinstance(o, PhysicsObject) and o.body_type in (pymunk.Body.DYNAMIC, pymunk.Body.KINEMATIC):
                 self._movable_objs.add(o)
-                
+            if isinstance(o, PhysicsObject) and o.body_type == pymunk.Body.STATIC:
+                self._static_objs.add(o)
+        
         return super().add(*objs)
     
     def remove(self, *objs: pymunk.space._AddableObjects) -> None:
@@ -796,6 +802,7 @@ class PhysicsSpace(pymunk.Space):
         for o in objs:
             if isinstance(o, PhysicsObject):
                 self._movable_objs.discard(o)
+                self._static_objs.discard(o)
         
         return super().remove(*objs)
     
@@ -891,9 +898,38 @@ class PhysicsSpace(pymunk.Space):
         for o in self._movable_objs:
             o.activate()
     
-    def debug_draw_collision(self):
+    def debug_draw_movable_collision(
+        self,
+        line_color = (255, 255, 0, 255),
+        line_thickness = 1,
+        fill_color = None,
+        ):
         for o in self._movable_objs:
-            o.draw()
+            o.draw(
+                line_color=line_color,
+                line_thickness=line_thickness,
+                fill_color=fill_color
+            )
+    
+    def debug_draw_static_collision(
+        self,
+        line_color = (255, 0, 255, 255),
+        line_thickness = 1,
+        fill_color = None,
+        ):
+        
+        debug_draw_physics(
+            self.static_body, 
+            line_color=line_color,
+            line_thickness=line_thickness,
+            fill_color=fill_color)
+        for o in self._static_objs:
+            o.draw(
+                line_color=line_color,
+                line_thickness=line_thickness,
+                fill_color=fill_color
+            )
+    
     
     def sync(self):
         

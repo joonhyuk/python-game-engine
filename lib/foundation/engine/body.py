@@ -98,7 +98,6 @@ class BodyHandler(GameObject):
     
     def destroy(self) -> bool:
         BodyHandler.counter_removed += 1
-        # self.sprite.remove_from_sprite_lists()
         return super().destroy()
     
     def _get_visibility(self) -> bool:

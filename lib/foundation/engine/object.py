@@ -80,7 +80,7 @@ class GameObject(object):
         '''
         pass
     
-    def destroy(self) -> None:
+    def destroy(self) -> bool:
         '''
         Literally destroy this object. Note that it's not dead, dispawn, etc.
         
@@ -89,13 +89,18 @@ class GameObject(object):
         '''
         #TODO add 'remove_from_all_list' to Client for proper GC
         self.on_destroy()
-        members = self.get_members()
+        members = self.get_members()[:]
         if members:
             for member in members:
-                if member.owner == self : member.destroy()      ### for handlers
-        del self._members
+                if member._owner == self :
+                    '''
+                    Remove only my own members, not my superior (for handlers)
+                    '''
+                    if member.destroy(): self.members.remove(member)
+        # del self._members
         self.spawnned = False
         self._alive = False
+        return True
     
     def on_destroy(self):
         '''
@@ -133,10 +138,17 @@ class GameObject(object):
         return [m for m in self._members if inc(m) and exc(m)]
     
     def owners(self, type_ : type) -> GameObject:
+        '''
+        Try to retrieve top owner's member of type : `type_`
+        
+        Should be called after spawnned.
+        '''
         try:
-            return self.owner.get_members(type_)[0]
+            member = self.owner.get_members(type_)[0]
         except:
             raise AttributeError(f'{self.owner} doesn\'t have {type_} member')
+        else:
+            return member
     
     def is_alive(self) -> bool:
         ''' Overridable but need retuning super().is_alive()'''

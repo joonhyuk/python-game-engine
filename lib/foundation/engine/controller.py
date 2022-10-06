@@ -10,7 +10,7 @@ class Controller(GameObject):
     
     def spawn(self) -> GameObject:
         super().spawn()
-        self.body : Body = self.owners(Body)
+        self.body : BodyHandler = self.owners(BodyHandler)
         self.movement : MovementHandler = self.owners(MovementHandler)
         self.action : ActionHandler = self.owners(ActionHandler)
         GAME.controllers.append(self)

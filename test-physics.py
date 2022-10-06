@@ -98,7 +98,11 @@ class PhysicsTestView(View):
         self.test_box = ShrinkingToy(box_body)
         self.test_box.spawn(self.wall_layer, CONFIG.screen_size / 2)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
-
+        print('---')
+        print('---')
+        print('---')
+        print('---')
+        print('---')
         dynamic_fan_blade_body = DynamicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
                                      shape_type=physics_types.poly, 
                                      mass=20,
@@ -107,6 +111,11 @@ class PhysicsTestView(View):
         self.test_rotating_dynamic = DynamicRotatingFan(dynamic_fan_blade_body).spawn(self.wall_layer, Vector(800,200))
         dynamic_fan_blade_body.physics.add_world_pivot(dynamic_fan_blade_body.position)
         dynamic_fan_blade_body.damping = 0.1
+        print('---')
+        print('---')
+        print('---')
+        print('---')
+        print('---')
         
         
         
@@ -383,7 +392,8 @@ class PhysicsTestView(View):
 
         self.player.draw()
         
-        self.space.debug_draw_collision()
+        self.space.debug_draw_movable_collision()
+        self.space.debug_draw_static_collision()
         # self.test_npc.body.physics.draw()
         # self.test_box.body.physics.draw()
         # self.test_rotating_dynamic.body.physics.draw()

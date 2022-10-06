@@ -121,9 +121,11 @@ class EscapeCharacterActionHandler(ActionHandler):
         # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         if query:
             first_hit = query[0]
-            sprite_first_hit:Sprite = GAME.physics_engine.get_object_from_shape(first_hit.shape)
-            # sprite_first_hit.color = colors.RED
-            # print(sprite_first_hit.owner)
+            
+            ### BUGS below for now.
+            # victim:PhysicsObject = first_hit.shape.body.owner
+            # print(victim, ' HIT!')
+            # victim.body.sprite.color = colors.RED
     
 
 class EscapePlayerMovement(TopDownPhysicsMovement):
