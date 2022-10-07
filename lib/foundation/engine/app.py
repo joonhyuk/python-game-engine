@@ -340,7 +340,8 @@ class Client(metaclass = SingletonType):
         self.mouse_screen_position = Vector(x, y)
 
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
-        pass
+        self.mouse_screen_position = Vector(x, y)
+
     
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         pass
