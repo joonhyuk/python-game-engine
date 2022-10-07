@@ -8,11 +8,14 @@ from .app import *
 
 class Controller(GameObject):
     
-    def spawn(self) -> GameObject:
-        super().spawn()
+    def setup(self, **kwargs) -> None:
         self.body : BodyHandler = self.owners(BodyHandler)
         self.movement : MovementHandler = self.owners(MovementHandler)
         self.action : ActionHandler = self.owners(ActionHandler)
+        return super().setup(**kwargs)
+    
+    def spawn(self) -> GameObject:
+        super().spawn()
         GAME.controllers.append(self)
         return self
     
@@ -31,6 +34,7 @@ class PlayerController(Controller):
     def setup(self, **kwargs) -> None:
         self.local_player_id : int = None
         ''' for local multiplay '''
+        return super().setup(**kwargs)
     
     def on_spawn(self) -> None:
         GAME.add_player(self)       ### push handlers to self

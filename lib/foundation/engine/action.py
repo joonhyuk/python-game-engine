@@ -7,7 +7,7 @@ from .object import *
 from .body import *
 from .movement import *
 
-class ActionHandler(Handler):
+class ActionHandler(GameObject):
     '''
     Action : custom functions for owner
     
@@ -17,14 +17,17 @@ class ActionHandler(Handler):
     
     '''
     
-    # __slots__ = ['_locked', 'locked_actions']
+    __slots__ = '_locked', 'locked_actions', 
     
-    def __init__(self, body:BodyHandler, movement:MovementHandler) -> None:
-        super().__init__()
-        self.body = body
-        self.movement = movement
+    def setup(self, **kwargs) -> None:
         self._locked = False
         self.locked_actions:list[type] = []
+        return super().setup(**kwargs)
+    
+    def on_spawn(self) -> None:
+        self.body = self.owners(BodyHandler)
+        self.movement = self.owners(MovementHandler)
+        return super().on_spawn()
     
     def _get_global_lock(self):
         return self._locked
@@ -34,7 +37,7 @@ class ActionHandler(Handler):
         self._locked = switch
     
     global_lock:bool = property(_get_global_lock, _set_global_lock)
-    
+
 
 class ActionFunction(partial):
     ''' Wrapper for partial. Just in case of needed later. '''
@@ -46,7 +49,7 @@ class Action:
     
     (WIP: support type hint on do function.)
     
-    :self.setup(): setting 'local' variable
+    :self.setup(): setting 'local' variable after `__init__()`
     :self.do(): action function
     
     '''
@@ -104,7 +107,6 @@ class Action:
     def lock_for(self, owner:ActionHandler, duration:float, *action_types):
         self.lock(owner, *action_types)
         schedule_once(self.delayed_unlock, duration, owner, *action_types)
-    
     
     @abstractmethod
     def do(self, owner:Union[GameObject, ActionHandler], *args, **kwargs):

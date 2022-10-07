@@ -136,7 +136,7 @@ class EscapePlayer(Character):
         self.energy = self.max_energy
         self.camera = CameraHandler(body = self.body)
         self.movement = EscapePlayerMovement(body=self.body)
-        self.actions = EscapeCharacterActionHandler(body=self.body, movement=self.movement)
+        self.action = EscapeCharacterActionHandler()
         self.controller = EscapePlayerController()
         self.projectile : type = ShrinkingBall
         
@@ -196,7 +196,7 @@ class SimpleAIObject(DynamicObject):
     def __init__(self, body: DynamicBody, **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.movement = EscapeAIMovement(body=self.body)
-        self.actions = TestAIActionComponent(body=self.body, movement=self.movement)
+        self.action = TestAIActionComponent()
         self.controller = TestAIController()
     
     # def get_components(self, *types: ActorComponent):

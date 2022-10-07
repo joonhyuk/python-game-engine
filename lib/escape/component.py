@@ -88,7 +88,7 @@ class EscapeCharacterActionHandler(ActionHandler):
     
     def test_attack(self, direction:Vector = None, range:float = 500):
         self.movement._move_modifier = 0.2
-        self.movement._turn_modifier = 0.1
+        # self.movement._turn_modifier = 1.0
         
         if direction is None: direction = self.body.forward_vector
         

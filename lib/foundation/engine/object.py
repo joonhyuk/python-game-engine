@@ -10,6 +10,8 @@ class GameObject(object):
     
     Defines the lifecycle of an object.
     
+    ## Setup with **kwargs
+    
     If kwargs set, they'll pass to `setup(**kwargs)`
     
     i.e.
@@ -21,7 +23,18 @@ class GameObject(object):
         f = Foo(message = 'world')
         print(f.hello) --> world
     ```
-    :Parameters:
+    
+    ## Get owner's member
+    
+    For handlers that should yuji top(highest) owner's members as theirs, 
+    use `self.owner[TYPE_OF_GAMEOBJECT]`.
+    
+    i.e.
+    ```
+        self.body = self.owner(BodyHandler)
+    ```
+    
+    ## Parameters
         `id : str`
             returns id(self)
         `alive : bool`
@@ -29,7 +42,7 @@ class GameObject(object):
         `spawnned : bool`
             is in game space
         `owner : GameObject`
-            get top owner
+            get top owner, read only.
         `members : list[GameObject]`
             get child GameObjects, read only.
     
@@ -66,10 +79,10 @@ class GameObject(object):
         members = self.get_members()
         if members:
             for member in members:
-                member.owner = self
+                member._owner = self
                 if not member.spawnned : member.spawn()
+        self._set_owners_member()
         self.on_spawn()
-        # print(f'{self} spawned by {self._owner}')
         return self
     
     def on_spawn(self) -> None:
@@ -111,7 +124,7 @@ class GameObject(object):
     def get_members(
         self, 
         types_include : Union[type, tuple[type]] = None, 
-        types_exclude : Union[type, tuple[type]] = None
+        types_exclude : Union[type, tuple[type]] = None,
         ) -> list[GameObject] :
         '''
         Get members with including types(type or tuple[type])
@@ -137,12 +150,29 @@ class GameObject(object):
         
         return [m for m in self._members if inc(m) and exc(m)]
     
+    def _set_owners_member(self) -> None:
+        ''' Should be called after spawnned '''
+        members:list[str] = []
+        if hasattr(self, '__dict__'):
+            members.extend([k for k, v in self.__dict__.items() if isinstance(v, ReservedMember) and v != self._owner])
+        if hasattr(self, '__slots__'):
+            members.extend([c for c in get_slots(self) if isinstance(getattr(self, c), ReservedMember) and getattr(self, c) != self._owner])
+            ''' 
+            if __slots__ exists, get all slots for member check. 
+            slightly bad for spawn performance, but good for memory, performance
+            '''
+        if members:
+            for name in members:
+                setattr(self, name, self.owners(getattr(self, name).type_))
+    
     def owners(self, type_ : type) -> GameObject:
         '''
-        Try to retrieve top owner's member of type : `type_`
-        
-        Should be called after spawnned.
+        Try to fetch top owner's member of type : `type_`
         '''
+        if not self.spawnned:
+            ''' Before spawnned, postpone fetching for later '''
+            return ReservedMember(type_)
+        
         try:
             member = self.owner.get_members(type_)[0]
         except:
@@ -150,29 +180,28 @@ class GameObject(object):
         else:
             return member
     
-    def is_alive(self) -> bool:
-        ''' Overridable but need retuning super().is_alive()'''
+    def _is_alive(self) -> bool:
+        ''' Overridable but need retuning super()._is_alive()'''
         return self._alive
     
-    def get_owner(self, _obj : GameObject) -> GameObject:
+    def get_top_owner(self, _obj : GameObject = None) -> GameObject:
+        ''' retrieve owner recursively '''
+        if _obj is None: _obj = self
         if _obj._owner is None: return _obj
-        return self.get_owner(_obj._owner)
+        return self.get_top_owner(_obj._owner)
     
-    def _get_owner(self) -> GameObject:
-        return self.get_owner(self)
+    owner : GameObject = property(get_top_owner)
+    ''' Returns top owner found recursively. 
     
-    def _set_owner(self, owner : GameObject):
-        self._owner = owner
+    Use `self._owner` to get the owner directly above '''
     
-    owner : GameObject = property(_get_owner, _set_owner)
-    
-    # @property
-    # def id(self) -> str:
-    #     return str(id(self))
+    @property
+    def id(self) -> str:
+        return str(id(self))
     
     @property
     def alive(self) -> bool:
-        return self.is_alive()
+        return self._is_alive()
     
     @property
     def members(self) -> list[GameObject]:
@@ -186,19 +215,22 @@ class GameObject(object):
     #         setattr(self,k,v)
 
 
+class ReservedMember:
+    
+    def __init__(self, type_ : type) -> None:
+        self.type_ = type_
+
+
 class Handler(GameObject):
     '''
-    GameObjects that should yuji owner's handlers as theirs.
+    GameObjects that should yuji owner's members as theirs.
     
+    Use `self.owner(GAMEOBJECT_TYPE_TO_RETRIEVE)`
     '''
-    __slots__ = ()
+    pass
     
-    def get_owner_member(self, type) -> None:
-        owner_members = self.owner.get_members(type)
-        if owner_members : return owner_members[0]
-        return None
-
 
 class Actor(GameObject):
     
     __slots__ = ()
+

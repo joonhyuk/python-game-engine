@@ -195,15 +195,15 @@ class Pawn(DynamicObject):
     
     def apply_damage(self, damage:float):
         self.hp -= damage
-        if not self.is_alive: self.die()
+        if not self.alive: self.die()
         
     def die(self):
         self.destroy()
     
     @property
-    def is_alive(self) -> bool:
+    def _is_alive(self) -> bool:
         if self.hp <=0: return False
-        return super().is_alive
+        return super()._is_alive
 
 
 class Character(Pawn):

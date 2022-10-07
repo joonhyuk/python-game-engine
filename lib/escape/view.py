@@ -269,7 +269,7 @@ class EscapeGameView(View):
         
     def on_update(self, delta_time: float):
         # print('view_update')
-        if not self.player.is_alive:
+        if not self.player.alive:
             view = GameOverScreen()
             self.window.show_view(view)
         
