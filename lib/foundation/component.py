@@ -330,6 +330,7 @@ class AIController(Controller):
     
     def setup(self):
         self.target:Actor = None
+        return super().setup()
     
     def on_spawn(self):
         GAME.ai_controllers.append(self)

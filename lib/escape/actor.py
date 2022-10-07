@@ -42,6 +42,7 @@ class BallProjectile(Ball):
         # self.body.physics.filter = pymunk.ShapeFilter(mask=physics_types.allmask^collision.character)
         # print(self.body.physics.filter)
 
+
 class ShrinkingBall(BallProjectile):
     
     __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')

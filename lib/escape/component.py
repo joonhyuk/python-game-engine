@@ -137,8 +137,6 @@ class EscapeAIMovement(TopDownPhysicsMovement):
 
 class TestAIController(AIController):
     #WIP #test
-    def setup(self):
-        self.target:GameObject = None
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
