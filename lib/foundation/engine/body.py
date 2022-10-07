@@ -455,7 +455,7 @@ class DynamicBody(PhysicsBody):
         if custom_damping is not None:
             sprite.pymunk.damping = custom_damping
 
-        # self.physics.velocity_func = velocity_callback
+        self.physics.velocity_func = velocity_callback
     
     def apply_force_local(self, force:Vector = vectors.zero):
         return self.physics.apply_force_at_local_point(force)

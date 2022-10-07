@@ -57,26 +57,11 @@ class StaticObject(Actor):
     def draw(self):
         self.body.draw()
     
-    def _get_position(self) -> Vector:
-        return self.body.position
+    position:Vector = PropertyFrom('body')
+    angle:float = PropertyFrom('body')
+    friction:float = PropertyFrom('body')
+    elasticity:float = PropertyFrom('body')
     
-    def _set_position(self, position) -> None:
-        self.body.sprite.position = position
-        self.body.physics.position = position
-        if self.body.spawnned: self.body.physics.space.reindex_static()    #BUG : when spawn, not yet added to space
-        
-    position:Vector = property(_get_position, _set_position)
-    
-    def _get_angle(self) -> float:
-        return self.body.angle
-    
-    def _set_angle(self, angle:float = 0.0):
-        self.body.sprite.angle = angle
-        self.body.physics.angle = angle
-        if self.body.spawnned: self.body.physics.space.reindex_static()    #BUG : when spawn, not yet added to space
-    
-    angle:float = property(_get_angle, _set_angle)
-
 
 class DynamicObject(Actor):
     
@@ -102,9 +87,11 @@ class DynamicObject(Actor):
         
         # self.body.spawn(spawn_to, position, angle)
         self.body.set_spawn(spawn_to=spawn_to, position=position, angle=angle)
+        super().spawn()
         if initial_impulse:
             self.body.apply_impulse_world(initial_impulse)
-        return super().spawn()
+        
+        return self
     
     def draw(self):
         self.body.draw()
@@ -113,11 +100,8 @@ class DynamicObject(Actor):
     mass:float = PropertyFrom('body')
     friction:float = PropertyFrom('body')
     elasticity:float = PropertyFrom('body')
-    
     visibility:bool = PropertyFrom('body')
-    
     position:Vector = PropertyFrom('body')
-    
     angle:float = PropertyFrom('body')
     velocity:Vector = PropertyFrom('body')
     speed:float = PropertyFrom('body')

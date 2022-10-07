@@ -67,7 +67,7 @@ class EscapePlayerController(PlayerController):
         GAME.last_mouse_lb_hold_time = CLOCK.perf - GAME.last_mouse_lb_hold_time
         GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self._tmp = self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
+        self._tmp = self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0.2, 2, 500, 2000, True))
 
 
 class TestAIActionComponent(ActionHandler):
