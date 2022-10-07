@@ -86,39 +86,27 @@ class Boody(Handler):
     
     def setup(self, **kwargs) -> None:
         self.pos = 1
+        self.testo = GameObject()
         return super().setup(**kwargs)
 
-class Coontroller(GameObject):
+class Coontroller(Handler):
     
-    def on_spawn(self):
+    def setup(self):
         self.boody:Boody = self.owners(Boody)
     
     def testt(self):
         self.boody.pos = 2
 
-SPC = pymunk.Space()
-
-from lib.foundation.physics import *
 
 class TestActor(GameObject):
     
     def setup(self, **kwargs) -> None:
         self.boody = Boody()
         self.controller = Coontroller()
-        self.pb = PhysicsObject()
         return super().setup(**kwargs)
-    
-    def on_spawn(self) -> None:
-        sp = pymunk.Circle(self.pb, 16)
-        SPC.add(self.pb, sp)
-        
-        return super().on_spawn()
     
 
 ta = TestActor()
 ta.spawn()
-print(ta.pb.owner)
-
-print(SPC.shapes[0].body.owner)
-
-
+print(ta.boody.owner)
+print(ta.controller.boody.testo.owner)

@@ -860,7 +860,7 @@ class PhysicsSpace(pymunk.Space):
         return super().add(*objs)
     
     def remove(self, *objs: pymunk.space._AddableObjects) -> None:
-        print("PHY RMV JOB")
+        # print("PHY RMV JOB")
         
         for o in objs:
             if isinstance(o, PhysicsObject):

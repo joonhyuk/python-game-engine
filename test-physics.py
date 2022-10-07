@@ -142,11 +142,21 @@ class PhysicsTestView(View):
         def seperate_player_hit_wall(player, wall, arbiter, space, data):
             print(player, 'seperate_hit', wall)
         
-        self.space.add_collision_handler(collision.character, collision.wall, 
-                                                  begin_handler=begin_player_hit_wall, 
-                                                  pre_handler=pre_player_hit_wall,
-                                                  separate_handler=seperate_player_hit_wall,
-                                                  post_handler=post_player_hit_wall)
+        collision_handler = partial(
+            self.space.add_collision_handler, 
+            begin_handler=begin_player_hit_wall, 
+            pre_handler=pre_player_hit_wall,
+            separate_handler=seperate_player_hit_wall,
+            post_handler=post_player_hit_wall)
+        
+        ### Pretty case for dealing with collision handler
+        # collision_handler(collision.character, collision.debris)
+        
+        # self.space.add_collision_handler(collision.character, collision.wall, 
+        #                                           begin_handler=begin_player_hit_wall, 
+        #                                           pre_handler=pre_player_hit_wall,
+        #                                           separate_handler=seperate_player_hit_wall,
+        #                                           post_handler=post_player_hit_wall)
 
         print(f'INITIAL LOADING TIME : {round(CLOCK.perf - start_loading_time, 2)} sec')
         

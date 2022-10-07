@@ -61,7 +61,6 @@ class EscapePlayerController(PlayerController):
         GAME.debug_text.timer_start('mouse_lb_hold')
         self.action.test_directional_attack(distance=500)
         # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
-        # self.actions.test_attack()
         # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
@@ -69,7 +68,6 @@ class EscapePlayerController(PlayerController):
         GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
         self._tmp = self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0, 3, 800, 5000, True))
-        # self._tmp = self.actions.test_shoot_ball()
 
 
 class TestAIActionComponent(ActionHandler):
@@ -87,9 +85,6 @@ class EscapeCharacterActionHandler(ActionHandler):
     jump = Jump()
     
     body:DynamicBody = None
-    
-    def setup(self):
-        pass
     
     def test_attack(self, direction:Vector = None, range:float = 500):
         self.movement._move_modifier = 0.2

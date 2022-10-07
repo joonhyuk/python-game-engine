@@ -15,12 +15,6 @@ import gc
 
 '''
 
-class TACT(TAction):
-    
-    def do(self, *args, **kwargs):
-        print(self.owner, 'do something like', args[0])
-        return super().do(*args, **kwargs)
-
 
 class PACT(Action):
     
@@ -120,7 +114,6 @@ class NACT(NewAction):
 class TACC(ActionHandler):
     
     pact = PACT()
-    tact = TACT()
     fact = FACT()
     
     nact = NACT()
@@ -133,7 +126,7 @@ class Tactor(Pawn):
     
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)
-        self.actions = TACC()
+        self.action = TACC()
         # self.new_action = NewAction(self)
 
 ta = Tactor(DynamicBody(SpriteCircle(16)))
@@ -152,12 +145,6 @@ for member_name, member_object in inspect.getmembers(eah):
         # print(member_object)
         print('weapons hot!')
         
-
-
-
-class Tick(ActorComponent):
-    pass
-
 
 class GameEntity(object):
     '''
