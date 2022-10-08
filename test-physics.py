@@ -1,3 +1,13 @@
+'''
+DISCLAIMER:
+
+It's dirty nasty testbed.
+Never blame anything for the codes below.
+
+Code review for the classes themselves used here is always welcome.
+
+'''
+
 # from lib.foundation import *
 from lib.escape import *
 # from config.game import *

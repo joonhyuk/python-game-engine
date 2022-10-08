@@ -98,15 +98,54 @@ class Coontroller(Handler):
         self.boody.pos = 2
 
 
+class Atk(SequentialAction):
+    
+    def setup(self, *args, **kwds) -> None:
+        self.pre = None
+        self.post = None
+    
+    # def pre(self, *args, **kwds):
+    #     pass
+    
+    def do(self, doing, other):
+        pp = (self.owner, 'do', doing, other)
+    
+    # def post(self, *args, **kwds):
+    #     # print('post')
+    #     pass
+
+
+class Atk2(Action):
+    
+    def do(self, owner: Union[GameObject, ActionHandler], doing, other) -> Any:
+        pp = (self.owner, 'do', doing, other)
+
 class TestActor(GameObject):
+    
+    attack = Atk()
+    attak = Atk2()
     
     def setup(self, **kwargs) -> None:
         self.boody = Boody()
         self.controller = Coontroller()
+        
         return super().setup(**kwargs)
     
 
 ta = TestActor()
 ta.spawn()
-print(ta.boody.owner)
-print(ta.controller.boody.testo.owner)
+start = time.perf_counter()
+
+for i in range(10000):
+    
+    ta.attack(doing = i, other = i**2)
+    
+print('time', time.perf_counter() - start)
+
+start = time.perf_counter()
+
+for i in range(10000):
+    
+    ta.attak(doing = i, other = i**2)
+    
+print('time', time.perf_counter() - start)

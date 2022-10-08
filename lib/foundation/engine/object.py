@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from functools import cache, cached_property
 from typing import Union
+
 from ..base import get_slots
 
 
@@ -184,6 +186,7 @@ class GameObject(object):
         ''' Overridable but need retuning super()._is_alive()'''
         return self._alive
     
+    @cache
     def get_top_owner(self, _obj : GameObject = None) -> GameObject:
         ''' retrieve owner recursively '''
         if _obj is None: _obj = self
@@ -195,7 +198,7 @@ class GameObject(object):
     
     Use `self._owner` to get the owner directly above '''
     
-    @property
+    @cached_property
     def id(self) -> str:
         return str(id(self))
     

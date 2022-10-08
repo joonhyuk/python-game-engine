@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from functools import partial
+from typing import Any
 
 from ..utils import *
 
@@ -29,6 +30,11 @@ class ActionHandler(GameObject):
         self.movement = self.owners(MovementHandler)
         return super().on_spawn()
     
+    def tick(self, delta_time: float):
+        ''' For actions need tick '''
+        
+        pass
+    
     def _get_global_lock(self):
         return self._locked
     
@@ -51,6 +57,11 @@ class Action:
     
     :self.setup(): setting 'local' variable after `__init__()`
     :self.do(): action function
+    
+    호출될 때 스타트 액션(없으면 바로 본론으로)
+    스타트 액션 종료 콜백으로 본론, 본론 콜백으로 마무리.
+    딜레이 혹은 애니메이션 플레이가 가능해야 한다.
+    콜 되면 틱마다 실행??? 타이머??? 액션 핸들러가 틱마다 실행해줌???
     
     '''
     
@@ -109,5 +120,61 @@ class Action:
         schedule_once(self.delayed_unlock, duration, owner, *action_types)
     
     @abstractmethod
-    def do(self, owner:Union[GameObject, ActionHandler], *args, **kwargs):
+    def do(self, owner:Union[GameObject, ActionHandler], *args, **kwargs) -> Any:
         return True
+
+
+class SequentialAction(Callable):
+    ''' 
+    - pre, do, post
+    - register self to handler ticker
+    
+    Callable처럼 그냥 call 해서 사용할 수 있어야 함.
+    '''
+    #TODO pre, post 더 쉽게 비활성화 시키는 방법, 지속 및 종료 훅 만드는 방법.
+    
+    def __init__(self, *args, **kwds) -> None:
+        self.owner:Actor = None
+        
+        # self._post = partial(self._sequencial_do, self.post, None)
+        self._do_post = partial(self._sequencial_do, self.do, self.post)
+        self._pre_post = partial(self._sequencial_do, self.pre, self._do_post)
+        self._pre = partial(self._sequencial_do, self.pre, self.do)
+        
+        self.setup(*args, **kwds)
+    
+    def __set_name__(self, owner, name):
+        self.owner:ActionHandler = owner
+        self.name = name
+    
+    def __call__(self, *args, **kwds) -> None:
+        if self.pre:
+            if self.post:
+                return self._pre_post(*args, **kwds)
+            return self._pre(*args, **kwds)
+        elif self.post:
+            return self._do_post(*args, **kwds)
+        else:
+            return self.do(*args, **kwds)
+        # return self.do(*args, *kwds)
+    
+    def setup(self, *args, **kwds) -> None:
+        pass
+    
+    def _sequencial_do(self, do:Callable, next: Callable = None, *args, **kwds):
+        done = do(*args, **kwds)
+        if next: return next(*args, **kwds)
+        return done
+    
+    @cache
+    def pre(self, *args, **kwds):
+        pass
+    
+    @abstractmethod
+    @cache
+    def do(self, *args, **kwds):
+        pass
+    
+    @cache
+    def post(self, *args, **kwds):
+        pass
