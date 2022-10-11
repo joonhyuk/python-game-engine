@@ -182,9 +182,6 @@ class SpriteBody(BodyHandler):
             self.spawn(spawn_to)
 
 
-from lib.foundation.physics import PhysicsObject
-
-
 class PhysicsBody(BodyHandler):
     '''
     PhysicsBody starts with STATIC body.
