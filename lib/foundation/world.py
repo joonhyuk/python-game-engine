@@ -149,13 +149,13 @@ class TiledMap:
         tiled_map: Optional[pytiled_parser.TiledMap] = None,
         ) -> arcade.TileMap:
         
-        self.__init__(
-            scale=scale,
-            use_spatial_hash=use_spatial_hash,
-            hit_box_algorithm=hit_box_algorithm,
-            hit_box_detail=hit_box_detail,
-            offset=offset,
-        )
+        # self.__init__(
+        #     scale=scale,
+        #     use_spatial_hash=use_spatial_hash,
+        #     hit_box_algorithm=hit_box_algorithm,
+        #     hit_box_detail=hit_box_detail,
+        #     offset=offset,
+        # )
         
         if not filepath: raise AttributeError('No map file path')
         self.map = tiled_map or pytiled_parser.parse_map(Path(get_path(filepath)))
