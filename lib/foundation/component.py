@@ -3,11 +3,20 @@ from __future__ import annotations
 from config.engine import *
 from .engine import *
 
+
 class StaticBody(PhysicsBody):
     
     __slots__ = ()
 
 
+
+class Shadow(GameObject):
+    
+    def setup(self, **kwargs) -> None:
+        self.body = self.owners(BodyHandler)
+        return super().setup(**kwargs)
+    
+    
 class Ticker(GameObject):
     
     #WIP

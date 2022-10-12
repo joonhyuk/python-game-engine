@@ -537,7 +537,7 @@ class WorldTestView(View):
             [self.player],
             spawn_layer = self.player_layer,
             position = Vector(100, 100),
-            area = Vector(100, 100)
+            area = Vector(50, 50)
             )
         sp.spawn()
         self.world = TiledMap(space = self.space, scale = 2)

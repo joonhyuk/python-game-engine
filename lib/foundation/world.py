@@ -211,6 +211,12 @@ class TiledMap:
                 print(layer.class_)
             processed = self._process_tile_layer(layer, **options)
             self.tile_layers[layer.name] = processed
+            if processed.properties:
+                if processed.properties.get('physics', True):
+                    self.space.add_static_collison(
+                        processed,
+                        elasticity = 1.0
+                    )
         # elif isinstance(layer, pytiled_parser.ObjectLayer):
         #     processed = self._process_object_layer(layer, **options)
         #     if processed[0]:
