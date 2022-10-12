@@ -1,8 +1,12 @@
 import random, re
 
 
-def flip_coin(prob = 0.5) -> bool:
-    return random.random() <= prob
+def flip_coin(prob = 0.5, h = None, t = None) -> bool:
+    
+    coin = random.random() <= prob
+    if all((h, t)):
+        return h if coin else t
+    return coin
 
 
 class Dice:

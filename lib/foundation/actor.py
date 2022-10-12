@@ -11,6 +11,49 @@ from .engine import *
 from .component import *
 
 
+class Spawner(GameObject):
+    
+    def __init__(
+        self,
+        actors: list[Union[StaticObject, DynamicObject]],
+        spawn_layer: ObjectLayer,
+        position: Vector,
+        angle: float = 0.0,
+        area: Vector = None,
+        spawn_angle: float = 0.0,
+        **kwargs) -> None:
+        super().__init__(**kwargs)
+        
+        self.actors = actors
+        ''' actor list for spawn '''
+        self.position = position
+        ''' center point of spawn area '''
+        self.angle = angle
+        ''' angle of spawn area '''
+        self.area = area
+        ''' width and height of spanw area '''
+        self.spawn_angle = spawn_angle
+        ''' angle of spawned actor '''
+        self.spawn_layer = spawn_layer
+        
+    def spawn(self) -> GameObject:
+        super().spawn()
+        for actor in self.actors:
+            if self.area is not None:
+                pos = get_random_pos(
+                    self.position,
+                    self.angle,
+                    self.area,
+                )
+            else: pos = self.position
+            actor.spawn(
+                spawn_to = self.spawn_layer,
+                position = pos,
+                angle = self.spawn_angle
+                )
+            
+
+
 class BodyObject(Actor):
     def __init__(self, 
                  body:BodyHandler,

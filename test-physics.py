@@ -68,12 +68,20 @@ class PhysicsTestView(View):
         self.space.damping = 0.01
         
         self.player = EscapePlayer()
-        self.player.spawn(self.character_layer, Vector(100, 100))
+        sp = Spawner(
+            [self.player], 
+            self.character_layer,
+            position = Vector(100,100),
+            area = Vector(100,100),
+            spawn_angle=90)
+        # self.player.spawn(self.character_layer, Vector(100, 100))
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
         # self.player.body.physics.friction = 1.0
         # self.player.body.sprite.pymunk.gravity = (0,980)
         # self.player.body.sprite.pymunk.damping = 0.01
         self.camera = self.player.camera
+        
+        sp.spawn()
         
         field_start = CLOCK.perf
         self._setup_field(self.field_layer)
@@ -524,10 +532,17 @@ class WorldTestView(View):
     def setup(self):
         self.space = PhysicsSpace()
         self.player_layer = ObjectLayer(self.space)
-        self.player = EscapePlayer().spawn(self.player_layer, Vector(100,100))
-        self.world = TiledMap(space = self.space)
+        self.player = EscapePlayer()
+        sp = Spawner(
+            [self.player],
+            spawn_layer = self.player_layer,
+            position = Vector(100, 100),
+            area = Vector(100, 100)
+            )
+        sp.spawn()
+        self.world = TiledMap(space = self.space, scale = 2)
         
-        self.world.load_map('tiled/test_map3.json')
+        self.world.load_map('tiled/test_map2.json')
         for layer in self.world.map.layers:
             print(layer.name)
         
@@ -555,8 +570,8 @@ def main():
     CLOCK.use_engine_tick = True
     
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
-    # GAME.set_scene(WorldTestView)
-    GAME.set_scene(PhysicsTestView)
+    GAME.set_scene(WorldTestView)
+    # GAME.set_scene(PhysicsTestView)
     GAME.run()
 
 if __name__ == '__main__':

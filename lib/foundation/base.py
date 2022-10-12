@@ -3,6 +3,7 @@ base feature codes
 joonhyuk@me.com
 """
 import os, sys, json
+
 from enum import Enum
 from typing import Iterable, Union
 from collections import deque
@@ -12,6 +13,8 @@ from easing_functions import *
 
 # from config import *
 from .vector import Vector
+from .dice import *
+import math
 
 cubic_easeinout = CubicEaseInOut()
 
@@ -303,6 +306,36 @@ def get_slots(_obj : object) -> set:
     for cls in _obj.__class__.__mro__:
         slots.update(getattr(cls, '__slots__', []))
     return slots
+
+def get_random_pos(
+    position: Vector,
+    angle: float = 0.0,
+    area: Vector = Vector(1, 1),
+    area_shape: str = 'rectangle',
+):
+    if area_shape == 'rectangle':
+        rand_x = random.random() * area.x * flip_coin(0.5, 1, -1) + position.x
+        rand_y = random.random() * area.y * flip_coin(0.5, 1, -1) + position.y
+    elif area_shape == 'elipse':
+        u = random.random() / 4.0
+        theta = math.atan(area.y/area.x * math.tan(2*math.pi*u))
+
+        v = random.random()
+        if 0.25 <= v < 0.5:
+            thata =  math.pi - theta
+        elif v < 0.75:
+            thate = math.pi + theta
+        else:
+            theta = -theta
+        
+        max_radius = area.x * area.y / math.sqrt((area.y*math.cos(theta))**2 + (area.x*math.sin(theta))**2)
+        
+        random_radius = max_radius * math.sqrt(random.random())
+
+        rand_x = random_radius * math.cos(theta)* flip_coin(0.5, 1, -1) 
+        rand_y = random_radius * math.sin(theta)* flip_coin(0.5, 1, -1) 
+    
+    return Vector(rand_x, rand_y).rotate(angle)
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
