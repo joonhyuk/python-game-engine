@@ -55,12 +55,6 @@
                     "name": "mass",
                     "type": "float",
                     "value": 1
-                },
-                {
-                    "name": "shape",
-                    "propertyType": "physics_shape",
-                    "type": "string",
-                    "value": "poly"
                 }
             ],
             "name": "physics",

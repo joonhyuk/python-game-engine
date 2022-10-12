@@ -85,7 +85,7 @@ def _get_image_source(
 #     type: Optional[str] = None
 
 
-class World:
+class TiledMap:
     """ Tiled map based world class 
     
     Will be the biggest object handling all retroactive game objects like sprites, physics.
@@ -132,10 +132,8 @@ class World:
         ''' sprite hit box detail parameter '''
         self.offset:Vector = offset
         ''' map offset '''
-        self.static_layers:Dict[str, ObjectLayer] = OrderedDict()
-        ''' simple field / walls. only static(without tick) objects here. doors should be in dynamic_layers '''
-        self.dynamic_layers:Dict[str, ObjectLayer] = OrderedDict()
-        ''' DynamicObjects '''
+        self.tile_layers:Dict[str, ObjectLayer] = OrderedDict()
+        ''' field / static / dynamic layers '''
         self.object_layers:Dict[str, List[TiledObject]] = OrderedDict()
         ''' Tiled objects '''
     
@@ -186,7 +184,6 @@ class World:
             #         "Please use unique names for all layers and tilesets in your map."
             #     )
             self._process_layer(layer, global_options, layer_options)
-            
     
     def _process_layer(
         self,
@@ -213,7 +210,7 @@ class World:
             if layer.name == 'test':
                 print(layer.class_)
             processed = self._process_tile_layer(layer, **options)
-            self.static_layers[layer.name] = processed
+            self.tile_layers[layer.name] = processed
         # elif isinstance(layer, pytiled_parser.ObjectLayer):
         #     processed = self._process_object_layer(layer, **options)
         #     if processed[0]:
@@ -283,7 +280,9 @@ class World:
         return None
 
     def _get_tile_by_id(
-        self, tileset: pytiled_parser.Tileset, tile_id: int
+        self, 
+        tileset: pytiled_parser.Tileset, 
+        tile_id: int
     ) -> Optional[pytiled_parser.Tile]:
         for tileset_key, cur_tileset in self.map.tilesets.items():
             if cur_tileset is tileset:
@@ -596,7 +595,8 @@ class World:
         pass
     
     def draw(self):
-        pass
+        for name, layer in self.tile_layers.items():
+            layer.draw()
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)
