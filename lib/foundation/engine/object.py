@@ -124,6 +124,7 @@ class GameObject(object):
         # self._owner = None    ### Uncomment this line for immediate GC
         self._members.clear()
         self.get_top_owner.cache_clear()
+        self.get_members.cache_clear()
         GameObject.destroy_counter += 1
         ''' For only debugging '''
         return True
@@ -138,6 +139,7 @@ class GameObject(object):
         ''' For only debugging '''
         if not self.alive: GameObject.gc_counter += 1
     
+    @cache
     def get_members(
         self, 
         types_include : Union[type, tuple[type]] = None, 
@@ -219,12 +221,29 @@ class GameObject(object):
     
     @property
     def alive(self) -> bool:
+        '''
+        Returns validity
+        '''
         return self._is_alive()
     
     @property
     def members(self) -> list[GameObject]:
-        return self._members
+        return self._members or self.get_members()
 
+    @property
+    def available(self) -> bool:
+        '''
+        Returns alive and spawnned
+        '''
+        if not self._owner:
+            return self.alive and self.spawnned
+        
+        return all((
+            self._owner.alive,
+            self._owner.spawnned,
+            self.alive,
+            self.spawnned
+        ))
     # def __getstate__(self):
     #     return dict([(k, getattr(self,k,None)) for k in self.__slots__])
 

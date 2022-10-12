@@ -8,6 +8,42 @@ class StaticBody(PhysicsBody):
     __slots__ = ()
 
 
+class Ticker(GameObject):
+    
+    #WIP
+    '''
+    Run every tick() of owner's members.
+    
+    GameObject 스폰에 그냥 기능을 넣어버리는 것은?
+    Client에 커플링 시킬거면 컴포넌트로 가는게 맞다.
+    '''
+    
+    __slots__ = 'tick_group', 
+    
+    def setup(self, **kwargs) -> None:
+        self.tick_group: list[Callable] = None
+        return super().setup(**kwargs)
+    
+    def on_spawn(self) -> None:
+        self.set_tickers()
+        return super().on_spawn()
+    
+    def set_tickers(self) -> None:
+        self.tick_group = []
+        for member in self.owner.members:
+            if hasattr(member, 'tick') and not isinstance(member, (Ticker, Controller)):
+                self.tick_group.append(member.tick)
+    
+    def tick(self, delta_time: float) -> bool:
+        
+        if not self.available: return False
+        
+        for tick in self.tick_group:
+            tick(delta_time)
+        
+        return True
+
+
 class SpriteMovement(MovementHandler):
     '''movement component for character'''
     

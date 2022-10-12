@@ -20,8 +20,7 @@ class Controller(GameObject):
         return self
     
     def tick(self, delta_time:float) -> bool:
-        if not self.spawnned : return False
-        if not self.owner.alive : return False
+        if not self.available: return False
         return True
         
     def destroy(self) -> None:

@@ -47,8 +47,7 @@ class MovementHandler(Handler):
         """
     
     def tick(self, delta_time:float) -> bool:
-        if not self.spawnned : return False
-        if not self.alive : return False
+        if not self.available: return False
         self._set_heading(delta_time)
         self._set_movement(delta_time)
         return True
