@@ -1,12 +1,16 @@
 from lib.foundation.component import *
 from .action import *
 
+import gc
+
 from config.game import * 
 
 class EscapePlayerController(PlayerController):
     
+    
     def setup(self, **kwargs) -> None:
         self.action:EscapeCharacterActionHandler
+        self._last_projectile = None
         
         return super().setup(**kwargs)
     
@@ -28,7 +32,7 @@ class EscapePlayerController(PlayerController):
 
         if key == keys.SPACE: self.action.test_boost(GAME.input_move, 500)
         if key == keys.ENTER: self.action.test_attack(self.body.forward_vector, 200)
-        if key == keys.H: self.movement.body.hidden = None
+        if key == keys.H: self.body.hidden = None
         
         if key == keys.Z:
             GAME.debug_text.perf_check('DELEGATED_ACTION_DELAY') 
@@ -67,8 +71,8 @@ class EscapePlayerController(PlayerController):
         GAME.last_mouse_lb_hold_time = CLOCK.perf - GAME.last_mouse_lb_hold_time
         GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self._tmp = self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0.2, 2, 500, 2000, True))
-
+        self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0.2, 2, 500, 2000, True))
+        # print(self._last_projectile)
 
 class TestAIActionComponent(ActionHandler):
     
@@ -112,19 +116,29 @@ class EscapeCharacterActionHandler(ActionHandler):
         # self.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
         shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
         
-        query = self.body.physics.space.segment_query(origin, end, thickness / 2, shape_filter)
+        query = self.body.physics.space.segment_query(end, origin, thickness / 2, shape_filter)
         # query = ENV.physics_engine.space.segment_query(origin, end, thickness / 2, shape_filter)
         if query:
             first_hit = query[0]
             
             ### BUGS below for now.
-            # victim:PhysicsObject = first_hit.shape.body.owner
-            # print(victim, ' HIT!')
-            # victim.body.sprite.color = colors.RED
+            try:
+                victim:PhysicsObject = first_hit.shape.body.owner
+            except:
+                print('HIT_QUERY', first_hit.shape.body)
+                pass
+            else:
+                print(victim, ' HIT!')
+                victim.body.sprite.color = colors.RED
+                victim.destroy()
     
 
 class EscapePlayerMovement(TopDownPhysicsMovement):
-    pass
+    
+    def __del__(self):
+        print('WHY??', self)
+        return super().__del__()
+    
 
 
 class EscapeAIMovement(TopDownPhysicsMovement):
@@ -143,9 +157,9 @@ class TestAIController(AIController):
         if CONFIG.debug_f_keys[7]:
             self.action.gaze(target_pos = self.target.position)
         if CONFIG.debug_f_keys[6]:
-            dist = get_distance(*self.movement.body.position, *self.target.position)
+            dist = get_distance(*self.body.position, *self.target.position)
             if dist > 100:
-                self.movement.move(self.movement.body.forward_vector * dist)
+                self.movement.move(self.body.forward_vector * dist)
 
 
 class TestKinematicObject(StaticObject):

@@ -194,9 +194,9 @@ class EscapeGameView(View):
         if key == arcade.key.C: 
             self.camera = self.player.camera
             self.player.camera.camera.position = self.window.current_camera.position
-        if key == arcade.key.F:
+        # if key == arcade.key.F:
             # self.player.body.change_x = -100
-            self.space.apply_force(self.player.body, (10000,0)) 
+            # self.space.apply_force(self.player.body, (10000,0)) 
     
     def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
         self.raycast_fire_check(self.player.position, Vector(x, y))

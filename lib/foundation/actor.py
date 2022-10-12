@@ -65,16 +65,13 @@ class StaticObject(Actor):
 
 class DynamicObject(Actor):
     
-    __slots__ = 'body', 'apply_force', 'apply_impulse', 
+    __slots__ = 'body', 
     
     def __init__(self, 
                  body:Union[DynamicBody, KinematicBody],
                  **kwargs) -> None:
         super().__init__(**kwargs)
         self.body:Union[DynamicBody, KinematicBody] = body
-        self.movable = True
-        self.apply_force = self.body.apply_force_world
-        self.apply_impulse = self.body.apply_impulse_world
     
     def spawn(self, 
               spawn_to:ObjectLayer, 
@@ -95,7 +92,6 @@ class DynamicObject(Actor):
     
     def draw(self):
         self.body.draw()
-    #     pass    ### delegate draw to body. 
     
     mass:float = PropertyFrom('body')
     friction:float = PropertyFrom('body')
@@ -141,7 +137,6 @@ class Projectile(DynamicBody):
                  offset_circle: Vector = ..., 
                  custom_gravity: Vector = vectors.zero, 
                  custom_damping: float = 0.0, 
-                 owner: ... = None,
                  **kwargs) -> None:
         super().__init__(sprite, 
                          position,
@@ -159,7 +154,6 @@ class Projectile(DynamicBody):
                          custom_gravity = custom_gravity,
                          custom_damping = custom_damping,
                          **kwargs)
-        self.owner = None
     
     def spawn(self, spawn_to: ObjectLayer, position: Vector = None, angle: float = None):
         return super().spawn(spawn_to, position, angle)
@@ -167,7 +161,7 @@ class Projectile(DynamicBody):
 
 class Pawn(DynamicObject):
     
-    # __slots__ = ('hp', 'movement', )
+    __slots__ = 'hp',  
     
     def __init__(self, 
                  body: DynamicBody, 
@@ -175,14 +169,14 @@ class Pawn(DynamicObject):
                  **kwargs) -> None:
         super().__init__(body, **kwargs)
         self.hp = hp
-        self.movement = TopDownPhysicsMovement(body = self.body)
+        # self.movement = TopDownPhysicsMovement(body = self.body)
     
     def apply_damage(self, damage:float):
         self.hp -= damage
-        if not self.alive: self.die()
+        if not self.alive: return self.die()
         
     def die(self):
-        self.destroy()
+        return self.destroy()
     
     @property
     def _is_alive(self) -> bool:
@@ -192,7 +186,7 @@ class Pawn(DynamicObject):
 
 class Character(Pawn):
     
-    # __slots__ = ('camera', )
+    __slots__ = 'controller', 
     
     def __init__(self, body: DynamicBody, hp: float = 100, **kwargs) -> None:
         super().__init__(body, hp, **kwargs)

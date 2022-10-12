@@ -1,3 +1,5 @@
+import sys
+
 from lib.foundation import *
 from .component import *
 
@@ -59,13 +61,22 @@ class ShrinkingBall(BallProjectile):
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None) -> None:
         super().spawn(spawn_to, position, angle, initial_impulse)
         delay_run(self.shrinking_start, self.start_shrink)
+        # print('refcount_s', sys.getrefcount(self))
+        return self
         
     def destroy(self) -> None:
-        return super().destroy()
+        super().destroy()
+        # print('refcount',str(gc.get_referrers(self)))
+        # print('refcount_e', sys.getrefcount(self))
+        # self.body - None
+        return True
+        
     
     def start_shrink(self):
         delay_cancel(self.start_shrink)
         schedule_interval(self._shrink, 1/60)
+        # print('refcount_1', sys.getrefcount(self))
+        
     
     def _shrink(self, dt):
         self.alpha -= dt / self.shrinking_delay
@@ -76,6 +87,12 @@ class ShrinkingBall(BallProjectile):
         alpha = clamp(self.alpha, 0.1, 1)
         self.body.sprite.color = (255, 0, 255, 255 * alpha)
         self.body.scale = alpha
+        # print('refcount_2', sys.getrefcount(self))
+        
+    
+    @property
+    def refcount(self):
+        return sys.getrefcount(self)
 
 
 class ShrinkingToy(DynamicObject):
@@ -136,12 +153,11 @@ class EscapePlayer(Character):
         self.max_energy = 100
         self.energy = self.max_energy
         self.camera = CameraHandler(body = self.body)
-        self.movement = EscapePlayerMovement(body=self.body)
+        self.movement = TopDownPhysicsMovement(body=self.body)
         self.action = EscapeCharacterActionHandler()
         self.controller = EscapePlayerController()
         self.projectile : type = ShrinkingBall
         
-    
     # def tick(self, delta_time: float = None) -> bool:
     #     if not super().tick(delta_time): return False
     #     if self._fire_counter % 5 == 0:

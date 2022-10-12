@@ -57,6 +57,8 @@ class PhysicsTestView(View):
         
     def setup(self):
         start_loading_time = CLOCK.get_perf()
+        self._tmp_actor = None
+        
         self.channel_static = None
         self.channel_dynamic = None
         
@@ -95,6 +97,7 @@ class PhysicsTestView(View):
         # test_simplebody.position = vectors.zero
         test_simpleactor = StaticObject(test_simplebody).spawn(self.wall_layer, position=Vector(200,200))
         test_simpleactor2 = StaticObject(test_simplebody2).spawn(self.wall_layer, position=Vector(200,568))
+        # self._tmp_actor = test_simpleactor
         # test_simpleactor.position = vectors.zero
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
         # test_simpleactor.body.sprite.remove_from_sprite_lists()
@@ -124,7 +127,6 @@ class PhysicsTestView(View):
                                                  shape_edge_radius=1)
         self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, Vector(800, 550))
         kinematic_fan_blade_body.physics.angular_velocity = 5
-        
         
         circle_body = DynamicBody(
             # SpriteCircle(48),
@@ -299,6 +301,10 @@ class PhysicsTestView(View):
         
         if key == keys.I: self._setup_debris_onecue(self.debris_layer)
         
+        if key == keys.K:
+            self.test_npc.destroy()
+            self.test_npc = None
+        
         return super().on_key_press(key, modifiers)
     
     def on_key_release(self, key: int, modifiers: int):
@@ -433,7 +439,7 @@ class PhysicsTestView(View):
         self.player.movement.tick(delta_time)
         GAME.debug_text.perf_check('PLAYER_TICK')
         
-        self.test_npc.tick(delta_time)
+        if self.test_npc: self.test_npc.tick(delta_time)
         self.test_rotating_dynamic.tick(delta_time)
         
         GAME.debug_text.perf_check('AI_TICK')
@@ -473,6 +479,7 @@ class PhysicsTestView(View):
         # ENV.debug_text.perf_check('update_empty_physics')
         GAME.debug_text.show_timer('mouse_lb_hold')
         
+        GAME.debug_text['GAMEOBJECT SPAWN/DESTROYED/GC'] = f'{GameObject.spawn_counter - GameObject.destroy_counter}/{GameObject.destroy_counter - GameObject.gc_counter}/{GameObject.gc_counter}'
         
         GAME.debug_text['BODY ALIVE/REMOVED/TRASHED'] = f'{BodyHandler.counter_created - BodyHandler.counter_removed}/{BodyHandler.counter_removed - BodyHandler.counter_gced}/{BodyHandler.counter_gced}'
     
@@ -481,6 +488,7 @@ class PhysicsTestView(View):
     #     scale = width / 1024
     #     self.field_layer.rescale(scale)
         GAME.debug_text.perf_check('update_game')
+
 
 class PlatformerTestView(View):
     

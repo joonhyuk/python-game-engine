@@ -599,7 +599,7 @@ class PhysicsSpace(pymunk.Space):
             if isinstance(o, PhysicsObject) and o.body_type == pymunk.Body.STATIC:
                 self._static_objs.add(o)
             if isinstance(o, pymunk.Shape):
-                self.__class__._temp_shapes.discard(o)
+                PhysicsSpace._temp_shapes.discard(o)
         
         return super().add(*objs)
     

@@ -50,6 +50,10 @@ class GameObject(object):
     
     '''
     
+    spawn_counter:int = 0
+    destroy_counter:int = 0
+    gc_counter:int = 0
+    
     __slots__ = '_alive', 'spawnned', '_owner', '_members'
     
     def __init__(self, **kwargs) -> None:
@@ -85,6 +89,8 @@ class GameObject(object):
                 if not member.spawnned : member.spawn()
         self._set_owners_member()
         self.on_spawn()
+        GameObject.spawn_counter += 1
+        ''' For only debugging '''
         return self
     
     def on_spawn(self) -> None:
@@ -109,12 +115,16 @@ class GameObject(object):
             for member in members:
                 if member._owner == self :
                     '''
-                    Remove only my own members, not my superior (for handlers)
+                    Destroy only my own members, not my superior (for handlers)
                     '''
-                    if member.destroy(): self.members.remove(member)
-        # del self._members
+                    if member.destroy(): 
+                        self.members.remove(member)
+                else:
+                    self.members.remove(member)
         self.spawnned = False
         self._alive = False
+        GameObject.destroy_counter += 1
+        ''' For only debugging '''
         return True
     
     def on_destroy(self):
@@ -122,6 +132,10 @@ class GameObject(object):
         Method that runs right before destruction
         '''
         pass
+    
+    def __del__(self):
+        ''' For only debugging '''
+        if not self.alive: GameObject.gc_counter += 1
     
     def get_members(
         self, 

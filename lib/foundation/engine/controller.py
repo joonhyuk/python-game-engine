@@ -44,7 +44,7 @@ class PlayerController(Controller):
         if not super().tick(delta_time) : return False
         self.movement.turn_to_position(GAME.target_point)
         self.movement.move_direction = GAME.move_input
-        GAME.debug_text['player_speed'] = round(self.movement.body.speed, 1)
+        GAME.debug_text['player_speed'] = round(self.body.speed, 1)
         
         return True
     

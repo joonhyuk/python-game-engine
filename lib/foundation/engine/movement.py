@@ -20,7 +20,7 @@ class MovementHandler(Handler):
         ) -> None:
         super().__init__(**kwargs)
         
-        self.body = body
+        self.body:BodyHandler = self.owners(BodyHandler)
         self.rotation_interp_speed = rotation_interp_speed
     
     def setup(self, **kwargs):
@@ -95,7 +95,7 @@ class MovementHandler(Handler):
         pass
     
     def move(self, force:Vector):
-        self.owner.apply_force(force)
+        self.body.apply_force(force)
         pass
     
     def move_forward(self):
