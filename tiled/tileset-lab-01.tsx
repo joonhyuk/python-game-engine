@@ -3,11 +3,7 @@
  <grid orientation="orthogonal" width="32" height="32"/>
  <image source="../resources/art/tileset-lab-01.png" width="240" height="176"/>
  <tile id="0" class="physics"/>
- <tile id="1" class="physics">
-  <properties>
-   <property name="cmonbaby" type="bool" value="false"/>
-  </properties>
- </tile>
+ <tile id="1" class="physics"/>
  <tile id="2" class="physics"/>
  <tile id="3" class="physics"/>
  <tile id="4" class="physics"/>

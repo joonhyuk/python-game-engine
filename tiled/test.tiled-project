@@ -8,9 +8,54 @@
     ],
     "propertyTypes": [
         {
+            "id": 4,
+            "name": "body_type",
+            "storageType": "int",
+            "type": "enum",
+            "values": [
+                "STATIC",
+                "DYNAMIC",
+                "KINEMATIC"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 5,
+            "name": "Game Class",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+                "Door",
+                "Wall",
+                "FanDynamic"
+            ],
+            "valuesAsFlags": false
+        },
+        {
             "color": "#ffa0a0a4",
             "id": 1,
             "members": [
+                {
+                    "name": "body_type",
+                    "propertyType": "body_type",
+                    "type": "int",
+                    "value": 0
+                },
+                {
+                    "name": "elasticity",
+                    "type": "float",
+                    "value": 0
+                },
+                {
+                    "name": "friction",
+                    "type": "float",
+                    "value": 1
+                },
+                {
+                    "name": "mass",
+                    "type": "float",
+                    "value": 1
+                },
                 {
                     "name": "shape",
                     "propertyType": "physics_shape",
@@ -41,6 +86,24 @@
                 "segment"
             ],
             "valuesAsFlags": false
+        },
+        {
+            "color": "#ffa0a0a4",
+            "id": 3,
+            "members": [
+            ],
+            "name": "test_class",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
         }
     ]
 }

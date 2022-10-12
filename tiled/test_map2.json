@@ -27,12 +27,6 @@
                  "id":1,
                  "name":"background",
                  "opacity":1,
-                 "properties":[
-                        {
-                         "name":"physics",
-                         "type":"bool",
-                         "value":false
-                        }],
                  "type":"tilelayer",
                  "visible":true,
                  "width":16,
@@ -153,9 +147,55 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":12,
+         "name":"Object Layer 1",
+         "objects":[
+                {
+                 "class":"physics",
+                 "height":32,
+                 "id":9,
+                 "name":"",
+                 "properties":[
+                        {
+                         "name":"body_type",
+                         "propertytype":"body_type",
+                         "type":"int",
+                         "value":1
+                        }, 
+                        {
+                         "name":"shape",
+                         "propertytype":"physics_shape",
+                         "type":"string",
+                         "value":"poly"
+                        }],
+                 "rotation":0,
+                 "visible":true,
+                 "width":32,
+                 "x":64,
+                 "y":0
+                }, 
+                {
+                 "class":"",
+                 "height":0,
+                 "id":11,
+                 "name":"",
+                 "rotation":0,
+                 "visible":true,
+                 "width":0,
+                 "x":256,
+                 "y":368
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":9,
- "nextobjectid":1,
+ "nextlayerid":13,
+ "nextobjectid":15,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.9.2",

@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional, Tuple, NamedTuple, Sequence, Union
 
 import pytiled_parser
 import pytiled_parser.tiled_object
+from pytiled_parser.tiled_object import TiledObject
+
 from pytiled_parser import Properties
 
 from arcade import (
@@ -75,16 +77,16 @@ def _get_image_source(
     return None
 
 
-class TiledObject(NamedTuple):
-    ''' need to be revisited '''
-    shape: Union[Point, PointList, Rect]
-    properties: Optional[Properties] = None
-    name: Optional[str] = None
-    type: Optional[str] = None
+# class TiledObject(NamedTuple):
+#     ''' need to be revisited '''
+#     shape: Union[Point, PointList, Rect]
+#     properties: Optional[Properties] = None
+#     name: Optional[str] = None
+#     type: Optional[str] = None
 
 
 class World:
-    ''' Tiled map based world class 
+    """ Tiled map based world class 
     
     Will be the biggest object handling all retroactive game objects like sprites, physics.
     
@@ -93,7 +95,7 @@ class World:
     - object layer or property (spawner, ...)
     - draw(), update()
     
-    '''
+    """
     def __init__(
         self,
         scale:float = 1.0,
@@ -106,11 +108,11 @@ class World:
         
         if space is None:
             try:
-                space = getattr(self, 'physics')
+                space = getattr(self, 'space')
             except:
-                self.physics:PhysicsSpace = PhysicsSpace()
+                self.space:PhysicsSpace = PhysicsSpace()
         else:
-            self.physics = space
+            self.space = space
         
         self.map:pytiled_parser.TiledMap= None
         ''' map data '''
@@ -140,8 +142,8 @@ class World:
     def load_map(
         self, 
         filepath:Union[str, Path] = None,
-        layer_options: Optional[Dict[str, Dict[str, Any]]] = None,
         scale:float = 1.0,
+        layer_options: Optional[Dict[str, Dict[str, Any]]] = None,
         use_spatial_hash: Optional[bool] = None,
         hit_box_algorithm: str = "Simple",
         hit_box_detail: float = 4.5,
@@ -234,7 +236,6 @@ class World:
         flipped_horizontally = False
         flipped_vertically = False
 
-        
         if tile_gid & _FLIPPED_HORIZONTALLY_FLAG:
             flipped_horizontally = True
             tile_gid -= _FLIPPED_HORIZONTALLY_FLAG
@@ -279,6 +280,17 @@ class World:
                 return my_tile
 
         print(f"Returning NO tile for {tile_gid}.")
+        return None
+
+    def _get_tile_by_id(
+        self, tileset: pytiled_parser.Tileset, tile_id: int
+    ) -> Optional[pytiled_parser.Tile]:
+        for tileset_key, cur_tileset in self.map.tilesets.items():
+            if cur_tileset is tileset:
+                for tile_key, tile in cur_tileset.tiles.items():
+                    if tile_id == tile.id:
+                        return tile
+
         return None
 
     def _create_sprite_from_tile(
@@ -483,6 +495,11 @@ class World:
 
         return my_sprite
 
+    def _process_image_layer(
+        self,
+    ):
+        pass
+    
     def _process_tile_layer(
         self,
         layer: pytiled_parser.TileLayer,
@@ -502,7 +519,7 @@ class World:
         # print(layer.name,'set_physics',set_physics)
         
         sprite_list: ObjectLayer = ObjectLayer(
-            self.physics if set_physics else None,
+            self.space if set_physics else None,
             use_spatial_hash=use_spatial_hash)
         
         map_array = layer.data
@@ -558,13 +575,18 @@ class World:
                         my_sprite.alpha = int(opacity * 255)
 
                     sprite_list.visible = layer.visible
+                    
                     sprite_list.add(my_sprite)
 
                 if layer.properties:
                     sprite_list.properties = layer.properties
 
         return sprite_list
-
+    
+    def _process_object_layer(
+        self,
+    ):
+        pass
 
     def setup(self):
         

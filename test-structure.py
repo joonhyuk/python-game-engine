@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from lib.foundation import *
+from lib.foundation.world import *
 
 
 class Member(GameObject):
@@ -136,16 +137,19 @@ ta = TestActor()
 ta.spawn()
 start = time.perf_counter()
 
-for i in range(10000):
+# for i in range(10000):
     
-    ta.attack(doing = i, other = i**2)
+#     ta.attack(doing = i, other = i**2)
     
-print('time', time.perf_counter() - start)
+# print('time', time.perf_counter() - start)
 
-start = time.perf_counter()
+# start = time.perf_counter()
 
-for i in range(10000):
+# for i in range(10000):
     
-    ta.attak(doing = i, other = i**2)
+#     ta.attak(doing = i, other = i**2)
     
-print('time', time.perf_counter() - start)
+# print('time', time.perf_counter() - start)
+print('world test start')
+world = World()
+world.load_map(Path('tiled/test_map2.json'))
