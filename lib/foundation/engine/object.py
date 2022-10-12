@@ -117,12 +117,13 @@ class GameObject(object):
                     '''
                     Destroy only my own members, not my superior (for handlers)
                     '''
-                    if member.destroy(): 
-                        self.members.remove(member)
-                else:
-                    self.members.remove(member)
+                    member.destroy()
+                    
         self.spawnned = False
         self._alive = False
+        # self._owner = None    ### Uncomment this line for immediate GC
+        self._members.clear()
+        self.get_top_owner.cache_clear()
         GameObject.destroy_counter += 1
         ''' For only debugging '''
         return True
@@ -200,7 +201,7 @@ class GameObject(object):
         ''' Overridable but need retuning super()._is_alive()'''
         return self._alive
     
-    @cache
+    @cache        ### Should clear cache when destroyed for GC
     def get_top_owner(self, _obj : GameObject = None) -> GameObject:
         ''' retrieve owner recursively '''
         if _obj is None: _obj = self
