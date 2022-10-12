@@ -28,11 +28,15 @@ class Ticker(GameObject):
         self.set_tickers()
         return super().on_spawn()
     
+    def on_destroy(self):
+        self.tick_group.clear()
+        return super().on_destroy()
+    
     def set_tickers(self) -> None:
         self.tick_group = []
         for member in self.owner.members:
             if hasattr(member, 'tick') and not isinstance(member, (Ticker, Controller)):
-                self.tick_group.append(member.tick)
+                GAME.tick_group.append(member.tick)
     
     def tick(self, delta_time: float) -> bool:
         

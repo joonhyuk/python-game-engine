@@ -151,5 +151,5 @@ start = time.perf_counter()
     
 # print('time', time.perf_counter() - start)
 print('world test start')
-world = World()
+world = TiledMap()
 world.load_map(Path('tiled/test_map2.json'))

@@ -130,7 +130,7 @@ class EscapeCharacterActionHandler(ActionHandler):
             else:
                 print(victim, ' HIT!')
                 victim.body.sprite.color = colors.RED
-                victim.destroy()
+                # victim.destroy()
     
 
 class EscapePlayerMovement(TopDownPhysicsMovement):

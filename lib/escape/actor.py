@@ -125,8 +125,19 @@ class RollingRock(ShrinkingToy):
 
 class KinematicRotatingFan(KinematicObject):
     
-    def __init__(self, body: KinematicBody, **kwargs) -> None:
-        super().__init__(body, **kwargs)
+    def setup(self, **kwargs) -> None:
+        self.angular_v = 3
+        return super().setup(**kwargs)
+    
+    def on_spawn(self) -> None:
+        self.rotate()
+        return super().on_spawn()
+    
+    def rotate(self, multiplier:int = 1):
+        self.angular_v *= multiplier
+        self.body.physics.angular_velocity = self.angular_v
+    
+    
 
 
 class DynamicRotatingFan(DynamicObject):
@@ -157,6 +168,7 @@ class EscapePlayer(Character):
         self.action = EscapeCharacterActionHandler()
         self.controller = EscapePlayerController()
         self.projectile : type = ShrinkingBall
+        self.ticker = Ticker()
         
     # def tick(self, delta_time: float = None) -> bool:
     #     if not super().tick(delta_time): return False

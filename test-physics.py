@@ -126,7 +126,6 @@ class PhysicsTestView(View):
                                                  shape_type=physics_types.poly,
                                                  shape_edge_radius=1)
         self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, Vector(800, 550))
-        kinematic_fan_blade_body.physics.angular_velocity = 5
         
         circle_body = DynamicBody(
             # SpriteCircle(48),
@@ -294,6 +293,8 @@ class PhysicsTestView(View):
         if key == keys.RIGHT:
             self.change_gravity(vectors.right)
         
+        if key == keys.F5:
+            self.test_rotating_kinematic.rotate(-1)
         # if key == keys.SPACE: self.player.test_boost(500)
         
         # if key == keys.H:
@@ -434,9 +435,9 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('update_game')
         super().on_update(delta_time)
         GAME.debug_text.perf_check('PLAYER_TICK')
-        self.player.controller.tick(delta_time)
-        self.player.camera.tick(delta_time)
-        self.player.movement.tick(delta_time)
+        # self.player.controller.tick(delta_time)
+        # self.player.camera.tick(delta_time)
+        # self.player.movement.tick(delta_time)
         GAME.debug_text.perf_check('PLAYER_TICK')
         
         if self.test_npc: self.test_npc.tick(delta_time)
@@ -457,20 +458,16 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('update_physics')
         
         GAME.debug_text.perf_check('resync_objects')
-        # self.physics_main.resync_objects()
-        # print(self.player.body.physics.segment_query((0,0), CONFIG.screen_size))
-        
-        # ENV.debug_text['distance'] = rowund(self.player.position.length, 1)
-        non_static_objects = self.space._movable_objs
-        if non_static_objects:
-            for o in non_static_objects:
-                o.owner.body.tick(delta_time)
-            total = len(non_static_objects)
-            # sleeps = list(map(lambda a:a.is_sleeping, self.physics_main.space.bodies)).count(True)
-            sleeps = 0
-            for a in self.space.bodies:
-                if a.is_sleeping: sleeps += 1
-            GAME.debug_text['MOVABLE TOTAL/SLEEP'] = f'{total}/{sleeps}'
+        self.space.sync()
+
+        if CONFIG.debug_f_keys[2]: 
+            total = len(self.space.movables)
+            
+            if total:
+                sleeps = 0
+                for a in self.space.bodies:
+                    if a.is_sleeping: sleeps += 1
+                GAME.debug_text['MOVABLE TOTAL/SLEEP'] = f'{total}/{sleeps}'
         GAME.debug_text.perf_check('resync_objects')
         
         # ENV.debug_text.perf_check('update_empty_physics')
@@ -520,29 +517,45 @@ class WorldTestView(View):
         
         self.player:EscapePlayer = None
         ''' will be substitute with spawn object in map '''
-        self.world:World = None
+        self.world:TiledMap = None
         ''' 
         contains everything for game : layers of objects, physics, update() or tick(), draw()
         '''
     def setup(self):
+        self.space = PhysicsSpace()
+        self.player_layer = ObjectLayer(self.space)
+        self.player = EscapePlayer().spawn(self.player_layer, Vector(100,100))
+        self.world = TiledMap(space = self.space)
         
-        self.player = EscapePlayer()
-        self.world = World()
+        self.world.load_map('tiled/test_map3.json')
+        for layer in self.world.map.layers:
+            print(layer.name)
+        
         
     def on_update(self, delta_time: float):
         
         # self.player.tick(delta_time)
+        # self.player.controller.tick(delta_time)
+        self.player.movement.tick(delta_time)
         self.world.tick(delta_time)     ### includes player, physics update
+        self.space.step(1/60)
+        self.space.sync()
         
     def on_draw(self):
-        
+        self.clear()
+        self.player.camera.use()
         self.world.draw()       ### includes player draw(in proper layer)
-
+        self.player_layer.draw()
+        
+        if CONFIG.debug_f_keys[2]:
+            self.space.debug_draw_movable_collision()
+            self.space.debug_draw_static_collision()
 
 def main():
     CLOCK.use_engine_tick = True
     
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
+    # GAME.set_scene(WorldTestView)
     GAME.set_scene(PhysicsTestView)
     GAME.run()
 

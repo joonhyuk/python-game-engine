@@ -207,6 +207,8 @@ class Client(metaclass = SingletonType):
     
     controllers = []
     
+    tick_group: list[Callable] = None
+    
     def __init__(
         self,
         max_local_players : int = 1,
@@ -217,6 +219,7 @@ class Client(metaclass = SingletonType):
         self.gamepads = self.get_gamepads()
         self.gamepad = self.get_gamepads(0)
         self.default_space = PhysicsSpace()
+        self.tick_group = []
     
     def add_player(self, player_controller):
         
@@ -341,7 +344,6 @@ class Client(metaclass = SingletonType):
 
     def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, modifiers: int):
         self.mouse_screen_position = Vector(x, y)
-
     
     def on_mouse_scroll(self, x: int, y: int, scroll_x: int, scroll_y: int):
         pass
@@ -363,6 +365,12 @@ class Client(metaclass = SingletonType):
     def on_update(self, delta_time: float):
         
         self.delta_time = delta_time
+        
+        self.player_controller.tick(delta_time)
+        
+        if self.tick_group:
+            for tick in self.tick_group:
+                tick(delta_time)
         
         scheduler_count = pyglet_clock._schedule_interval_items.__len__()
         

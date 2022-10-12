@@ -564,7 +564,7 @@ class PhysicsSpace(pymunk.Space):
     def __init__(
         self, 
         gravity: Vector = None,
-        damping: float = None,
+        damping: float = 0.01,
         threaded: bool = False,
         sleep_time_threshold: float = 5.0,
         idle_speed_threshold: float = 10.0,
