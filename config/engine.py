@@ -14,6 +14,8 @@ DEFAULT_FPS = 60
 DEFAULT_UI_SCALE = 100
 
 RESOURCE_PATH = 'resources/'
+TILED_PATH = 'tiled/'
+
 IMG_PATH = RESOURCE_PATH + 'art/'
 SFX_PATH = RESOURCE_PATH + 'sfx/'
 

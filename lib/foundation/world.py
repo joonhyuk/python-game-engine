@@ -159,7 +159,6 @@ class TiledMap:
         
         if not filepath: raise AttributeError('No map file path')
         self.map = tiled_map or pytiled_parser.parse_map(Path(get_path(filepath)))
-        
         if self.map.infinite: raise AttributeError('Infinite map currently not supported')
 
         self.size = Vector(*self.map.map_size)
@@ -178,11 +177,11 @@ class TiledMap:
         }
         
         for layer in self.map.layers:
-            # if (layer.name in self.tile_layers) or (layer.name in self.object_layers):
-            #     raise AttributeError(
-            #         f"You have a duplicate layer name '{layer.name}' in your Tiled map. "
-            #         "Please use unique names for all layers and tilesets in your map."
-            #     )
+            if (layer.name in self.tile_layers) or (layer.name in self.object_layers):
+                raise AttributeError(
+                    f"You have a duplicate layer name '{layer.name}' in your Tiled map. "
+                    "Please use unique names for all layers and tilesets in your map."
+                )
             self._process_layer(layer, global_options, layer_options)
     
     def _process_layer(
@@ -263,8 +262,11 @@ class TiledMap:
             ):
                 # No specific tile info, but there is a tile sheet
                 tile_ref = pytiled_parser.Tile(
-                    id=(tile_gid - tileset_key), image=tileset.image
+                    id=(tile_gid - tileset_key), image=tileset.image,
+                    # properties = tileset.tiles[tile_gid].properties
                 )
+                print('==========>>>', tileset.tiles[tile_gid].properties)
+                tile_ref.properties = tileset.tiles[tile_gid].properties      ### Manually inject properties, by mash
             elif tileset.tiles is None and tileset.image is not None:
                 # Not in this tileset, move to the next
                 continue
@@ -272,8 +274,7 @@ class TiledMap:
                 if tileset.tiles is None:
                     return None
                 tile_ref = tileset.tiles.get(tile_gid - tileset_key)
-            
-            if tile_ref.properties: print('SHOCK!','SHOCK!',tile_ref.properties)
+                        
             if tile_ref:
                 my_tile = copy.copy(tile_ref)
                 my_tile.tileset = tileset
@@ -325,7 +326,6 @@ class TiledMap:
                     Custom classes for animated tiles must subclass AnimatedTimeBasedSprite.
                     """
                 )
-            # print(custom_class.__name__)
             args = {"filename": image_file, "scale": scale}
             my_sprite = custom_class(**custom_class_args, **args)  # type: ignore
         else:
@@ -529,14 +529,14 @@ class TiledMap:
         
         map_array = layer.data
         # Loop through the layer and add in the list
+        
+        tqdmed = tqdm(total = len(map_array) * len(map_array[0]), desc = f'Loading {layer.name}')
         for row, rows in enumerate(map_array):
             for col, item in enumerate(rows):
                 # Check for an empty tile
                 if item == 0:
                     continue
                 tile = self._get_tile_by_gid(item)
-                if layer.name == 'test':
-                    print(tile.properties)
                 if tile is None:
                     raise ValueError(
                         (
@@ -545,6 +545,7 @@ class TiledMap:
                             f"at ({col}, {row})."
                         )
                     )
+                
                 my_sprite:Sprite
                 my_sprite = self._create_sprite_from_tile(
                     tile,
@@ -578,14 +579,14 @@ class TiledMap:
                     opacity = layer.opacity
                     if opacity:
                         my_sprite.alpha = int(opacity * 255)
-
-                    sprite_list.visible = layer.visible
                     
                     sprite_list.add(my_sprite)
+                tqdmed.update(1)
 
-                if layer.properties:
-                    sprite_list.properties = layer.properties
-
+        sprite_list.visible = layer.visible
+        if layer.properties:
+            sprite_list.properties = layer.properties
+        
         return sprite_list
     
     def _process_object_layer(

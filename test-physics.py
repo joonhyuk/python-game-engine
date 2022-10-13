@@ -541,22 +541,16 @@ class WorldTestView(View):
             )
         sp.spawn()
         self.world = TiledMap(space = self.space, scale = 2)
-        
-        self.world.load_map('tiled/test_map2.json')
-        for layer in self.world.map.layers:
-            print(layer.name)
-        
+        self.world.load_map('tiled/test_map3.json')
         
     def on_update(self, delta_time: float):
         
-        # self.player.tick(delta_time)
-        # self.player.controller.tick(delta_time)
-        self.player.movement.tick(delta_time)
         self.world.tick(delta_time)     ### includes player, physics update
         self.space.step(1/60)
         self.space.sync()
         
     def on_draw(self):
+        
         self.clear()
         self.player.camera.use()
         self.world.draw()       ### includes player draw(in proper layer)

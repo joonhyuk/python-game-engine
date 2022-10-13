@@ -30,6 +30,11 @@
  <tile id="52" class="physics"/>
  <tile id="53" class="physics"/>
  <tile id="54" class="physics"/>
+ <tile id="59">
+  <properties>
+   <property name="phys" type="int" propertytype="body_type" value="1"/>
+  </properties>
+ </tile>
  <tile id="79" class="physics"/>
  <tile id="80" class="physics"/>
  <tile id="81" class="physics"/>

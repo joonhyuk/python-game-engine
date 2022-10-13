@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import pytiled_parser
 import pytiled_parser.tiled_object
+from pytiled_parser.tiled_object import TiledObject
 from arcade import (
     AnimatedTimeBasedSprite,
     AnimationKeyframe,
@@ -81,14 +82,6 @@ def _get_image_source(
 
     print(f"Warning, can't find image {image_file} for tile {tile.id}")
     return None
-class TiledObject(NamedTuple):
-    ''' need to be revisited '''
-    shape: Union[Point, PointList, Rect]
-    properties: Optional[Properties] = None
-    name: Optional[str] = None
-    type: Optional[str] = None
-
-
 
 class TileMap:
     """
