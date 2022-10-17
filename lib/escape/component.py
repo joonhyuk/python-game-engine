@@ -21,10 +21,10 @@ class EscapePlayerController(PlayerController):
         - input config support (key, mouse, gamepad)
         - action manager component (movement, character action, system action)
         '''
-        if key in (keys.W, keys.UP): GAME.input_move += vectors.up
-        if key in (keys.S, keys.DOWN): GAME.input_move += vectors.down
-        if key in (keys.A, keys.LEFT): GAME.input_move += vectors.left
-        if key in (keys.D, keys.RIGHT): GAME.input_move += vectors.right
+        if key in (keys.W,): GAME.input_move += vectors.up
+        if key in (keys.S,): GAME.input_move += vectors.down
+        if key in (keys.A,): GAME.input_move += vectors.left
+        if key in (keys.D,): GAME.input_move += vectors.right
         
         if key == keys.LSHIFT: self.movement.speed_level = 2
         # if key == keys.LSHIFT: self.lshift_applied = True
@@ -46,10 +46,10 @@ class EscapePlayerController(PlayerController):
             self.action.toggle_ball(self.owner.projectile, 1000)
         
     def on_key_release(self, key: int, modifiers: int):
-        if key in (keys.W, keys.UP): GAME.input_move -= vectors.up
-        if key in (keys.S, keys.DOWN): GAME.input_move -= vectors.down
-        if key in (keys.A, keys.LEFT): GAME.input_move -= vectors.left
-        if key in (keys.D, keys.RIGHT): GAME.input_move -= vectors.right
+        if key in (keys.W,): GAME.input_move -= vectors.up
+        if key in (keys.S,): GAME.input_move -= vectors.down
+        if key in (keys.A,): GAME.input_move -= vectors.left
+        if key in (keys.D,): GAME.input_move -= vectors.right
         if key == keys.LSHIFT: self.movement.speed_level = 1
         # if key == keys.LSHIFT: self.lshift_applied = False
         # if key == keys.LCTRL: self.lctrl_applied = False
