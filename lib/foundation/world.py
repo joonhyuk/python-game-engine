@@ -531,7 +531,7 @@ class TiledMap:
     ) -> ObjectLayer:
 
         try:    ### set_physics default True, unless set to False manually
-            set_physics = layer.properties.get('physics', False)
+            set_physics = layer.properties.get('physics', True)
         except:
             set_physics = True
         # print(layer.name,'set_physics',set_physics)
@@ -596,10 +596,10 @@ class TiledMap:
                     if not tile.class_:
                         sprite_list.add(my_sprite)
                     else:
-                        class_ = getattr(sys.modules['lib.escape.actor'], tile.class_)
+                        class_ = getattr(sys.modules['lib.escape'], tile.class_)
                         my_actor: GameObject = class_(
                             sprite = my_sprite,
-                            mass = 1
+                            mass = 50
                             )
                         sprite_list.add(my_actor)
                         # my_actor.spawn(sprite_list)
@@ -626,6 +626,11 @@ class TiledMap:
         if not scale:
             scale = self.scale
 
+        try:    ### set_physics default True, unless set to False manually
+            set_physics = layer.properties.get('physics', True)
+        except:
+            set_physics = True
+        
         sprite_list: Optional[ObjectLayer] = None
         objects_list: Optional[List[TiledObject]] = []
 
@@ -633,7 +638,10 @@ class TiledMap:
             # shape: Optional[Union[Point, PointList, Rect]] = None
             if isinstance(cur_object, pytiled_parser.tiled_object.Tile):
                 if not sprite_list:
-                    sprite_list = ObjectLayer(use_spatial_hash=use_spatial_hash)
+                    sprite_list = ObjectLayer(
+                        self.default_space if set_physics else None,
+                        use_spatial_hash=use_spatial_hash)
+                    sprite_list.visible = layer.visible
 
                 tile = self._get_tile_by_gid(cur_object.gid)
                 my_sprite = self._create_sprite_from_tile(
@@ -665,7 +673,7 @@ class TiledMap:
 
                 angle_degrees = math.degrees(rotation)
                 rotated_center_x, rotated_center_y = rotate_point(
-                    width / 2, height / 2, 0, 0, angle_degrees
+                    (0,0), angle_degrees, (width / 2, height / 2)
                 )
 
                 my_sprite.position = (x + rotated_center_x, y + rotated_center_y)
@@ -706,16 +714,21 @@ class TiledMap:
 
                 if cur_object.properties:
                     my_sprite.properties.update(cur_object.properties)
-
-                if cur_object.class_:
-                    my_sprite.properties["class"] = cur_object.class_
-
-                if cur_object.name:
+                
+                try:
+                    class_ = getattr(sys.modules['lib.escape'], tile.class_)
+                except:
+                    sprite_list.append(my_sprite)
+                else:
+                    sprite_list.add(
+                        class_(sprite = my_sprite)
+                    )
+                
+                if cur_object.name:     ### What is this for?
                     my_sprite.properties["name"] = cur_object.name
 
-                sprite_list.visible = layer.visible
-                sprite_list.append(my_sprite)
                 continue
+            
             elif isinstance(cur_object, pytiled_parser.tiled_object.Point):
                 x = cur_object.coordinates.x * scale
                 y = (

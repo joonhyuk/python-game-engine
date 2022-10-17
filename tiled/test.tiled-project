@@ -29,21 +29,15 @@
                     "type": "class",
                     "value": {
                         "body_type": 1,
-                        "mass": 20
+                        "mass": 50
                     }
                 }
             ],
             "name": "DynamicFan",
             "type": "class",
             "useAs": [
-                "property",
-                "map",
-                "layer",
                 "object",
-                "tile",
-                "tileset",
-                "wangcolor",
-                "wangset"
+                "tile"
             ]
         },
         {
