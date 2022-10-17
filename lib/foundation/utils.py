@@ -312,8 +312,6 @@ def tick_for(tick_func, duration:float, interval:float = 1/DEFAULT_FPS, *args, *
 def delayed_unschedule(dt, func):
     unschedule(func)
 
-
-
 def delayed_func(dt, func, *args, **kwargs):
     return func(*args, **kwargs)
 
@@ -351,6 +349,14 @@ def patched_unschedule_in_clock(self, func, *args):
 
 def patched_unschedule(func, *args):
     pyglet_clock.unschedule(func, *args)
+
+def shade_color(alpha: float = 0.5, r = 0.0, g = 0.0, b = 0.0):
+    return (
+        int(255 * r),
+        int(255 * g),
+        int(255 * b),
+        int(255 * alpha),
+    )
 
 pyglet.clock.Clock.unschedule = patched_unschedule_in_clock
 unschedule = patched_unschedule

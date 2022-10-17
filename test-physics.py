@@ -30,42 +30,44 @@ from lib.escape.view import TitleScreen
 class TestTitle(TitleScreen):
     
     def start_game(self):
-        GAME.set_scene(PhysicsTestView)  
+        GAME.set_scene(TestInstruction)  
 
 
 class TestInstruction(View):
-    instruction: str = "\
-DISCLAIMER\n\
-----------\n\
-TECH DEMO : NO GAMEPLAY, BUGS AND MANY REPLACEMENTS\n\
-\n\
-\n\
-KEY GUIDE\n\
----------\n\
-WASD keys = MOVE PLAYER\n\
-ARROW keys = CHANGE GRAVITY\n\
-G key = TURN GRAVITY OFF\n\
-I key = SPAWN DRONES\n\
-B key = TOGGLE PROJECTILE\t SPACE bar = EVADE\
-\n\
-\n\
-~ key = TOGGLE WARFOG SHADER\n\
-F1 key = TOGGLE DEBUG INFO\n\
-F2 key = TOGGLE DEBUG DRAW\n\
-\n\
-ESC key = EXIT GAME\n\
-\n\
-\n\
-THANK YOU FOR PLAYING\n\
----------------------\n\
-mash@krafton.com\n\
-\
-"
+    
+    def __init__(self, window: Window = None):
+        super().__init__(window)
+        self.game_view: View = None
+        self.background = None
+    
+    def on_show_view(self):
+        arcade.set_background_color(shade_color(0.3))
+        return super().on_show_view()
     
     def draw_contents(self):
         # arcade.draw_text(self.instruction, 500,500, width=300, multiline=True)
-        draw_text(self.instruction, CONFIG.screen_size / 2, align='center', anchor=Vector(0.5,0.5), font_size = 15, width = 800)
+        if self.game_view:
+            self.game_view.on_draw()
+            
+        instruction = load_texture(get_path(RESOURCE_PATH + '/app/NG1_instruction.png'))
+        instruction.draw_scaled(*(CONFIG.screen_size / 2))
+        # draw_text(self.instruction, CONFIG.screen_size / 2, align='center', anchor=Vector(0.5,0.5), font_size = 15, width = 800)
         
+    def on_key_press(self, symbol: int, modifiers: int):
+        self.go_to_game()
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        self.go_to_game()
+    
+    def go_to_game(self):
+        
+        GAME.global_pause = False
+        
+        if self.game_view is None:
+            GAME.set_scene(PhysicsTestView)
+        else:
+            self.window.show_view(self.game_view)
+            
 
 
 class PhysicsTestView(View):
@@ -147,7 +149,7 @@ class PhysicsTestView(View):
                                      )
         # test_simplebody.position = vectors.zero
         test_simpleactor = StaticObject(test_simplebody).spawn(self.wall_layer, position=Vector(200,200))
-        test_simpleactor2 = StaticObject(test_simplebody2).spawn(self.wall_layer, position=Vector(200,568))
+        test_simpleactor2 = StaticObject(test_simplebody2).spawn(self.wall_layer, position=Vector(1080,760))
         # self._tmp_actor = test_simpleactor
         # test_simpleactor.position = vectors.zero
         # test_simpleactor.spawn(self.test_layer, Vector(300,300))
@@ -160,7 +162,7 @@ class PhysicsTestView(View):
                                )
         # box = DynamicObject(box_body)
         self.test_box = ShrinkingToy(box_body)
-        self.test_box.spawn(self.wall_layer, CONFIG.screen_size / 2)
+        self.test_box.spawn(self.wall_layer, CONFIG.screen_size / 4)
         # box.body.physics.add_pivot(self.player.body.physics.body, self.player.position, box.position)
         dynamic_fan_blade_body = DynamicBody(
             Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
@@ -173,10 +175,15 @@ class PhysicsTestView(View):
         dynamic_fan_blade_body.physics.add_world_pivot(dynamic_fan_blade_body.position)
         dynamic_fan_blade_body.damping = 0.1
         
-        kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=1.5, hit_box_algorithm='Detailed'),
+        fan2 = DynamicFan(
+            Sprite(get_path(IMG_PATH + 'test_fan_blade4.png'), scale=2, hit_box_algorithm='Detailed'),
+            collision_type=collision.wall,
+        ).spawn(self.wall_layer, Vector(200, 760))
+        
+        kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=3, hit_box_algorithm='Detailed'),
                                                  shape_type=physics_types.poly,
                                                  shape_edge_radius=1)
-        self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, Vector(800, 550))
+        self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, CONFIG.screen_size // 2)
         
         circle_body = DynamicBody(
             # SpriteCircle(48),
@@ -346,7 +353,14 @@ class PhysicsTestView(View):
         
         if key == keys.F5:
             self.test_rotating_kinematic.rotate(-1)
-        # if key == keys.SPACE: self.player.test_boost(500)
+        
+        if key == keys.ESCAPE:
+            pause = TestInstruction(self.window)
+            pause.game_view = self
+            pause.background = self.window.context
+            GAME.global_pause = True
+            
+            self.window.show_view(pause)
         
         # if key == keys.H:
         #     self.player.body.physics.hidden = None
@@ -627,8 +641,9 @@ def main():
     CLOCK.use_engine_tick = True
     
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
-    GAME.set_scene(WorldTestView)
-    # GAME.set_scene(TestTitle)
+    # GAME.set_scene(WorldTestView)
+    GAME.set_scene(TestTitle)
+    # GAME.set_scene(TestInstruction)
     GAME.run()
 
 if __name__ == '__main__':

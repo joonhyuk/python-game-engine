@@ -209,6 +209,9 @@ class Client(metaclass = SingletonType):
     
     tick_group: list[Callable] = None
     
+    global_pause: bool = False
+    
+    
     def __init__(
         self,
         max_local_players : int = 1,
@@ -335,10 +338,10 @@ class Client(metaclass = SingletonType):
         for i in range(13):
             if key == keys.__dict__[f'F{i+1}']: 
                 CONFIG.debug_f_keys[i+1] = not CONFIG.debug_f_keys[i+1]
+        if key == arcade.key.Q and modifiers & arcade.key.MOD_CTRL: arcade.exit()  ### for convenience
         
     def on_key_release(self, key:int, modifiers:int):
         self.key_inputs.remove(key)
-        if key == arcade.key.ESCAPE: arcade.exit()  ### for convenience
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self.mouse_screen_position = Vector(x, y)
@@ -366,6 +369,9 @@ class Client(metaclass = SingletonType):
     def on_update(self, delta_time: float):
         
         self.delta_time = delta_time
+        
+        if self.global_pause:
+            return False
         
         GAME.debug_text.perf_check('PAWN_TICK')
         if self.player_controller:

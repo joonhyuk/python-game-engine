@@ -7,6 +7,7 @@ from ..utils import *
 from .object import *
 from .body import *
 from .movement import *
+from .app import GAME
 
 class ActionHandler(GameObject):
     '''
@@ -75,6 +76,7 @@ class Action:
         self.name = name
     
     def __get__(self, owner:Union[GameObject, ActionHandler], objtype = None):
+        if GAME.global_pause: return self.void
         if isinstance(owner, ActionHandler):
             if owner.global_lock or self.__class__ in owner.locked_actions:
                 return self.void

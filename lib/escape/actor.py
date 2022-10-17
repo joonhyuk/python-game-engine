@@ -79,6 +79,7 @@ class ShrinkingBall(BallProjectile):
         
     
     def _shrink(self, dt):
+        if GAME.global_pause: return False
         self.alpha -= dt / self.shrinking_delay
         if self.alpha <= 0:
             unschedule(self._shrink)
@@ -173,7 +174,14 @@ class DynamicFan(DynamicObject):
     
     def on_spawn(self) -> None:
         self.body.physics.add_world_pivot()
+        GAME.tick_group.append(self.tick)
         return super().on_spawn()
+    
+    def tick(self, delta_time: float) -> bool:
+        # if not super().tick(delta_time): return False
+        if CONFIG.debug_f_keys[5]: 
+            self.body.physics.apply_force_at_local_point((0, -10000), (self.body.size.x, 0))
+        return True
 
 class EscapePlayer(Character):
     

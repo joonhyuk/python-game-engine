@@ -55,6 +55,11 @@ class TestScaleToggle(Action):
         unschedule(self.shrink)
     
     def shrink(self, delta_time:float, owner:Union[Actor, ActionHandler]):
+        
+        if GAME.global_pause: return False
+        
+        delta_time = min(1/30, delta_time)  ### Failsafe for global clock pause
+        
         if not CONFIG.debug_f_keys[4]: return False
         self.alpha = self.alpha + self._toggler * delta_time / self.scaling_duration
         if self.alpha <= 0:
@@ -77,6 +82,8 @@ class TestShootBall(Action):
         return self.fire(0, owner, proj_type, impulse)
 
     def fire(self, dt, owner:ActionHandler, proj_type, impulse):
+        # if GAME.global_pause: return False
+        
         proj:DynamicObject = proj_type()
         proj.body.damping = 1.0
         return proj.spawn(owner.body.layers[0], owner.body.position, initial_impulse=owner.body.forward_vector * impulse)
