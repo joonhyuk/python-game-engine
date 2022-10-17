@@ -149,6 +149,32 @@ class DynamicRotatingFan(DynamicObject):
         return True
 
 
+class DynamicFan(DynamicObject):
+    
+    def __init__(
+        self, 
+        sprite: Sprite,
+        collision_type = collision.wall,
+        mass = 20,
+        shape_edge_radius = 2,
+        
+        **kwargs
+    ) -> None:
+        
+        body = DynamicBody(
+            sprite = sprite,
+            collision_type = collision_type,
+            shape_type = physics_types.poly,
+            mass = mass,
+            shape_edge_radius = shape_edge_radius 
+        )
+        body.damping = 0.1
+        super().__init__(body, **kwargs)
+    
+    def on_spawn(self) -> None:
+        self.body.physics.add_world_pivot()
+        return super().on_spawn()
+
 class EscapePlayer(Character):
     
     # __slots__ = ('_fire_counter', 'movement', 'camera')

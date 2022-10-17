@@ -20,6 +20,33 @@
             "valuesAsFlags": false
         },
         {
+            "color": "#ffa0a0a4",
+            "id": 6,
+            "members": [
+                {
+                    "name": "phys",
+                    "propertyType": "physics",
+                    "type": "class",
+                    "value": {
+                        "body_type": 1,
+                        "mass": 20
+                    }
+                }
+            ],
+            "name": "DynamicFan",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        },
+        {
             "id": 5,
             "name": "Game Class",
             "storageType": "string",
@@ -29,6 +56,18 @@
                 "Wall",
                 "FanDynamic",
                 "WorldStatic"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "id": 8,
+            "name": "hit_box_algorithm",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+                "Detailed",
+                "Simple",
+                "None"
             ],
             "valuesAsFlags": false
         },
@@ -88,6 +127,24 @@
             "members": [
             ],
             "name": "test_class",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        },
+        {
+            "color": "#ffa0a0a4",
+            "id": 7,
+            "members": [
+            ],
+            "name": "Class3",
             "type": "class",
             "useAs": [
                 "property",

@@ -153,3 +153,8 @@ start = time.perf_counter()
 print('world test start')
 world = TiledMap()
 world.load_map(Path('tiled/test_map2.json'))
+
+def str_to_class(classname):
+    return getattr(sys.modules[__name__], classname)
+
+print(rotate_point(Vector(0,1), 90, Vector(0.5,0.5)).rotate(-90))

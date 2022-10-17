@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, NamedTuple, Sequence, Union
 
 import pytiled_parser
 import pytiled_parser.tiled_object
-from pytiled_parser.tiled_object import TiledObject
+# from pytiled_parser.tiled_object import TiledObject
 
 from pytiled_parser import Properties
 
@@ -14,11 +14,12 @@ from arcade import (
     AnimatedTimeBasedSprite,
     AnimationKeyframe,
     load_texture,
-)
+)       ### Should be deprecated
 
 from config.engine import *
 from lib.foundation.base import *
 from lib.foundation.engine import *
+from lib.foundation.component import CameraHandler
 
 _FLIPPED_HORIZONTALLY_FLAG = 0x80000000
 _FLIPPED_VERTICALLY_FLAG = 0x40000000
@@ -77,12 +78,11 @@ def _get_image_source(
     return None
 
 
-# class TiledObject(NamedTuple):
-#     ''' need to be revisited '''
-#     shape: Union[Point, PointList, Rect]
-#     properties: Optional[Properties] = None
-#     name: Optional[str] = None
-#     type: Optional[str] = None
+class TiledObject(NamedTuple):
+    shape: Union[Point, PointList, Rect]
+    properties: Optional[Properties] = None
+    name: Optional[str] = None
+    class_: Optional[str] = None
 
 
 class TiledMap:
@@ -110,9 +110,9 @@ class TiledMap:
             try:
                 space = getattr(self, 'space')
             except:
-                self.space:PhysicsSpace = PhysicsSpace()
+                self.default_space:PhysicsSpace = PhysicsSpace()
         else:
-            self.space = space
+            self.default_space = space
         
         self.map:pytiled_parser.TiledMap= None
         ''' map data '''
@@ -136,16 +136,18 @@ class TiledMap:
         ''' field / static / dynamic layers '''
         self.object_layers:Dict[str, List[TiledObject]] = OrderedDict()
         ''' Tiled objects '''
+        self.camera: Union[Camera, CameraHandler] = None
+        ''' Viewport for world draw '''
     
     def load_map(
         self, 
         filepath:Union[str, Path] = None,
-        scale:float = 1.0,
+        # scale:float = 1.0,
         layer_options: Optional[Dict[str, Dict[str, Any]]] = None,
-        use_spatial_hash: Optional[bool] = None,
-        hit_box_algorithm: str = "Simple",
-        hit_box_detail: float = 4.5,
-        offset: Vector = vectors.zero,
+        # use_spatial_hash: Optional[bool] = None,
+        # hit_box_algorithm: str = "Simple",
+        # hit_box_detail: float = 4.5,
+        # offset: Vector = vectors.zero,
         tiled_map: Optional[pytiled_parser.TiledMap] = None,
         ) -> arcade.TileMap:
         
@@ -183,6 +185,9 @@ class TiledMap:
                     "Please use unique names for all layers and tilesets in your map."
                 )
             self._process_layer(layer, global_options, layer_options)
+        
+        ppp = load_json(TILED_PATH + 'propertytypes.json')
+        print(ppp)
     
     def _process_layer(
         self,
@@ -212,21 +217,22 @@ class TiledMap:
             self.tile_layers[layer.name] = processed
             if processed.properties:
                 if processed.properties.get('physics', True):
-                    self.space.add_static_collison(
+                    self.default_space.add_static_collison(
                         processed,
                         elasticity = 1.0
                     )
-        # elif isinstance(layer, pytiled_parser.ObjectLayer):
-        #     processed = self._process_object_layer(layer, **options)
-        #     if processed[0]:
-        #         sprite_list = processed[0]
-        #         if sprite_list:
-        #             self.tile_layers[layer.name] = sprite_list
-        #     if processed[1]:
-        #         object_list = processed[1]
-        #         if object_list:
-        #             self.object_layers[layer.name] = object_list
-        # elif isinstance(layer, pytiled_parser.ImageLayer):
+        elif isinstance(layer, pytiled_parser.ObjectLayer):
+            processed = self._process_object_layer(layer, **options)
+            if processed[0]:
+                sprite_list = processed[0]
+                if sprite_list:
+                    self.tile_layers[layer.name] = sprite_list
+            if processed[1]:
+                object_list = processed[1]
+                if object_list:
+                    self.object_layers[layer.name] = object_list
+        elif isinstance(layer, pytiled_parser.ImageLayer):
+            pass
         #     processed = self._process_image_layer(layer, **options)
         #     self.tile_layers[layer.name] = processed
         elif isinstance(layer, pytiled_parser.LayerGroup):
@@ -262,11 +268,12 @@ class TiledMap:
             ):
                 # No specific tile info, but there is a tile sheet
                 tile_ref = pytiled_parser.Tile(
-                    id=(tile_gid - tileset_key), image=tileset.image,
-                    # properties = tileset.tiles[tile_gid].properties
+                    id=(tile_gid - tileset_key), image=tileset.image
                 )
-                print('==========>>>', tileset.tiles[tile_gid].properties)
-                tile_ref.properties = tileset.tiles[tile_gid].properties      ### Manually inject properties, by mash
+                if tileset.tiles:
+                    from_tileset = tileset.tiles.get(tile_gid)
+                    if from_tileset:
+                        tile_ref.properties = from_tileset.properties      ### Manually inject properties, by mash
             elif tileset.tiles is None and tileset.image is not None:
                 # Not in this tileset, move to the next
                 continue
@@ -310,6 +317,12 @@ class TiledMap:
     ) -> Sprite:
         """Given a tile from the parser, try and create a Sprite from it."""
 
+        if tile.properties:
+            hit_box_algorithm = get_from_dict(tile.properties, 'hit_box_algorithm', hit_box_algorithm)
+            hit_box_detail = get_from_dict(tile.properties, 'hit_box_detail', hit_box_detail)
+            angle = get_from_dict(tile.properties, 'angle', 0.0)
+            scale = get_from_dict(tile.properties, 'scale', scale)
+        
         # --- Step 1, Find a reference to an image this is going to be based off of
         map_source = self.map.map_file
         map_directory = os.path.dirname(map_source)
@@ -524,7 +537,7 @@ class TiledMap:
         # print(layer.name,'set_physics',set_physics)
         
         sprite_list: ObjectLayer = ObjectLayer(
-            self.space if set_physics else None,
+            self.default_space if set_physics else None,
             use_spatial_hash=use_spatial_hash)
         
         map_array = layer.data
@@ -580,7 +593,16 @@ class TiledMap:
                     if opacity:
                         my_sprite.alpha = int(opacity * 255)
                     
-                    sprite_list.add(my_sprite)
+                    if not tile.class_:
+                        sprite_list.add(my_sprite)
+                    else:
+                        class_ = getattr(sys.modules['lib.escape.actor'], tile.class_)
+                        my_actor: GameObject = class_(
+                            sprite = my_sprite,
+                            mass = 1
+                            )
+                        sprite_list.add(my_actor)
+                        # my_actor.spawn(sprite_list)
                 tqdmed.update(1)
 
         sprite_list.visible = layer.visible
@@ -591,19 +613,211 @@ class TiledMap:
     
     def _process_object_layer(
         self,
-    ):
-        pass
+        layer: pytiled_parser.ObjectLayer,
+        scale: float = 1.0,
+        use_spatial_hash: Optional[bool] = None,
+        hit_box_algorithm: str = "Simple",
+        hit_box_detail: float = 4.5,
+        offset: Vector = vectors.zero,
+        custom_class: Optional[type] = None,
+        custom_class_args: Dict[str, Any] = {},
+    ) -> Tuple[Optional[ObjectLayer], Optional[List[TiledObject]]]:
+
+        if not scale:
+            scale = self.scale
+
+        sprite_list: Optional[ObjectLayer] = None
+        objects_list: Optional[List[TiledObject]] = []
+
+        for cur_object in layer.tiled_objects:
+            # shape: Optional[Union[Point, PointList, Rect]] = None
+            if isinstance(cur_object, pytiled_parser.tiled_object.Tile):
+                if not sprite_list:
+                    sprite_list = ObjectLayer(use_spatial_hash=use_spatial_hash)
+
+                tile = self._get_tile_by_gid(cur_object.gid)
+                my_sprite = self._create_sprite_from_tile(
+                    tile,
+                    scale=scale,
+                    hit_box_algorithm=hit_box_algorithm,
+                    hit_box_detail=hit_box_detail,
+                    custom_class=custom_class,
+                    custom_class_args=custom_class_args,
+                )
+
+                x = (cur_object.coordinates.x * scale) + offset[0]
+                y = (
+                    (
+                        self.map.map_size.height * self.map.tile_size[1]
+                        - cur_object.coordinates.y
+                    )
+                    * scale
+                ) + offset[1]
+
+                my_sprite.width = width = cur_object.size[0] * scale
+                my_sprite.height = height = cur_object.size[1] * scale
+                # center_x = width / 2
+                # center_y = height / 2
+                if cur_object.rotation:
+                    rotation = -math.radians(cur_object.rotation)
+                else:
+                    rotation = 0
+
+                angle_degrees = math.degrees(rotation)
+                rotated_center_x, rotated_center_y = rotate_point(
+                    width / 2, height / 2, 0, 0, angle_degrees
+                )
+
+                my_sprite.position = (x + rotated_center_x, y + rotated_center_y)
+                my_sprite.angle = angle_degrees
+
+                if layer.tint_color:
+                    my_sprite.color = layer.tint_color
+
+                opacity = layer.opacity
+                if opacity:
+                    my_sprite.alpha = int(opacity * 255)
+
+                if cur_object.properties and "change_x" in cur_object.properties:
+                    my_sprite.change_x = float(cur_object.properties["change_x"])
+
+                if cur_object.properties and "change_y" in cur_object.properties:
+                    my_sprite.change_y = float(cur_object.properties["change_y"])
+
+                if cur_object.properties and "boundary_bottom" in cur_object.properties:
+                    my_sprite.boundary_bottom = float(
+                        cur_object.properties["boundary_bottom"]
+                    )
+
+                if cur_object.properties and "boundary_top" in cur_object.properties:
+                    my_sprite.boundary_top = float(
+                        cur_object.properties["boundary_top"]
+                    )
+
+                if cur_object.properties and "boundary_left" in cur_object.properties:
+                    my_sprite.boundary_left = float(
+                        cur_object.properties["boundary_left"]
+                    )
+
+                if cur_object.properties and "boundary_right" in cur_object.properties:
+                    my_sprite.boundary_right = float(
+                        cur_object.properties["boundary_right"]
+                    )
+
+                if cur_object.properties:
+                    my_sprite.properties.update(cur_object.properties)
+
+                if cur_object.class_:
+                    my_sprite.properties["class"] = cur_object.class_
+
+                if cur_object.name:
+                    my_sprite.properties["name"] = cur_object.name
+
+                sprite_list.visible = layer.visible
+                sprite_list.append(my_sprite)
+                continue
+            elif isinstance(cur_object, pytiled_parser.tiled_object.Point):
+                x = cur_object.coordinates.x * scale
+                y = (
+                    self.map.map_size.height * self.map.tile_size[1]
+                    - cur_object.coordinates.y
+                ) * scale
+
+                shape = [x + offset[0], y + offset[1]]
+            elif isinstance(cur_object, pytiled_parser.tiled_object.Rectangle):
+                if cur_object.size.width == 0 and cur_object.size.height == 0:
+                    print(
+                        f"WARNING: Tiled object with ID {cur_object.id} is a rectangle "
+                        "with a width and height of 0. Loading it as a single point."
+                    )
+                    x = cur_object.coordinates.x * scale
+                    y = (
+                        self.map.map_size.height * self.map.tile_size[1]
+                        - cur_object.coordinates.y
+                    ) * scale
+
+                    shape = [x + offset[0], y + offset[1]]
+                else:
+                    x = cur_object.coordinates.x + offset[0]
+                    y = cur_object.coordinates.y + offset[1]
+                    sx = x
+                    sy = -y
+                    ex = x + cur_object.size.width
+                    ey = -(y + cur_object.size.height)
+
+                    p1 = [sx, sy]
+                    p2 = [ex, sy]
+                    p3 = [ex, ey]
+                    p4 = [sx, ey]
+
+                    shape = [p1, p2, p3, p4]
+            elif isinstance(
+                cur_object, pytiled_parser.tiled_object.Polygon
+            ) or isinstance(cur_object, pytiled_parser.tiled_object.Polyline):
+                shape = []
+                for point in cur_object.points:
+                    x = point.x + cur_object.coordinates.x
+                    y = (self.size.y * self.tile_size.y) - (
+                        point.y + cur_object.coordinates.y
+                    )
+                    point = (x + offset[0], y + offset[1])
+                    shape.append(point)
+
+                # If shape is a polyline, and it is closed, we need to remove the duplicate end point
+                if shape[0][0] == shape[-1][0] and shape[0][1] == shape[-1][1]:
+                    shape.pop()
+            elif isinstance(cur_object, pytiled_parser.tiled_object.Ellipse):
+                hw = cur_object.size.width / 2
+                hh = cur_object.size.height / 2
+                cx = cur_object.coordinates.x + hw
+                cy = cur_object.coordinates.y + hh
+
+                total_steps = 8
+                angles = [
+                    step / total_steps * 2 * math.pi for step in range(total_steps)
+                ]
+                shape = []
+                for angle in angles:
+                    x = hw * math.cos(angle) + cx
+                    y = -(hh * math.sin(angle) + cy)
+                    point = [x + offset[0], y + offset[1]]
+                    shape.append(point)
+            else:
+                continue
+
+            if shape:
+                tiled_object = TiledObject(
+                    shape, cur_object.properties, cur_object.name, cur_object.class_
+                )
+
+                if not objects_list:
+                    objects_list = []
+
+                objects_list.append(tiled_object)
+
+        return sprite_list or None, objects_list or None
 
     def setup(self):
         
         if not self.map: return False
+        '''
+        Object spawnning will be here
+        '''
+    
+    def _level_object_create(self, class_name: str , *args, **kwds):
+        
+        class_ = get_class_loaded(class_name)
+        return class_(*args, **kwds)
         
     def tick(self, delta_time:float):
         pass
     
     def draw(self):
+        if self.camera:
+            self.camera.use()
         for name, layer in self.tile_layers.items():
             layer.draw()
+
 
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

@@ -560,8 +560,6 @@ class PlatformerTestView(View):
         map_name = ":resources:/tiled_maps/pymunk_test_map.json"
         tile_map = arcade.load_tilemap(map_name, SPRITE_SCALING_TILES)
         
-        # self.wall_layer = tile_map.
-        
 
 class WorldTestView(View):
     
@@ -574,43 +572,63 @@ class WorldTestView(View):
         ''' 
         contains everything for game : layers of objects, physics, update() or tick(), draw()
         '''
+        self.camera:Camera = None
+        
     def setup(self):
-        self.space = PhysicsSpace()
+        
+        self.space = PhysicsSpace()     ### For control physics from view.
         self.player_layer = ObjectLayer(self.space)
         self.player = EscapePlayer()
         sp = Spawner(
             [self.player],
-            spawn_layer = self.player_layer,
+        spawn_layer = self.player_layer,
             position = Vector(100, 100),
             area = Vector(50, 50)
             )
         sp.spawn()
         self.world = TiledMap(space = self.space, scale = 2)
-        self.world.load_map('tiled/test_map3.json')
+        self.world.load_map('tiled/test_map5.json')
+        self.world.camera = self.player.camera
+        self.camera = Camera(*CONFIG.screen_size)
+        
+        dfs = Sprite(
+            get_path(IMG_PATH + 'test_fan_blade4.png'), hit_box_algorithm='Detailed',
+            position = Vector(500, 500),
+            angle = 90,
+        )
+        
+        df = DynamicFan(
+            sprite = dfs,
+        )
+        
+        df.spawn(self.world.tile_layers['wall'])
+        # self.world.tile_layers['wall'].add(df)
+        
         
     def on_update(self, delta_time: float):
         
         self.world.tick(delta_time)     ### includes player, physics update
-        self.space.step(1/60)
-        self.space.sync()
+        self.space.tick(1/60)
         
     def on_draw(self):
         
         self.clear()
-        self.player.camera.use()
-        self.world.draw()       ### includes player draw(in proper layer)
+        self.world.draw()       ### Will include player draw(in proper layer)
         self.player_layer.draw()
         
         if CONFIG.debug_f_keys[2]:
             self.space.debug_draw_movable_collision()
             self.space.debug_draw_static_collision()
+        
+        self.camera.use()
+        
 
 def main():
     CLOCK.use_engine_tick = True
     
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
     GAME.set_scene(WorldTestView)
-    # GAME.set_scene(PhysicsTestView)
+    # GAME.set_scene(TestTitle)
     GAME.run()
 
 if __name__ == '__main__':

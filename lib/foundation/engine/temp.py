@@ -35,17 +35,20 @@ class ObjectLayer(arcade.SpriteList):
         
         actor, body, sprite = self._get_obj_tree(obj)
         
+        if actor:
+            return actor.spawn(spawn_to = self)
+        
         if sprite:
             try:
                 self.append(sprite)
             except ValueError:
                 pass
         
-        if self._space:
-            if body:
+        if body:
+            if self.space:
                 body:PhysicsBody
                 if body.physics:
-                    body.physics.spawn_in_space(self.space)
+                    return body.physics.spawn_in_space(self.space)
                     # self._add_to_physics(sprite, body.physics)
                     
                     # self._physics_instance.add_physics_object(sprite, body.physics)  ### add sprite-physics pair to engine for refering

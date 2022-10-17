@@ -337,6 +337,8 @@ def get_random_pos(
     
     return Vector(rand_x, rand_y).rotate(angle)
 
+def get_class_loaded(name: str):
+    return getattr(sys.modules[__name__], name)
 
 def rotate_point(point: tuple, degree: float, center: tuple = (0, 0), precision = 2) -> Vector:
     tmp_x = point[0] - center[0]

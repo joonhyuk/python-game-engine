@@ -354,7 +354,9 @@ class TopDownPhysicsMovement(MovementHandler):
         return speed * (1 - damping) * 60 * self.body.mass
     
     def set_movement(self, delta_time: float):
-        self.body.apply_force(self.move_direction * self._get_force_scalar(self.desired_move_speed))
+        speed = self._get_force_scalar(self.desired_move_speed)
+        self.body.apply_force(self.move_direction * speed)
+        print(speed, self.body.damping)
         return True
     
     def set_heading(self, delta_time:float):

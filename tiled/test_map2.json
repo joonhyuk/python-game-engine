@@ -215,6 +215,19 @@
         {
          "firstgid":141,
          "source":"test_tileset.tsx"
+        }, 
+        {
+         "columns":32,
+         "firstgid":369,
+         "image":"..\/resources\/art\/tileset-lab-03.png",
+         "imageheight":512,
+         "imagewidth":1024,
+         "margin":0,
+         "name":"tileset-lab-03",
+         "spacing":0,
+         "tilecount":512,
+         "tileheight":32,
+         "tilewidth":32
         }],
  "tilewidth":16,
  "type":"map",
