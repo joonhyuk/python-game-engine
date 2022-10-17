@@ -37,7 +37,7 @@ class Vector(tuple):
     def argument(self, origin=None, radians=False):
         """ Returns the argument of the vector, the angle clockwise from +x. In degress by default, 
             set radians=True to get the result in radians. This only works for 2D vectors. """
-        if origin is None: origin = vector_right
+        if origin is None: origin = vectors.right
         norm = self.norm()
         if not norm: return 0
         arg_in_rad = math.acos(origin*self/norm)
@@ -56,7 +56,7 @@ class Vector(tuple):
         For slightly better performance than argument() """
         norm = math.sqrt(sum( x*x for x in self ))
         if not norm: return 0
-        angle = math.degrees(math.acos(vector_right * self/norm))
+        angle = math.degrees(math.acos(vectors.right * self/norm))
         if self[1] < 0:
             return 360 - angle
         else:
@@ -342,9 +342,25 @@ class Vector(tuple):
         else:
             return None
 
-vector_zero = Vector(0, 0)
-vector_right = Vector(1, 0)
-vector_up = Vector(0, 1)
+
+class vectors:
+    ''' prepare basic vectors '''
+    zero = Vector()
+    
+    right = Vector(1,0)
+    left = Vector(-1,0)
+    up = Vector(0,1)
+    down = Vector(0,-1)
+    
+    forward = right
+    backward = left
+    rightside = down
+    leftside = up
+    
+    upperright = (up + right).unit
+    lowerright = (down + right).unit
+    upperleft = (up + left).unit
+    lowerleft = (down + left).unit
 
 
 if __name__ != "__main__":

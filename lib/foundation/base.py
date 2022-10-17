@@ -12,7 +12,7 @@ from tqdm import tqdm
 from easing_functions import *
 
 # from config import *
-from .vector import Vector
+from .vector import Vector, vectors
 from .dice import *
 import math
 
@@ -337,5 +337,20 @@ def get_random_pos(
     
     return Vector(rand_x, rand_y).rotate(angle)
 
+
+def rotate_point(point: tuple, degree: float, center: tuple = (0, 0), precision = 2) -> Vector:
+    tmp_x = point[0] - center[0]
+    tmp_y = point[1] - center[1]
+    
+    angle = math.radians(degree)
+    cos_angle = math.cos(angle)
+    sin_angle = math.sin(angle)
+    
+    # return type(point)(
+    return Vector(
+        round(tmp_x * cos_angle - tmp_y * sin_angle + center[0], precision),
+        round(tmp_x * sin_angle + tmp_y * cos_angle + center[1], precision)
+        )
+    
 if __name__ != "__main__":
     print("include", __name__, ":", __file__)

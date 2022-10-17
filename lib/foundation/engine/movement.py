@@ -53,7 +53,8 @@ class MovementHandler(Handler):
         return True
     
     def _set_movement(self, delta_time:float):
-        if not self.move_direction: return False
+        if not self.move_direction or self.move_direction == vectors.zero: 
+            return False
         if self.move_direction.near_zero():
             ''' stop '''
             if self.body.velocity.is_zero: return False
@@ -65,11 +66,12 @@ class MovementHandler(Handler):
         return self.set_movement(delta_time)
     
     def _set_heading(self, delta_time:float):
+        if self.turn_lock: return False
         if self.body.angle == self.desired_angle: return False
-        if math.isclose(self.body.angle, self.desired_angle):
+        if math.isclose(self.body.angle, self.desired_angle, abs_tol=0.1):
             self.body.angle = self.desired_angle
             return False
-        if self.turn_lock: return False
+        # print('ANGLE DIFF : ',self.body.angle, self.desired_angle)
         
         return self.set_heading(delta_time)
     

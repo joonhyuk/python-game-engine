@@ -129,7 +129,7 @@ class EscapeCharacterActionHandler(ActionHandler):
                 pass
             else:
                 print(victim, ' HIT!')
-                victim.body.sprite.color = colors.RED
+                # victim.body.sprite.color = colors.RED
                 # victim.destroy()
     
 
@@ -143,23 +143,29 @@ class EscapePlayerMovement(TopDownPhysicsMovement):
 
 class EscapeAIMovement(TopDownPhysicsMovement):
     #WIP
-    def tick(self, delta_time: float) -> bool:
-        # if self.desired_angle != 0.0:
-        #     print(self.owner, 'moving!')
-        return super().tick(delta_time)
-
+    pass
 
 class TestAIController(AIController):
     #WIP #test
     
     def tick(self, delta_time: float) -> bool:
         if not super().tick(delta_time): return False
-        if CONFIG.debug_f_keys[7]:
-            self.action.gaze(target_pos = self.target.position)
+        if not self.target: return False
+        self.movement:EscapeAIMovement
+        
         if CONFIG.debug_f_keys[6]:
+            self.action.gaze(target_pos = self.target.position)
+        if CONFIG.debug_f_keys[7]:
             dist = get_distance(*self.body.position, *self.target.position)
+            self.movement.max_speeds = [dist * 0.5]
             if dist > 100:
-                self.movement.move(self.body.forward_vector * dist)
+                self.movement.speed_level = 0
+                self.movement.move_direction = self.body.forward_vector
+            else:
+                self.movement.move_direction = None
+        else:
+            self.movement.move_direction = None
+                # self.movement.move(self.body.forward_vector * dist)
 
 
 class TestKinematicObject(StaticObject):

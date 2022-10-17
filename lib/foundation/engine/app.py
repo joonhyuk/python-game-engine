@@ -250,6 +250,7 @@ class Client(metaclass = SingletonType):
         print(message)
     
     def _get_player_controller(self):
+        if not self.local_players: return None
         return self.local_players[0]
     
     player_controller = property(_get_player_controller)
@@ -366,11 +367,17 @@ class Client(metaclass = SingletonType):
         
         self.delta_time = delta_time
         
-        self.player_controller.tick(delta_time)
+        GAME.debug_text.perf_check('PAWN_TICK')
+        if self.player_controller:
+            self.player_controller.tick(delta_time)
+        
+        for aic in self.ai_controllers:
+            aic.tick(delta_time)
         
         if self.tick_group:
             for tick in self.tick_group:
                 tick(delta_time)
+        GAME.debug_text.perf_check('PAWN_TICK')
         
         scheduler_count = pyglet_clock._schedule_interval_items.__len__()
         
@@ -381,8 +388,8 @@ class Client(metaclass = SingletonType):
         self.debug_text['SCHEDULER'] = scheduler_count
         
     def on_draw(self):
-        
-        self.debug_text.draw()
+        if not CONFIG.debug_f_keys[1]:
+            self.debug_text.draw()
     
     def on_joybutton_press(self, _joystick, button):
         print("TEST(CLIENT) : Button {} down".format(button))

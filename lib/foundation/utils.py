@@ -183,7 +183,6 @@ def debug_draw_physics(
             debug_draw_segment(center + shape.a, center + shape.b, line_color, line_thickness)
         else:
             debug_draw_poly(shape.get_vertices(), center, angle, line_color, line_thickness, fill_color, radian=True)
-            
 
 def debug_draw_shape(shape:pymunk.Shape,
                      body:pymunk.Body = None,
@@ -224,6 +223,43 @@ def debug_draw_marker(position:Vector = Vector(),
     debug_draw_segment(position, position - corner_point, color)
     debug_draw_segment(position, position + corner_point.rotate(90), color)
     debug_draw_segment(position, position + corner_point.rotate(-90), color)
+
+def draw_text(
+    text: str,
+    position: Vector,
+    color: tuple = (192, 192, 192, 255),
+    align: str = 'left',
+    anchor: Vector = vectors.zero,
+    font_size: int = 20,
+    font_name: tuple[str] = ('calibri'),
+    width: int = 0,
+    ):
+    
+    if anchor.x == 0: anchor_x = 'left'
+    elif anchor.x == 1: anchor_x = 'right'
+    else: anchor_x = 'center'
+    
+    if anchor.y == 0: anchor_y = 'baseline'
+    elif anchor.y == 1: anchor_y = 'top'
+    else: anchor_y = 'center'
+    
+    if width:
+        multiline = True
+    else:
+        multiline = False
+    
+    arcade.draw_text(
+        text,
+        *position,
+        color = color,
+        font_size = font_size,
+        align = align,
+        font_name = font_name,
+        anchor_x = anchor_x,
+        anchor_y = anchor_y,
+        width=width,
+        multiline=multiline
+    )
 
 def add_sprite_timeout(sprite:arcade.Sprite, location:Vector, layer:arcade.SpriteList, timeout:float = 0.0):
     sprite.position = location

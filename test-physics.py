@@ -25,6 +25,49 @@ PHYSICS_TEST_DEBRIS_NUM = 100
 PHYSICS_TEST_DEBRIS_RADIUS = 9
 
 
+from lib.escape.view import TitleScreen
+
+class TestTitle(TitleScreen):
+    
+    def start_game(self):
+        GAME.set_scene(PhysicsTestView)  
+
+
+class TestInstruction(View):
+    instruction: str = "\
+DISCLAIMER\n\
+----------\n\
+TECH DEMO : NO GAMEPLAY, BUGS AND MANY REPLACEMENTS\n\
+\n\
+\n\
+KEY GUIDE\n\
+---------\n\
+WASD keys = MOVE PLAYER\n\
+ARROW keys = CHANGE GRAVITY\n\
+G key = TURN GRAVITY OFF\n\
+I key = SPAWN DRONES\n\
+B key = TOGGLE PROJECTILE\t SPACE bar = EVADE\
+\n\
+\n\
+~ key = TOGGLE WARFOG SHADER\n\
+F1 key = TOGGLE DEBUG INFO\n\
+F2 key = TOGGLE DEBUG DRAW\n\
+\n\
+ESC key = EXIT GAME\n\
+\n\
+\n\
+THANK YOU FOR PLAYING\n\
+---------------------\n\
+mash@krafton.com\n\
+\
+"
+    
+    def draw_contents(self):
+        # arcade.draw_text(self.instruction, 500,500, width=300, multiline=True)
+        draw_text(self.instruction, CONFIG.screen_size / 2, align='center', anchor=Vector(0.5,0.5), font_size = 15, width = 800)
+        
+
+
 class PhysicsTestView(View):
     
     def __init__(self, window: Window = None):
@@ -72,16 +115,16 @@ class PhysicsTestView(View):
             [self.player], 
             self.character_layer,
             position = Vector(100,100),
-            area = Vector(100,100),
+            area = Vector(50,50),
             spawn_angle=90)
-        # self.player.spawn(self.character_layer, Vector(100, 100))
+        self.camera = self.player.camera
+        
+        # sp.spawn()    ### Spawn with spawnner test
         self.player.body.sprite.pymunk.max_velocity = CONFIG.terminal_speed
+        self.player.spawn(self.character_layer, Vector(100, 100))
         # self.player.body.physics.friction = 1.0
         # self.player.body.sprite.pymunk.gravity = (0,980)
         # self.player.body.sprite.pymunk.damping = 0.01
-        self.camera = self.player.camera
-        
-        sp.spawn()
         
         field_start = CLOCK.perf
         self._setup_field(self.field_layer)
@@ -130,7 +173,7 @@ class PhysicsTestView(View):
         dynamic_fan_blade_body.physics.add_world_pivot(dynamic_fan_blade_body.position)
         dynamic_fan_blade_body.damping = 0.1
         
-        kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=2, hit_box_algorithm='Detailed'),
+        kinematic_fan_blade_body = KinematicBody(Sprite(get_path(IMG_PATH + 'test_fan_blade2.png'), scale=1.5, hit_box_algorithm='Detailed'),
                                                  shape_type=physics_types.poly,
                                                  shape_edge_radius=1)
         self.test_rotating_kinematic:KinematicRotatingFan = KinematicRotatingFan(kinematic_fan_blade_body).spawn(self.wall_layer, Vector(800, 550))
@@ -285,7 +328,7 @@ class PhysicsTestView(View):
                 layer.add(ground)
     
     def on_key_press(self, key: int, modifiers: int):
-        print('key, mod', key, modifiers, keys.DOWN, keys.MOD_OPTION)
+        # print('key, mod', key, modifiers, keys.DOWN, keys.MOD_OPTION)
         if key == keys.G: 
             self.change_gravity(vectors.zero)
             gc.collect()    ### garbage collect manually
@@ -388,7 +431,7 @@ class PhysicsTestView(View):
             add_sprite_timeout(SpriteCircle(5, (255, 64, 0, 128)), query_first.point, self.debris_layer, 3)
     
     def on_draw(self):
-        GAME.debug_text.perf_check('on_draw')
+        GAME.debug_text.perf_check('DRAW')
         super().on_draw()
         
         self.camera.use()
@@ -407,8 +450,6 @@ class PhysicsTestView(View):
         self.fx_layer.draw()
         
         self.test_layer.draw()
-        debug_draw_segment(self.player.position, self.player.position + self.player.body.velocity, color = colors.AERO_BLUE)
-        debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
         
         self.shader.program['activated'] = CONFIG.debug_f_keys[0]
         self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
@@ -423,6 +464,8 @@ class PhysicsTestView(View):
         self.player.draw()
         
         if CONFIG.debug_f_keys[2]:
+            debug_draw_segment(self.player.position, self.player.position + self.player.body.velocity, color = colors.AERO_BLUE)
+            debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
             self.space.debug_draw_movable_collision()
             self.space.debug_draw_static_collision()
         # self.test_npc.body.physics.draw()
@@ -436,30 +479,33 @@ class PhysicsTestView(View):
         GAME.viewport.use()
         # GAME.debug_text['PLAYER_POS'] = self.player.position
         # GAME.debug_text['CAMERA_POS'] = self.camera.center
-        GAME.debug_text.perf_check('on_draw')
+        GAME.debug_text.perf_check('DRAW')
     
     def on_update(self, delta_time: float):
         # print('-------------->UPDATE',self)
         GAME.debug_text.perf_check('update_game')
         super().on_update(delta_time)
-        GAME.debug_text.perf_check('PLAYER_TICK')
+        # GAME.debug_text.perf_check('PLAYER_TICK')
         # self.player.controller.tick(delta_time)
         # self.player.camera.tick(delta_time)
         # self.player.movement.tick(delta_time)
-        GAME.debug_text.perf_check('PLAYER_TICK')
+        # GAME.debug_text.perf_check('PLAYER_TICK')
         
         if self.test_npc: self.test_npc.tick(delta_time)
         self.test_rotating_dynamic.tick(delta_time)
         
-        GAME.debug_text.perf_check('AI_TICK')
+        GAME.debug_text.perf_check('AI_PERCEPTION_TICK')
         for ai_pawn in GAME.ai_controllers:
             ai_pawn.target = self.player
-            ai_pawn.tick(delta_time)
-            ai_pawn.movement.tick(delta_time)
-        GAME.debug_text.perf_check('AI_TICK')
+            # ai_pawn.tick(delta_time)    ### Run controller tick
+            # ai_pawn.movement.tick(delta_time)
+        GAME.debug_text.perf_check('AI_PERCEPTION_TICK')
         
         GAME.debug_text.perf_check('update_physics')
-        self.space.step(1/60)
+
+        # self.space.step(delta_time)
+        self.space.tick(1/60, sync = False)
+        
         if CONFIG.debug_f_keys[3]:
             grounding = self.player.body.physics.get_grounding()
             # print(self.player.body.physics.get_grounding())
@@ -468,14 +514,13 @@ class PhysicsTestView(View):
         GAME.debug_text.perf_check('resync_objects')
         self.space.sync()
 
-        if CONFIG.debug_f_keys[2]: 
-            total = len(self.space.movables)
-            
-            if total:
-                sleeps = 0
-                for a in self.space.bodies:
-                    if a.is_sleeping: sleeps += 1
-                GAME.debug_text['MOVABLE TOTAL/SLEEP'] = f'{total}/{sleeps}'
+        total = len(self.space.movables)
+        
+        if total:
+            sleeps = 0
+            for a in self.space.bodies:
+                if a.is_sleeping: sleeps += 1
+            GAME.debug_text['MOVABLE TOTAL/SLEEP'] = f'{total}/{sleeps}'
         GAME.debug_text.perf_check('resync_objects')
         
         # ENV.debug_text.perf_check('update_empty_physics')

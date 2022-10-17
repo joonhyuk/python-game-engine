@@ -9,7 +9,7 @@ class TitleScreen(View):
         
         # reset viewport
         arcade.set_viewport(0, self.window.width, 0, self.window.height)
-        self.shadertoy = Shadertoy(size = self.window.get_framebuffer_size(), main_source = open(get_path('data/shader/title_planet.glsl')).read())
+        self.shadertoy = Shadertoy(size = self.window.get_framebuffer_size(), main_source = open(get_path('data/shader/title_ocean.glsl')).read())
         self.fade_in = 0.5
         self.time = 0
     

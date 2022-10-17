@@ -46,6 +46,7 @@ class Ticker(GameObject):
         for member in self.owner.members:
             if hasattr(member, 'tick') and not isinstance(member, (Ticker, Controller)):
                 GAME.tick_group.append(member.tick)
+                ''' Coupled with engine '''
     
     def tick(self, delta_time: float) -> bool:
         
@@ -347,6 +348,7 @@ class TopDownPhysicsMovement(MovementHandler):
         self.speed_level = self.run
         self.acceleration = acceleration
 
+    @cache
     def _get_force_scalar(self, speed:float):
         damping = pow(self.body.damping, 1/60)
         return speed * (1 - damping) * 60 * self.body.mass
@@ -360,7 +362,8 @@ class TopDownPhysicsMovement(MovementHandler):
         self.body.angle = get_positive_angle(rinterp_to(self.body.angle,
                                                         self.desired_angle,
                                                         delta_time,
-                                                        self.desired_rotation_speed
+                                                        self.desired_rotation_speed,
+                                                        precision = 1
                                                         ))
         return True
     
@@ -374,6 +377,7 @@ class TopDownPhysicsMovement(MovementHandler):
 
 
 class AIController(Controller):
+    #WIP
     
     __slots__ = 'target', 
     
@@ -387,6 +391,10 @@ class AIController(Controller):
     
     def set_target(self, target):
         self.target = target
+    
+    def on_destroy(self):
+        GAME.ai_controllers.remove(self)
+        return super().on_destroy()
 
 
 class LifeTime(Handler):

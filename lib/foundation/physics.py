@@ -394,13 +394,18 @@ class PhysicsObject(pymunk.Body, GameObject):
     
     def spawn_in_space(self, space: pymunk.Space) -> None:
         space.add(self, *self.shapes)
+        return self
     
-    def add_world_pivot(self, position : Vector) -> None:
+    def add_world_pivot(self, position: Vector = None) -> None:
         '''
         Example feature for dealing with constraints.
         '''
         if not self.space: 
             raise PhysicsException('Not yet added to space')
+        
+        if position is None:
+            position = self.position
+        
         self.space.add(
             pymunk.constraints.PivotJoint(self, self.space.static_body, position)
         )
@@ -745,7 +750,14 @@ class PhysicsSpace(pymunk.Space):
     def sync(self):
         
         for o in self._movable_objs:
-            o._owner._sync()
+            if o.spawnned: o._owner._sync()        ### Not so robust method
+            
+    def tick(self, delta_time: float, sync: bool = True):
+        # for _ in range(5):
+        #     self.step(1/300)
+        
+        self.step(delta_time)
+        if sync: self.sync()
     
     @property
     def movables(self) -> list[GameObject]:

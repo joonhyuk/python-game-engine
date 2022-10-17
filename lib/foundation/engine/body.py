@@ -327,7 +327,7 @@ class PhysicsBody(BodyHandler):
             self.physics.angle = math.radians(angle)
             if self.physics.space:
                 self.physics.space.reindex_shapes_for_body(self.physics)
-        self.sprite.angle = angle
+        else: self.sprite.angle = angle
 
     angle:float = property(_get_angle, _set_angle)
     
@@ -485,7 +485,7 @@ class DynamicBody(PhysicsBody):
     def _set_angle(self, angle:float = 0.0):
         if self.physics:
             self.physics.angle = math.radians(angle)
-        self.sprite.angle = angle
+        else: self.sprite.angle = angle
 
     angle:float = property(PhysicsBody._get_angle, _set_angle)
     

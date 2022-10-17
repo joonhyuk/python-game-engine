@@ -227,6 +227,7 @@ class SimpleAIObject(DynamicObject):
         self.movement = EscapeAIMovement(body=self.body)
         self.action = TestAIActionComponent()
         self.controller = TestAIController()
+        self.ticker = Ticker()
     
     # def get_components(self, *types: ActorComponent):
         # return super().get_components(*types)
