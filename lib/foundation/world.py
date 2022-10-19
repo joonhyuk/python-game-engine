@@ -593,16 +593,13 @@ class TiledMap:
                     if opacity:
                         my_sprite.alpha = int(opacity * 255)
                     
-                    if not tile.class_:
-                        sprite_list.add(my_sprite)
+                    class_ = get_class_loaded(tile.class_)
+                    if class_ is None:
+                        sprite_list.append(my_sprite)
                     else:
-                        class_ = getattr(sys.modules['lib.escape'], tile.class_)
-                        my_actor: GameObject = class_(
-                            sprite = my_sprite,
-                            mass = 50
-                            )
-                        sprite_list.add(my_actor)
-                        # my_actor.spawn(sprite_list)
+                        sprite_list.add(
+                            class_(sprite = my_sprite)
+                        )
                 tqdmed.update(1)
 
         sprite_list.visible = layer.visible
@@ -715,9 +712,8 @@ class TiledMap:
                 if cur_object.properties:
                     my_sprite.properties.update(cur_object.properties)
                 
-                try:
-                    class_ = getattr(sys.modules['lib.escape'], tile.class_)
-                except:
+                class_ = get_class_loaded(tile.class_)
+                if class_ is None:
                     sprite_list.append(my_sprite)
                 else:
                     sprite_list.add(
@@ -817,10 +813,13 @@ class TiledMap:
         Object spawnning will be here
         '''
     
-    def _level_object_create(self, class_name: str , *args, **kwds):
+    def _create_actor_from_tile(self, class_name: str , *args, **kwds):
+        #WIP
         
+        # print('sys.modules',sys.modules[__name__])
         class_ = get_class_loaded(class_name)
-        return class_(*args, **kwds)
+        # return class_
+        # return class_(*args, **kwds)
         
     def tick(self, delta_time:float):
         pass

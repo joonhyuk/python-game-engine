@@ -3,7 +3,13 @@ from .body import *
 
 
 class ObjectLayer(arcade.SpriteList):
-    """ extended spritelist with actor, body """
+    '''
+    Extended SpriteList with body, actor.
+    
+    Sprite, body, actor appear(be spawnned) in the game at the same time they are added here
+    
+    '''
+    
     def __init__(self, 
                  space:PhysicsSpace = None,
                  use_spatial_hash=None, spatial_hash_cell_size=128, is_static=False, atlas: arcade.TextureAtlas = None, capacity: int = 100, lazy: bool = False, visible: bool = True):
