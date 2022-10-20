@@ -8,10 +8,10 @@ class HitMarker(SpriteCircle):
     
     def __init__(self, position: Vector, spawn_to: ObjectLayer):
         
-        super().__init__(3, colors.RED_DEVIL, False, position = position)
+        super().__init__(3, colors.YELLOW_ORANGE, False, position = position)
         self.spawnned = True
         spawn_to.add(self)
-        schedule_once(self.vanish, 1)    
+        schedule_once(self.vanish, 0.2)    
 
     def vanish(self, dt):
         return self.destroy()
@@ -25,7 +25,7 @@ class RayHitCheckPerfTest(GameObject):
         space: PhysicsSpace,
         start: Vector,
         direction: Vector,
-        speed: float = 12000,
+        speed: float = 2400,
         **kwargs
     ) -> None:
         super().__init__(**kwargs)
@@ -42,8 +42,8 @@ class RayHitCheckPerfTest(GameObject):
             return self.destroy()
         end = self.start + self.direction * self.speed * delta_time
         
-        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
-        query = self.space.segment_query(end, self.start, 1, shape_filter=shape_filter)
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS() ^ collision.character)
+        query = self.space.segment_query(self.start, end, 1, shape_filter=shape_filter)
         if query:
             first_hit = None
             for q in query:
@@ -57,9 +57,10 @@ class RayHitCheckPerfTest(GameObject):
                     print('HIT_QUERY', first_hit.shape.body)
                     pass
                 else:
-                    print(victim, ' HIT!')
+                    # print(victim, ' HIT!')
                     # victim.body.sprite.color = colors.RED
                     HitMarker(first_hit.point, victim.body._last_spawn_layer)
+                    victim.body.physics.apply_impulse_at_world_point(self.direction * 500, first_hit.point)
                     return self.destroy()
                     # victim.destroy()
             
@@ -118,31 +119,28 @@ class BallProjectile(Ball):
 
 class ShrinkingBall(BallProjectile):
     
-    __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha')
+    __slots__ = ('shrinking_start', 'shrinking_delay', 'alpha', '_tmp_test')
 
     def __init__(self, 
-                 shrinking_start = 3.0,
-                 shrinking_delay = 1.0,
+                 shrinking_start = 0.2,
+                 shrinking_delay = 0.1,
                  ) -> None:
         super().__init__()
         self.shrinking_start = shrinking_start
         self.shrinking_delay = shrinking_delay
         self.alpha = 1.0
+        self._tmp_test = None
     
     def spawn(self, spawn_to: ObjectLayer, position: Vector, angle: float = None, initial_impulse: Vector = None) -> None:
         super().spawn(spawn_to, position, angle, initial_impulse)
         delay_run(self.shrinking_start, self.start_shrink)
         # print('refcount_s', sys.getrefcount(self))
         return self
-        
-    def destroy(self) -> None:
-        super().destroy()
-        # print('refcount',str(gc.get_referrers(self)))
-        # print('refcount_e', sys.getrefcount(self))
-        # self.body - None
-        return True
-        
     
+    def on_spawn(self) -> None:
+        self._tmp_test = RayHitCheckPerfTest(self.body.physics.space, self.position, self.forward_vector).spawn()
+        return super().on_spawn()
+        
     def start_shrink(self):
         delay_cancel(self.start_shrink)
         schedule_interval(self._shrink, 1/60)

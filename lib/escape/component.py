@@ -63,7 +63,7 @@ class EscapePlayerController(PlayerController):
         '''
         GAME.last_mouse_lb_hold_time = CLOCK.perf
         GAME.debug_text.timer_start('mouse_lb_hold')
-        self.action.test_directional_attack(distance=500)
+        # self.action.test_directional_attack(distance=500)
         # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
         
