@@ -58,7 +58,7 @@ class GameObject(object):
     
     def __init__(self, **kwargs) -> None:
         self._alive = True
-        ''' Rockbottom switch of alive check '''
+        ''' Rockbottom switch of alive check. Only set to false when destroyed. '''
         self.spawnned = False
         ''' Is in game space '''
         self._owner : GameObject = None
@@ -109,6 +109,7 @@ class GameObject(object):
         destroy() should be called as kinda callback after all process of death ends.
         '''
         #TODO add 'remove_from_all_list' to Client for proper GC
+        if not self._alive: return False
         self.on_destroy()
         members = self.get_members()[:]
         if members:
