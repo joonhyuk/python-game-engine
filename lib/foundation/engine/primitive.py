@@ -97,8 +97,9 @@ class SpriteCircle(Sprite):
     def __init__(self, 
                  radius: Union[int, Vector], 
                  color: arcade.Color = colors.ALIZARIN_CRIMSON, 
-                 nose: bool = True):
-        super().__init__()
+                 nose: bool = True,
+                 **kwds):
+        super().__init__(**kwds)
         if isinstance(radius, int):
             radius = Vector.diagonal(radius)
         diameter = radius * 2

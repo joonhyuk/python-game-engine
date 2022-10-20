@@ -3,6 +3,77 @@ import sys
 from lib.foundation import *
 from .component import *
 
+
+class HitMarker(SpriteCircle):
+    
+    def __init__(self, position: Vector, spawn_to: ObjectLayer):
+        
+        super().__init__(3, colors.RED_DEVIL, False, position = position)
+        self.spawnned = True
+        spawn_to.add(self)
+        schedule_once(self.vanish, 1)    
+
+    def vanish(self, dt):
+        return self.destroy()
+
+class RayHitCheckPerfTest(GameObject):
+    
+    __slots__ = 'space', 'start', 'direction', 'speed', '_tmp_counter'
+    
+    def __init__(
+        self, 
+        space: PhysicsSpace,
+        start: Vector,
+        direction: Vector,
+        speed: float = 12000,
+        **kwargs
+    ) -> None:
+        super().__init__(**kwargs)
+        self.space = space
+        self.start = start
+        self.direction = direction
+        self.speed = speed
+        self._tmp_counter: int = 0
+        
+        GAME.tick_group.append(self.tick)
+    
+    def tick(self, delta_time: float):
+        if self._tmp_counter >= 120:
+            return self.destroy()
+        end = self.start + self.direction * self.speed * delta_time
+        
+        shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^collision.character)
+        query = self.space.segment_query(end, self.start, 1, shape_filter=shape_filter)
+        if query:
+            first_hit = None
+            for q in query:
+                if q.shape.collision_type not in (collision.character, collision.projectile):
+                    first_hit = q
+            # first_hit = query[0]
+            if first_hit:
+                try:
+                    victim:DynamicObject = first_hit.shape.body.owner
+                except:
+                    print('HIT_QUERY', first_hit.shape.body)
+                    pass
+                else:
+                    print(victim, ' HIT!')
+                    # victim.body.sprite.color = colors.RED
+                    HitMarker(first_hit.point, victim.body._last_spawn_layer)
+                    return self.destroy()
+                    # victim.destroy()
+            
+            
+            
+        # print('TEST_HIGHSPEED_BULLETS',v)
+        self._tmp_counter += 1
+        self.start = end
+        return True
+    
+    def on_destroy(self):
+        GAME.tick_group.remove(self.tick)
+        return super().on_destroy()
+
 class Ball(Pawn):
     
     __slots__ = ()

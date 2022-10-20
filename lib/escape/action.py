@@ -86,7 +86,7 @@ class TestShootBall(Action):
         
         proj:DynamicObject = proj_type()
         proj.body.damping = 1.0
-        return proj.spawn(owner.body.layers[0], owner.body.position, initial_impulse=owner.body.forward_vector * impulse)
+        return proj.spawn(owner.body.layers[0], owner.body.position, owner.body.angle, initial_impulse=owner.body.forward_vector * impulse)
         ''' somewhat bad usage becaues action attached on ActionComponent '''
 
 
