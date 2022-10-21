@@ -375,8 +375,8 @@ class Client(metaclass = SingletonType):
         
         GAME.debug_text['TICK_GROUP'] = len(self.tick_group) + len(self.ai_controllers)
         GAME.debug_text.perf_check('PAWN_TICK')
-        if self.player_controller:
-            self.player_controller.tick(delta_time)
+        # if self.player_controller:
+            # self.player_controller.tick(delta_time)
         
         for aic in self.ai_controllers:
             aic.tick(delta_time)

@@ -47,6 +47,9 @@ class PlayerController(Controller):
         
         return True
     
+    def on_update(self, delta_time: float):
+        self.tick(delta_time)
+    
     def on_key_press(self, key: int, modifiers: int):
         pass
     
