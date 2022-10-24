@@ -140,11 +140,11 @@ class PhysicsTestView(View):
         
         ### test new method!
         test_simplebody = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
-                                     collision_type=collision.none,
+                                     collision_type=collision.wall,
                                      elasticity=1.0
                                      )
         test_simplebody2 = StaticBody(SpriteCircle(32, colors.YELLOW_GREEN), 
-                                     collision_type=collision.none,
+                                     collision_type=collision.wall,
                                      elasticity=1.0
                                      )
         # test_simplebody.position = vectors.zero
@@ -351,6 +351,9 @@ class PhysicsTestView(View):
         if key == keys.RIGHT:
             self.change_gravity(vectors.right)
         
+        if key == keys.F:
+            self.line_of_fire_check()
+        
         if key == keys.F5:
             self.test_rotating_kinematic.rotate(-1)
         
@@ -420,29 +423,21 @@ class PhysicsTestView(View):
         body.physics.activate()
         return
         
-    def line_of_fire_check(self, origin:Vector, end:Vector, thickness:float = 1, muzzle_speed:float = 500):
+    def line_of_fire_check(self):
         ''' 초고속 발사체(광학병기, 레일건) 체크용. 화학병기 발사체는 발사체를 직접 날려서 충돌체크.
         '''
-        self.player.body.physics.filter = pymunk.ShapeFilter(categories=0b1)
-        sf = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS()^0b1)
-        query = self.space.space.segment_query(origin, end, thickness / 2, sf)
-        query_first = self.space.space.segment_query_first(origin, end, thickness / 2, sf)
-        # if query:
-        #     for sq in query:
-        #         shape = sq.shape
-        #         location = sq.point
-        #         normal = sq.normal
-        #         c1 = SpriteCircle(5, color=(255, 96, 0, 192))
-        #         c1.position = location
-        #         self.debris_layer.add(c1)
-        #         schedule_once(c1.remove_from_sprite_lists, 3)
-        
+        sf = pymunk.ShapeFilter(
+            mask = pymunk.ShapeFilter.ALL_MASKS() ^ (collision.projectile | collision.character)
+            )
+            # debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
+        query = self.player.body.physics.space.segment_query(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, 1, sf)
+        query_first = self.player.body.physics.space.segment_query_first(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, 1, sf)
+        if query:
+            for q in query:
+                HitMarker(q.point, 1).spawn(self.character_layer)
         if query_first:
-            qb:pymunk.Body = query_first.shape.body
-            iv = (end - origin).unit * muzzle_speed / 2
-            iv -= query_first.normal * muzzle_speed / 2
-            qb.apply_impulse_at_world_point(iv, query_first.point)
-            add_sprite_timeout(SpriteCircle(5, (255, 64, 0, 128)), query_first.point, self.debris_layer, 3)
+            HitMarker(query_first.point, 1, 5, colors.RED).spawn(self.character_layer)
+            print('FIRST HIT', query_first)
     
     def on_draw(self):
         GAME.debug_text.perf_check('DRAW')
@@ -482,6 +477,7 @@ class PhysicsTestView(View):
             debug_draw_segment(self.player.position, self.player.position + self.player.forward_vector * PLAYER_ATTACK_RANGE, colors.RED)
             self.space.debug_draw_movable_collision()
             self.space.debug_draw_static_collision()
+            draw_debug_later()
         # self.test_npc.body.physics.draw()
         # self.test_box.body.physics.draw()
         # self.test_rotating_dynamic.body.physics.draw()
@@ -493,6 +489,11 @@ class PhysicsTestView(View):
         GAME.viewport.use()
         # GAME.debug_text['PLAYER_POS'] = self.player.position
         # GAME.debug_text['CAMERA_POS'] = self.camera.center
+        
+        # if CONFIG.debug_f_keys[9]:
+        #     CONFIG.debug_f_keys[9] = False
+        #     GAME.show_alert('Breakpoint')
+        
         GAME.debug_text.perf_check('DRAW')
     
     def on_update(self, delta_time: float):

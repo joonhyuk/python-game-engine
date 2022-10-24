@@ -3,6 +3,7 @@ base feature codes
 joonhyuk@me.com
 """
 import os, sys, json
+import math
 
 from enum import Enum
 from typing import Iterable, Union
@@ -14,7 +15,6 @@ from easing_functions import *
 # from config import *
 from .vector import Vector, vectors
 from .dice import *
-import math
 
 cubic_easeinout = CubicEaseInOut()
 

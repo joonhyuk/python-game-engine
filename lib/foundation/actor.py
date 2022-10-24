@@ -245,3 +245,63 @@ class Character(Pawn):
     #     return True
 
 
+class RayHitCheckPerfTest(GameObject):
+    
+    __slots__ = 'layer', 'start', 'direction', 'speed', 'filter', '_tmp_counter'
+    
+    def __init__(
+        self, 
+        layer: ObjectLayer,
+        start: Vector,
+        direction: Vector,
+        speed: float = 9600,
+        **kwargs
+    ) -> None:
+        super().__init__(**kwargs)
+        self.layer = layer
+        self.start = start
+        self.direction = direction
+        self.speed = speed
+        ''' distance per sec '''
+        self._tmp_counter: int = 0
+        self.filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS() ^ (collision.projectile | collision.character))
+        
+        GAME.tick_group.append(self.tick)
+    
+    def tick(self, delta_time: float):
+        if self._tmp_counter >= 120:
+            return self.destroy()
+        end = self.start + self.direction * self.speed * delta_time
+        debug_draw_segment_later(self.start, end, (255,255,0,192))
+        
+        # shape_filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS() ^ collision.character)
+        # print('FILTER---------------------->', bin(shape_filter.mask))
+        # query = self.space.segment_query(self.start, end, 1, shape_filter=shape_filter)
+        first_hit = self.layer.space.segment_query_first(
+            self.start,
+            end,
+            1,
+            shape_filter=self.filter
+        )
+        
+        if first_hit:
+            print('---------------------->self.filter', self.filter.mask)
+            print('---------------------->first_hit.filter', first_hit.shape.collision_type)
+            print('---------------------->masking', self.filter.mask & first_hit.shape.collision_type)
+            try:
+                victim = first_hit.shape.body.owner
+            except:
+                HitMarker(first_hit.point).spawn(self.layer)
+            else:
+                HitMarker(first_hit.point, radius=5, color=colors.RED).spawn(self.layer)
+                victim.body.physics.apply_impulse_at_world_point(self.direction * 500, first_hit.point)
+                return self.destroy()
+            
+        self._tmp_counter += 1
+        self.start = end
+        return True
+    
+    def on_destroy(self):
+        GAME.tick_group.remove(self.tick)
+        return super().on_destroy()
+

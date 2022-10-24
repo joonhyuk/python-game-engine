@@ -135,6 +135,38 @@ def load_shader(file_path:str, target_window:arcade.Window, channels:list[arcade
     
     return shadertoy
 
+_debug_drawlist_segment = deque()
+_debug_drawlist_circle = deque()
+_debug_drawlist_poly = deque()
+
+def draw_debug_later():
+    while _debug_drawlist_segment:
+        debug_draw_segment(*_debug_drawlist_segment.pop())
+    while _debug_drawlist_circle:
+        debug_draw_circle(*_debug_drawlist_circle.pop())
+    while _debug_drawlist_poly:
+        debug_draw_poly(*_debug_drawlist_poly.pop())
+
+def debug_draw_segment_later(start:Vector = vectors.zero, end:Vector = vectors.right, color = arcade.color.WHITE, thickness = 1, duration_frames = 60):
+    _debug_drawlist_segment.append((start, end, color, thickness))
+
+def debug_draw_circle_later(center:Vector = vectors.zero, 
+                      radius:float = DEFAULT_TILE_SIZE, 
+                      line_color = arcade.color.WHITE, 
+                      line_thickness = 1, 
+                      fill_color = None):
+    _debug_drawlist_circle.append((center, radius, line_color, line_thickness, fill_color))
+
+def debug_draw_poly_later(points:list[Tuple[float, float]],
+                    center:Vector = vectors.zero,
+                    angle:float = 0.0,
+                    line_color = arcade.color.WHITE, 
+                    line_thickness = 1, 
+                    fill_color = None,
+                    radian = False,
+                    ):
+    _debug_drawlist_poly.append((points, center, angle, line_color, line_thickness, fill_color, radian))
+
 def debug_draw_segment(start:Vector = vectors.zero, end:Vector = vectors.right, color = arcade.color.WHITE, thickness = 1):
     if not CONFIG.debug_draw: return False
     return arcade.draw_line(start.x, start.y, end.x, end.y, color, thickness)
@@ -209,7 +241,7 @@ def debug_draw_multi_shape(shapelist:list[pymunk.Poly],
                     line_thickness = 1, 
                     fill_color = None
                     ):
-    
+    ''' Deprecaed with _physics.py '''
     for shape in shapelist:
         debug_draw_shape(shape, body, line_color, line_thickness, fill_color)
 

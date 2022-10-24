@@ -14,7 +14,7 @@ import arcade.color as colors
 from ..vector import Vector
 from config import *
 from .object import *
-
+from ..utils import schedule_once
 
 class GLTexture(arcade.Texture):
     pass
@@ -44,6 +44,12 @@ class Sprite(GameObject, arcade.Sprite):
         self._relative_scale = 1.0
         if position is not None:
             self.position = position
+    
+    def spawn(self, spawn_to = None) -> GameObject:
+        ''' Risky... revisit later '''
+        if spawn_to is not None:
+            spawn_to.add(self)
+        return super().spawn()
     
     def destroy(self) -> None:
         self.remove_from_sprite_lists()
@@ -165,3 +171,19 @@ class Layer(arcade.SpriteList):
     
     def remove(self, obj):
         raise Exception('this object should not be called')
+
+
+class HitMarker(SpriteCircle):
+    
+    def __init__(self, position: Vector, duration: float = 0.2, radius: int = 3, color = colors.YELLOW_ORANGE):
+        
+        super().__init__(radius, color, False, position = position)
+        self.duration = duration
+        
+    def on_spawn(self) -> None:
+        schedule_once(self.vanish, self.duration)    
+
+    def vanish(self, dt):
+        return self.destroy()
+
+

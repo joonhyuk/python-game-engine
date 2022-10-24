@@ -89,6 +89,16 @@ class TestShootBall(Action):
         return proj.spawn(owner.body.layers[0], owner.body.position, owner.body.angle, initial_impulse=owner.body.forward_vector * impulse)
         ''' somewhat bad usage becaues action attached on ActionComponent '''
 
+class TestRayCheckFire(Action):
+    
+    def do(self, owner: Union[GameObject, ActionHandler], 
+           layer: ObjectLayer,
+           start: Vector,
+           direction: Vector,
+           ) -> Any:
+        
+        RayHitCheckPerfTest(layer, start, direction).spawn()
+
 
 class ToggleFireAction(TestShootBall):
     

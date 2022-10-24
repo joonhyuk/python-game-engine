@@ -231,6 +231,7 @@ def setup_shapes(
     def set_shapes_attr(shapes:list[pymunk.Shape]) -> list[pymunk.Shape]:
         for s in shapes:
             s.collision_type = collision_type
+            s.filter = pymunk.ShapeFilter(categories=collision_type)    ### set collision type to filter
             if friction: s.friction = friction
             if elasticity: s.elasticity = elasticity
             PhysicsSpace._temp_shapes.add(s)
