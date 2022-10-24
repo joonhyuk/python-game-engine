@@ -52,6 +52,11 @@ class TestInstruction(View):
         instruction = load_texture(get_path(RESOURCE_PATH + '/app/NG1_instruction.png'))
         instruction.draw_scaled(*(CONFIG.screen_size / 2))
         # draw_text(self.instruction, CONFIG.screen_size / 2, align='center', anchor=Vector(0.5,0.5), font_size = 15, width = 800)
+        arcade.draw_text('PRESS ANY KEY' ,
+                         self.window.width // 2, 40, 
+                         arcade.color.WHITE, 
+                         font_size=20, 
+                         anchor_x='center')
         
     def on_key_press(self, symbol: int, modifiers: int):
         self.go_to_game()
