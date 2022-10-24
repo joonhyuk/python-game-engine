@@ -661,8 +661,10 @@ class TiledMap:
 
                 my_sprite.width = width = cur_object.size[0] * scale
                 my_sprite.height = height = cur_object.size[1] * scale
-                # center_x = width / 2
-                # center_y = height / 2
+                center_x = width / 2
+                center_y = height / 2
+                x += center_x
+                y += center_y
                 if cur_object.rotation:
                     rotation = -math.radians(cur_object.rotation)
                 else:
