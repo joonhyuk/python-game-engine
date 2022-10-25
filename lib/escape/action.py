@@ -131,6 +131,8 @@ class ToggleRayQueryFire(TestRayQueryFire):
            ) -> Any:
         '''
         The maximum rounds per minute is, 3600 (for 60 fps. fires every tick)
+        
+        만약 이를 넘고 싶으면, 한 발에 실리는 위력을 더 세게...???
         '''
         self.on = not self.on
         if self.on:
