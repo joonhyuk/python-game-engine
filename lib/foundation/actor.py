@@ -247,7 +247,7 @@ class Character(Pawn):
 
 class RayHitCheckPerfTest(GameObject):
     
-    __slots__ = 'layer', 'start', 'direction', 'speed', 'filter', '_tmp_counter'
+    __slots__ = 'layer', 'start', 'direction', 'speed', 'mass', 'filter', '_tmp_counter'
     
     def __init__(
         self, 
@@ -255,6 +255,7 @@ class RayHitCheckPerfTest(GameObject):
         start: Vector,
         direction: Vector,
         speed: float = 9600,
+        mass: float = 0.05,
         **kwargs
     ) -> None:
         super().__init__(**kwargs)
@@ -263,6 +264,7 @@ class RayHitCheckPerfTest(GameObject):
         self.direction = direction
         self.speed = speed
         ''' distance per sec '''
+        self.mass = mass
         self._tmp_counter: int = 0
         self.filter = pymunk.ShapeFilter(mask = pymunk.ShapeFilter.ALL_MASKS() ^ (collision.projectile | collision.character))
         
@@ -285,16 +287,16 @@ class RayHitCheckPerfTest(GameObject):
         )
         
         if first_hit:
-            print('---------------------->self.filter', self.filter.mask)
-            print('---------------------->first_hit.filter', first_hit.shape.collision_type)
-            print('---------------------->masking', self.filter.mask & first_hit.shape.collision_type)
+            # print('---------------------->self.filter', self.filter.mask)
+            # print('---------------------->first_hit.filter', first_hit.shape.collision_type)
+            # print('---------------------->masking', self.filter.mask & first_hit.shape.collision_type)
             try:
                 victim = first_hit.shape.body.owner
             except:
                 HitMarker(first_hit.point).spawn(self.layer)
             else:
                 HitMarker(first_hit.point, radius=5, color=colors.RED).spawn(self.layer)
-                victim.body.physics.apply_impulse_at_world_point(self.direction * 500, first_hit.point)
+                victim.body.physics.apply_impulse_at_world_point(self.direction * self.speed * self.mass, first_hit.point)
                 return self.destroy()
             
         self._tmp_counter += 1

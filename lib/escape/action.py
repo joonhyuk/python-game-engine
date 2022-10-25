@@ -89,15 +89,19 @@ class TestShootBall(Action):
         return proj.spawn(owner.body.layers[0], owner.body.position, owner.body.angle, initial_impulse=owner.body.forward_vector * impulse)
         ''' somewhat bad usage becaues action attached on ActionComponent '''
 
-class TestRayCheckFire(Action):
+class TestRayQueryFire(Action):
     
     def do(self, owner: Union[GameObject, ActionHandler], 
            layer: ObjectLayer,
-           start: Vector,
-           direction: Vector,
+           speed = 4800,
+           mass = 0.05,
            ) -> Any:
-        
-        RayHitCheckPerfTest(layer, start, direction).spawn()
+        self.fire(0, owner, layer, speed, mass)
+    
+    def fire(self, dt, owner, layer, speed, mass):
+        start = owner.body.position
+        direction = owner.body.forward_vector
+        RayHitCheckPerfTest(layer, start, direction, speed, mass).spawn()
 
 
 class ToggleFireAction(TestShootBall):
@@ -110,6 +114,27 @@ class ToggleFireAction(TestShootBall):
         self.on = not self.on
         if self.on:
             schedule_interval(self.fire, 0.06, owner, proj_type, impulse)
+        else: unschedule(self.fire)
+
+
+class ToggleRayQueryFire(TestRayQueryFire):
+    
+    def setup(self, *args, **kwargs):
+        self.fire_counter = 0
+        self.on = False
+    
+    def do(self, owner: Union[GameObject, ActionHandler], 
+           layer: ObjectLayer, 
+           speed= 4800,
+           mass= 0.05,
+           rpm: int = 600,
+           ) -> Any:
+        '''
+        The maximum rounds per minute is, 3600 (for 60 fps. fires every tick)
+        '''
+        self.on = not self.on
+        if self.on:
+            schedule_interval(self.fire, 60 / rpm, owner, layer, speed, mass)
         else: unschedule(self.fire)
 
 

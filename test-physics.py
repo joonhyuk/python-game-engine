@@ -107,6 +107,10 @@ class PhysicsTestView(View):
         
     def setup(self):
         start_loading_time = CLOCK.get_perf()
+        
+        
+        self.window.set_mouse_cursor(self.window.get_system_mouse_cursor(self.window.CURSOR_CROSSHAIR))
+        
         self._tmp_actor = None
         
         self.channel_static = None

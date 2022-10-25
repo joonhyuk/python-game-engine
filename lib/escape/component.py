@@ -43,7 +43,13 @@ class EscapePlayerController(PlayerController):
             self.action.test_action_2()
             
         if key == keys.B:
-            self.action.toggle_ball(self.owner.projectile, 1000)
+            self.action.toggle_ray(
+                self.owner.body._last_spawn_layer, 
+                speed = 4800,
+                mass = 0.075,
+                rpm = 700,
+                )
+            # self.action.toggle_ball(self.owner.projectile, 1000)
         
     def on_key_release(self, key: int, modifiers: int):
         if key in (keys.W,): GAME.input_move -= vectors.up
@@ -63,17 +69,18 @@ class EscapePlayerController(PlayerController):
         '''
         GAME.last_mouse_lb_hold_time = CLOCK.perf
         GAME.debug_text.timer_start('mouse_lb_hold')
-        
-        # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
-        # ENV.debug_text.perf_check('DELEGATED_ATTACK_DELAY') 
+        self.action.test_ray_fire(
+            self.owner.body._last_spawn_layer,
+            speed = 4800,
+            mass = 0.08
+            )
         
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         GAME.last_mouse_lb_hold_time = CLOCK.perf - GAME.last_mouse_lb_hold_time
         GAME.debug_text.timer_end('mouse_lb_hold', 3)
         
-        self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0.2, 2, 500, 2000, True))
-        self.action.test_ray_fire(self.owner.body._last_spawn_layer, self.owner.position, self.owner.body.forward_vector)
-        # print(self._last_projectile)
+        # self.action.test_projectile(self.owner.projectile, map_range(GAME.last_mouse_lb_hold_time, 0.2, 2, 500, 2000, True))
+        
 
 class TestAIActionComponent(ActionHandler):
     
@@ -85,11 +92,12 @@ class EscapeCharacterActionHandler(ActionHandler):
     test_action = TestAction()
     test_action_2 = TestAction2()
     toggle_ball = ToggleFireAction2()
+    toggle_ray = ToggleRayQueryFire()
     test_boost = TestBoost()
     test_projectile = TestShootBall()
     jump = Jump()
     
-    test_ray_fire = TestRayCheckFire()
+    test_ray_fire = TestRayQueryFire()
     
     body:DynamicBody = None
     
