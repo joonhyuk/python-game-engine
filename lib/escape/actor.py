@@ -79,7 +79,7 @@ class ShrinkingBall(BallProjectile):
             return self.destroy()
             
         alpha = clamp(self.alpha, 0.1, 1)
-        self.body.sprite.color = (255, 0, 255, 255 * alpha)
+        self.body.sprite.color[3] = 255 * alpha
         self.body.scale = alpha
         # print('refcount_2', sys.getrefcount(self))
         
@@ -255,6 +255,8 @@ class SimpleAIObject(DynamicObject):
         self.action = TestAIActionComponent()
         self.controller = TestAIController()
         self.ticker = Ticker()
+        
+        self.enemy = flip_coin(0.25)
     
     # def get_components(self, *types: ActorComponent):
         # return super().get_components(*types)
@@ -262,6 +264,13 @@ class SimpleAIObject(DynamicObject):
     # def tick(self, delta_time: float) -> bool:
     #     print(self, 'ticking')
     #     return super().tick(delta_time)
+    
+    def on_spawn(self) -> None:
+        if self.enemy: 
+            self.body.sprite.color = colors.RED
+            self.body.physics.mass = 5
+        
+        return super().on_spawn()
 
 class Door(Pawn):
     
