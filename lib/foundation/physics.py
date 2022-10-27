@@ -640,17 +640,15 @@ class PhysicsSpace(pymunk.Space):
         ) -> None:
         print('world static collision building')
         
-        with open('data/static_collision.data', 'rb') as f:
-            a = pickle.load(f, )
-            self.add(*a)
-            return a
+        # with open('data/static_collision.data', 'rb') as f:
+        #     a = pickle.load(f, )
+        #     self.add(*a)
+        #     return a
         
         walls_points:list = []
         for sprite in tqdm(sprite_list):
             sprite:Sprite
             walls_points.append(sprite.get_adjusted_hit_box())
-        
-        # print(hash(frozenset(walls_points)))
         
         shapes = setup_shapes(
             self.static_body, 
@@ -660,11 +658,14 @@ class PhysicsSpace(pymunk.Space):
             elasticity = elasticity,
             )
         
-        # with open('data/static_collision.data', 'wb') as f:
-            # pickle.dump(shapes, f)
-                
         self.add(*shapes)
         return shapes
+    
+    def set_world_static(
+        self,
+        
+    ):
+        pass
     
     def get_owners_from_arbiter(self, arbiter: pymunk.Arbiter) -> tuple[Optional[GameObject], Optional[GameObject]]:
         """ Given a collision arbiter, return the shapes associated with the collision. """

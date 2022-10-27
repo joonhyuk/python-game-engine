@@ -117,6 +117,10 @@ class TiledMap:
         
         self.map:pytiled_parser.TiledMap= None
         ''' map data '''
+        self.map_hash = None
+        ''' hexdigest md5 of map json for cache comparison '''
+        self.map_static_collision = None
+        ''' static collision cache for map '''
         self.size:Vector = None
         ''' size of map '''
         self.tile_size:Vector = None
@@ -160,15 +164,26 @@ class TiledMap:
         #     offset=offset,
         # )
         
-        a = load_json(get_path(filepath))
-        a = json.dumps(a, sort_keys=True).encode('utf-8')
-        print(hashlib.md5(a).hexdigest())
-        ### cd7ababb1ccdaa97c8004b127ed2c86d
-        
         if not filepath: raise AttributeError('No map file path')
         self.map = tiled_map or pytiled_parser.parse_map(Path(get_path(filepath)))
         if self.map.infinite: raise AttributeError('Infinite map currently not supported')
 
+        ### Try to get static collision data from cache
+        self.map_hash = get_json_md5_hexdigest(filepath)
+        map_collision_cache = ''.join(get_path(filepath).split('.')[0:-1]) + '.cc'
+        try:
+            with open(map_collision_cache, 'rb') as f:
+                map_cc = pickle.load(f)
+        except:
+            pass   
+        else:
+            if map_cc:
+                if map_cc[0] == self.map_hash:
+                    self.map_static_collision = map_cc[1]
+        ### End of static collision cache process     
+        
+        print(self.map_hash, map_collision_cache)
+        
         self.size = Vector(*self.map.map_size)
         self.tile_size = Vector(*self.map.tile_size)
         self.bg_color = self.map.background_color
@@ -239,6 +254,8 @@ class TiledMap:
         elif isinstance(layer, pytiled_parser.LayerGroup):
             for sub_layer in layer.layers:
                 self._process_layer(sub_layer, global_options, layer_options)
+        
+        
 
     def _get_tile_by_gid(self, tile_gid: int) -> Optional[pytiled_parser.Tile]:
         flipped_diagonally = False
