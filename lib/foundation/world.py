@@ -145,7 +145,7 @@ class TiledMap:
         # scale:float = 1.0,
         layer_options: Optional[Dict[str, Dict[str, Any]]] = None,
         # use_spatial_hash: Optional[bool] = None,
-        # hit_box_algorithm: str = "Simple",
+        # hit_box_algorithm: str = "Detailed",
         # hit_box_detail: float = 4.5,
         # offset: Vector = vectors.zero,
         tiled_map: Optional[pytiled_parser.TiledMap] = None,
@@ -186,9 +186,6 @@ class TiledMap:
                 )
             self._process_layer(layer, global_options, layer_options)
         
-        ppp = load_json(TILED_PATH + 'propertytypes.json')
-        print(ppp)
-    
     def _process_layer(
         self,
         layer: pytiled_parser.Layer,
@@ -211,12 +208,10 @@ class TiledMap:
                 # options = new_options
 
         if isinstance(layer, pytiled_parser.TileLayer):
-            if layer.name == 'test':
-                print(layer.class_)
             processed = self._process_tile_layer(layer, **options)
             self.tile_layers[layer.name] = processed
             if processed.properties:
-                if processed.properties.get('physics', True):
+                if processed.properties.get('world_static', True):
                     self.default_space.add_static_collison(
                         processed,
                         elasticity = 1.0
@@ -310,7 +305,7 @@ class TiledMap:
         self,
         tile: pytiled_parser.Tile,
         scale: float = 1.0,
-        hit_box_algorithm: str = "Simple",
+        hit_box_algorithm: str = "Detailed",
         hit_box_detail: float = 4.5,
         custom_class: Optional[type] = None,
         custom_class_args: Dict[str, Any] = {},
@@ -373,7 +368,7 @@ class TiledMap:
                 my_sprite.properties[key] = value
         
         if tile.class_:
-            print(tile.class_)
+            print(tile.properties)
             my_sprite.properties["class"] = tile.class_
 
         # Add tile ID to sprite properties
@@ -523,7 +518,7 @@ class TiledMap:
         layer: pytiled_parser.TileLayer,
         scale: float = 1.0,
         use_spatial_hash: Optional[bool] = None,
-        hit_box_algorithm: str = "Simple",
+        hit_box_algorithm: str = "Detailed",
         hit_box_detail: float = 4.5,
         offset: Vector = vectors.zero,
         custom_class: Optional[type] = None,
@@ -613,7 +608,7 @@ class TiledMap:
         layer: pytiled_parser.ObjectLayer,
         scale: float = 1.0,
         use_spatial_hash: Optional[bool] = None,
-        hit_box_algorithm: str = "Simple",
+        hit_box_algorithm: str = "Detailed",
         hit_box_detail: float = 4.5,
         offset: Vector = vectors.zero,
         custom_class: Optional[type] = None,

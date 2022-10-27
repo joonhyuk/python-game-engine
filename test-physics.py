@@ -615,17 +615,17 @@ class WorldTestView(View):
         self.world.camera = self.player.camera
         self.camera = Camera(*CONFIG.screen_size)
         
-        dfs = Sprite(
-            get_path(IMG_PATH + 'test_fan_blade4.png'), hit_box_algorithm='Detailed',
-            position = Vector(500, 500),
-            angle = 90,
-        )
+        # dfs = Sprite(
+        #     get_path(IMG_PATH + 'test_fan_blade4.png'), hit_box_algorithm='Detailed',
+        #     position = Vector(500, 500),
+        #     angle = 90,
+        # )
         
-        df = DynamicFan(
-            sprite = dfs,
-        )
+        # df = DynamicFan(
+        #     sprite = dfs,
+        # )
         
-        df.spawn(self.world.tile_layers['wall'])
+        # df.spawn(self.world.tile_layers['wall'])
         # self.world.tile_layers['wall'].add(df)
         
         
