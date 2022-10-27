@@ -1,4 +1,5 @@
 import copy
+import hashlib
 
 from collections import OrderedDict
 from pathlib import Path
@@ -158,6 +159,11 @@ class TiledMap:
         #     hit_box_detail=hit_box_detail,
         #     offset=offset,
         # )
+        
+        a = load_json(get_path(filepath))
+        a = json.dumps(a, sort_keys=True).encode('utf-8')
+        print(hashlib.md5(a).hexdigest())
+        ### cd7ababb1ccdaa97c8004b127ed2c86d
         
         if not filepath: raise AttributeError('No map file path')
         self.map = tiled_map or pytiled_parser.parse_map(Path(get_path(filepath)))

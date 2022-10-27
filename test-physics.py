@@ -611,7 +611,11 @@ class WorldTestView(View):
             )
         sp.spawn()
         self.world = TiledMap(space = self.space, scale = 2)
-        self.world.load_map('tiled/test_map5.json')
+        self.world.load_map('tiled/test_map3.json')
+        
+        # with open('data/player_cached.data', 'wb') as f:
+            # pickle.dump(self.player, f)
+        
         self.world.camera = self.player.camera
         self.camera = Camera(*CONFIG.screen_size)
         
@@ -625,8 +629,14 @@ class WorldTestView(View):
         #     sprite = dfs,
         # )
         
-        # df.spawn(self.world.tile_layers['wall'])
+        # df.spawn(self.world.tile_layers['walls'])
         # self.world.tile_layers['wall'].add(df)
+        
+        
+        self.channel_static = None
+        self.channel_dynamic = None
+        self.channels:list[GLTexture] = [self.channel_static, self.channel_dynamic]
+        self.shader = load_shader(get_path('data/shader/rtshadow.glsl'), self.window, self.channels)
         
         
     def on_update(self, delta_time: float):
@@ -635,24 +645,41 @@ class WorldTestView(View):
         self.space.tick(1/60)
         
     def on_draw(self):
+        GAME.debug_text.perf_check('DRAW')
+        self.camera.use()
         
-        self.clear()
+        self.channels[0].use()
+        self.channels[0].clear()
+        self.world.tile_layers['walls'].draw()       ### Will include player draw(in proper layer)
+        self.channels[1].use()
+        self.channels[1].clear()
         self.world.draw()       ### Will include player draw(in proper layer)
+        
+        self.shader.program['activated'] = CONFIG.debug_f_keys[0]
+        self.shader.program['lightPosition'] = self.player.screen_position * GAME.render_scale
+        self.shader.program['lightSize'] = 500 * GAME.render_scale
+        self.shader.program['lightAngle'] = 75.0
+        self.shader.program['lightDirectionV'] = self.player.body.forward_vector
+
+        self.window.use()
+        self.clear()
+        self.shader.render()
+
         self.player_layer.draw()
         
         if CONFIG.debug_f_keys[2]:
             self.space.debug_draw_movable_collision()
             self.space.debug_draw_static_collision()
         
-        self.camera.use()
+        GAME.debug_text.perf_check('DRAW')
         
 
 def main():
     CLOCK.use_engine_tick = True
     
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
-    # GAME.set_scene(WorldTestView)
-    GAME.set_scene(TestTitle)
+    GAME.set_scene(WorldTestView)
+    # GAME.set_scene(TestTitle)
     # GAME.set_scene(TestInstruction)
     GAME.run()
 
