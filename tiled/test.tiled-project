@@ -24,13 +24,9 @@
             "id": 6,
             "members": [
                 {
-                    "name": "phys",
-                    "propertyType": "physics",
-                    "type": "class",
-                    "value": {
-                        "body_type": 1,
-                        "mass": 50
-                    }
+                    "name": "mass",
+                    "type": "float",
+                    "value": 20
                 }
             ],
             "name": "DynamicFan",
@@ -121,24 +117,6 @@
             "members": [
             ],
             "name": "test_class",
-            "type": "class",
-            "useAs": [
-                "property",
-                "map",
-                "layer",
-                "object",
-                "tile",
-                "tileset",
-                "wangcolor",
-                "wangset"
-            ]
-        },
-        {
-            "color": "#ffa0a0a4",
-            "id": 7,
-            "members": [
-            ],
-            "name": "Class3",
             "type": "class",
             "useAs": [
                 "property",

@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tileset version="1.9" tiledversion="1.9.2" name="test_fan_blade" tilewidth="162" tileheight="160" tilecount="4" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
- <tile id="0">
+ <tile id="0" class="DynamicFan">
+  <properties>
+   <property name="hit_box_algorithm" propertytype="hit_box_algorithm" value="Detailed"/>
+   <property name="hit_box_detail" type="float" value="4.5"/>
+  </properties>
   <image width="162" height="150" source="../resources/art/test_fan_blade0.png"/>
  </tile>
  <tile id="1">
@@ -14,6 +18,7 @@
   <properties>
    <property name="angle" type="float" value="90"/>
    <property name="hit_box_algorithm" propertytype="hit_box_algorithm" value="Detailed"/>
+   <property name="hit_box_detail" type="float" value="3"/>
   </properties>
   <image width="122" height="122" source="../resources/art/test_fan_blade4.png"/>
  </tile>
