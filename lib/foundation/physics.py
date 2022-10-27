@@ -650,6 +650,8 @@ class PhysicsSpace(pymunk.Space):
             sprite:Sprite
             walls_points.append(sprite.get_adjusted_hit_box())
         
+        # print(hash(frozenset(walls_points)))
+        
         shapes = setup_shapes(
             self.static_body, 
             collision_type = collision_type,
@@ -658,6 +660,9 @@ class PhysicsSpace(pymunk.Space):
             elasticity = elasticity,
             )
         
+        # with open('data/static_collision.data', 'wb') as f:
+            # pickle.dump(shapes, f)
+                
         self.add(*shapes)
         return shapes
     
