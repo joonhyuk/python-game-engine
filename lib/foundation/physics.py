@@ -215,10 +215,19 @@ def get_owner(
     
     return None
 
+def get_merged_convexes(sprite_list):
+    ''' Returns merged convexes from sprite list '''
+    walls_points:list = []
+    for sprite in tqdm(sprite_list):
+        sprite:Sprite
+        walls_points.append(sprite.get_adjusted_hit_box())
+    
+    return get_convexes(walls_points)
+
 def setup_shapes(
     body: PhysicsObject,
     collision_type = collision.default,
-    shape_data: Union[float, list[Vector]] = None,
+    shape_data: Union[float, list] = None,
     shape_edge_radius: float = 0.0,
     shape_offset:Vector = vectors.zero,
     friction: float = None,
@@ -240,7 +249,7 @@ def setup_shapes(
     
     if isinstance(shape_data, list):
         first = shape_data[0]
-        if len(first) == 2 and all(isinstance(x, (float, int)) for x in first):
+        if len(first) == 2 and all(isinstance(x, (float, int)) for x in first): ### for single shape
             point_count = len(shape_data)
             ### shape should have more than 2 points
             if point_count < 2:
@@ -272,15 +281,10 @@ def setup_shapes(
         ### For multiple shapes
         
         # convexes = get_convexes(shape_data)
-        # with open('data/convex_test.data', 'wb') as f:
-        #     pickle.dump(convexes, f)
-        
-        with open('data/convex_test.data', 'rb') as f:
-            convexes = pickle.load(f)
         
         return set_shapes_attr([
             pymunk.Poly(body, c, radius=shape_edge_radius) 
-            for c in convexes
+            for c in shape_data
         ])
     ### for circle shape
     if isinstance(shape_data, (int, float)):
@@ -632,7 +636,8 @@ class PhysicsSpace(pymunk.Space):
         return super().remove(*objs)
     
     def add_static_collison(
-        self, sprite_list,
+        self, 
+        shape_data,
         friction = 1.0,
         elasticity:float = None,
         collision_type = collision.default,
@@ -645,17 +650,17 @@ class PhysicsSpace(pymunk.Space):
         #     self.add(*a)
         #     return a
         
-        walls_points:list = []
-        for sprite in tqdm(sprite_list):
-            sprite:Sprite
-            walls_points.append(sprite.get_adjusted_hit_box())
+        # walls_points:list = []
+        # for sprite in tqdm(sprite_list):
+        #     sprite:Sprite
+        #     walls_points.append(sprite.get_adjusted_hit_box())
         
         # print(hash(frozenset(walls_points)))
         
         shapes = setup_shapes(
             self.static_body, 
             collision_type = collision_type,
-            shape_data = walls_points,
+            shape_data = shape_data,
             friction = friction,
             elasticity = elasticity,
             )
