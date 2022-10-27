@@ -15,6 +15,19 @@ class Shadow(GameObject):
     def setup(self, **kwargs) -> None:
         self.body = self.owners(BodyHandler)
         return super().setup(**kwargs)
+
+
+@dataclass
+class Parameters(GameObject):
+    
+    #WIP
+    '''
+    Handles parameters for GameObjects
+    
+    - 게임 파라미터 컴포넌트. PropertyFrom과 다른 점은?
+    - 왜 있어야 하는가? 틱별로 뭔가 하기 위해? 액터를 껍데기로 만들기 위해? 그럴거면 액터 자체가 되는게 더 맞지 않나?
+    - 이런저런 1차 2차 스탯들을 계산해 주기 위해?
+    '''
     
     
 class Ticker(GameObject):
@@ -22,6 +35,9 @@ class Ticker(GameObject):
     #WIP
     '''
     Run every tick() of owner's members.
+    
+    GameObject에 추가된 상태에서 스폰되면, top owner의 컴포넌트 중 'tick'을 가진 대상을
+    모두 Client의 tick_group에 추가한다.
     
     GameObject 스폰에 그냥 기능을 넣어버리는 것은?
     Client에 커플링 시킬거면 컴포넌트로 가는게 맞다.
@@ -49,7 +65,7 @@ class Ticker(GameObject):
                 ''' Coupled with engine '''
     
     def tick(self, delta_time: float) -> bool:
-        
+        ''' Will not be used '''
         if not self.available: return False
         
         for tick in self.tick_group:

@@ -3,6 +3,7 @@ from __future__ import annotations
 (only coupled with pymunk in this file)
 '''
 
+import pickle
 import math
 from typing import Callable, Optional, Union
 
@@ -269,7 +270,14 @@ def setup_shapes(
                 )
             ])
         ### For multiple shapes
-        convexes = get_convexes(shape_data)
+        
+        # convexes = get_convexes(shape_data)
+        # with open('data/convex_test.data', 'wb') as f:
+        #     pickle.dump(convexes, f)
+        
+        with open('data/convex_test.data', 'rb') as f:
+            convexes = pickle.load(f)
+        
         return set_shapes_attr([
             pymunk.Poly(body, c, radius=shape_edge_radius) 
             for c in convexes
@@ -631,10 +639,18 @@ class PhysicsSpace(pymunk.Space):
         shape_edge_raduis = 0.0,
         ) -> None:
         print('world static collision building')
+        
+        with open('data/static_collision.data', 'rb') as f:
+            a = pickle.load(f, )
+            self.add(*a)
+            return a
+        
         walls_points:list = []
         for sprite in tqdm(sprite_list):
             sprite:Sprite
             walls_points.append(sprite.get_adjusted_hit_box())
+        
+        # print(hash(frozenset(walls_points)))
         
         shapes = setup_shapes(
             self.static_body, 
@@ -644,6 +660,9 @@ class PhysicsSpace(pymunk.Space):
             elasticity = elasticity,
             )
         
+        # with open('data/static_collision.data', 'wb') as f:
+            # pickle.dump(shapes, f)
+                
         self.add(*shapes)
         return shapes
     
