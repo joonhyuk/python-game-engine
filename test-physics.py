@@ -316,7 +316,7 @@ class PhysicsTestView(View):
         layer.extend(sprite_list)
         
         self.wall_collision_debug_shape = self.space.add_static_collison(
-            layer, 
+            get_merged_convexes(layer), 
             collision_type = collision.wall,
             elasticity=1.0)
         ### for presentation, leaving old one below
@@ -646,7 +646,8 @@ class WorldTestView(View):
         
     def on_draw(self):
         GAME.debug_text.perf_check('DRAW')
-        self.camera.use()
+        
+        self.world.camera.use()
         
         self.channels[0].use()
         self.channels[0].clear()
@@ -671,6 +672,7 @@ class WorldTestView(View):
             self.space.debug_draw_movable_collision()
             self.space.debug_draw_static_collision()
         
+        self.camera.use()
         GAME.debug_text.perf_check('DRAW')
         
 
