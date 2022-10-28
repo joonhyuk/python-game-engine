@@ -293,7 +293,9 @@ class RayHitCheckPerfTest(GameObject):
             try:
                 victim = first_hit.shape.body.owner
             except:
+                ''' Hits wall in this case '''
                 HitMarker(first_hit.point).spawn(self.layer)
+                return self.destroy()
             else:
                 HitMarker(first_hit.point, radius=5, color=colors.RED).spawn(self.layer)
                 victim.body.physics.apply_impulse_at_world_point(self.direction * self.speed * self.mass, first_hit.point)
