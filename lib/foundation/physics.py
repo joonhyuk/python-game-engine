@@ -779,7 +779,10 @@ class PhysicsSpace(pymunk.Space):
             )
     
     def sync(self):
-        
+        '''
+        이동 가능한 대상만 싱크해야 하므로 일단은 여기서 하는 것으로 유지.
+        만약 _movable_objs를 유지하지 않을 경우 DynamicBody부터 tick에서 sync를 하도록 변경.
+        '''
         for o in self._movable_objs:
             if o.spawnned: o._owner._sync()        ### Not so robust method
             
