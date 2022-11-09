@@ -640,6 +640,7 @@ class WorldTestView(View):
         
         
     def on_update(self, delta_time: float):
+        GAME.debug_text['GAMEOBJECT SPAWN/DESTROYED/GC'] = f'{GameObject.spawn_counter - GameObject.destroy_counter}/{GameObject.destroy_counter - GameObject.gc_counter}/{GameObject.gc_counter}'
         
         self.world.tick(delta_time)     ### includes player, physics update
         self.space.tick(1/60)
