@@ -3,6 +3,7 @@ from __future__ import annotations
 (only coupled with pymunk in this file)
 '''
 
+import pickle
 import math
 from typing import Callable, Optional, Union
 
@@ -214,10 +215,19 @@ def get_owner(
     
     return None
 
+def get_merged_convexes(sprite_list):
+    ''' Returns merged convexes from sprite list '''
+    walls_points:list = []
+    for sprite in tqdm(sprite_list):
+        sprite:Sprite
+        walls_points.append(sprite.get_adjusted_hit_box())
+    
+    return get_convexes(walls_points)
+
 def setup_shapes(
     body: PhysicsObject,
     collision_type = collision.default,
-    shape_data: Union[float, list[Vector]] = None,
+    shape_data: Union[float, list] = None,
     shape_edge_radius: float = 0.0,
     shape_offset:Vector = vectors.zero,
     friction: float = None,
@@ -239,7 +249,7 @@ def setup_shapes(
     
     if isinstance(shape_data, list):
         first = shape_data[0]
-        if len(first) == 2 and all(isinstance(x, (float, int)) for x in first):
+        if len(first) == 2 and all(isinstance(x, (float, int)) for x in first): ### for single shape
             point_count = len(shape_data)
             ### shape should have more than 2 points
             if point_count < 2:
@@ -269,10 +279,12 @@ def setup_shapes(
                 )
             ])
         ### For multiple shapes
-        convexes = get_convexes(shape_data)
+        
+        # convexes = get_convexes(shape_data)
+        
         return set_shapes_attr([
             pymunk.Poly(body, c, radius=shape_edge_radius) 
-            for c in convexes
+            for c in shape_data
         ])
     ### for circle shape
     if isinstance(shape_data, (int, float)):
@@ -624,28 +636,46 @@ class PhysicsSpace(pymunk.Space):
         return super().remove(*objs)
     
     def add_static_collison(
-        self, sprite_list,
+        self, 
+        shape_data,
         friction = 1.0,
         elasticity:float = None,
         collision_type = collision.default,
         shape_edge_raduis = 0.0,
         ) -> None:
         print('world static collision building')
-        walls_points:list = []
-        for sprite in tqdm(sprite_list):
-            sprite:Sprite
-            walls_points.append(sprite.get_adjusted_hit_box())
+        
+        # with open('data/static_collision.data', 'rb') as f:
+        #     a = pickle.load(f, )
+        #     self.add(*a)
+        #     return a
+        
+        # walls_points:list = []
+        # for sprite in tqdm(sprite_list):
+        #     sprite:Sprite
+        #     walls_points.append(sprite.get_adjusted_hit_box())
+        
+        # print(hash(frozenset(walls_points)))
         
         shapes = setup_shapes(
             self.static_body, 
             collision_type = collision_type,
-            shape_data = walls_points,
+            shape_data = shape_data,
             friction = friction,
             elasticity = elasticity,
             )
         
+        # with open('data/static_collision.data', 'wb') as f:
+            # pickle.dump(shapes, f)
+                
         self.add(*shapes)
         return shapes
+    
+    def set_world_static(
+        self,
+        
+    ):
+        pass
     
     def get_owners_from_arbiter(self, arbiter: pymunk.Arbiter) -> tuple[Optional[GameObject], Optional[GameObject]]:
         """ Given a collision arbiter, return the shapes associated with the collision. """
@@ -749,7 +779,10 @@ class PhysicsSpace(pymunk.Space):
             )
     
     def sync(self):
-        
+        '''
+        이동 가능한 대상만 싱크해야 하므로 일단은 여기서 하는 것으로 유지.
+        만약 _movable_objs를 유지하지 않을 경우 DynamicBody부터 tick에서 sync를 하도록 변경.
+        '''
         for o in self._movable_objs:
             if o.spawnned: o._owner._sync()        ### Not so robust method
             

@@ -5,6 +5,8 @@ joonhyuk@me.com
 import os, sys, json
 import math
 
+from hashlib import md5
+
 from enum import Enum
 from typing import Iterable, Union
 from collections import deque
@@ -112,6 +114,9 @@ class Version(metaclass=SingletonType):
     def __repr__(self):
         return self.__str__()
 
+
+def get_json_md5_hexdigest(filepath: str):
+    return md5(json.dumps(load_json(get_path(filepath)), sort_keys=True).encode('utf-8')).hexdigest()
 
 def get_path(path):
     """return proper path for packaging platform"""

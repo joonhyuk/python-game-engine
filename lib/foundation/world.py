@@ -1,4 +1,5 @@
 import copy
+import hashlib
 
 from collections import OrderedDict
 from pathlib import Path
@@ -116,6 +117,12 @@ class TiledMap:
         
         self.map:pytiled_parser.TiledMap= None
         ''' map data '''
+        self.map_hash = None
+        ''' hexdigest md5 of map json for cache comparison '''
+        self.map_static_collision = []
+        ''' static collision cache for map '''
+        self.map_static_collision_cached = False
+        ''' is collision cached '''
         self.size:Vector = None
         ''' size of map '''
         self.tile_size:Vector = None
@@ -159,10 +166,32 @@ class TiledMap:
         #     offset=offset,
         # )
         
+        a = load_json(get_path(filepath))
+        a = json.dumps(a, sort_keys=True).encode('utf-8')
+        print(hashlib.md5(a).hexdigest())
+        ### cd7ababb1ccdaa97c8004b127ed2c86d
+        
         if not filepath: raise AttributeError('No map file path')
         self.map = tiled_map or pytiled_parser.parse_map(Path(get_path(filepath)))
         if self.map.infinite: raise AttributeError('Infinite map currently not supported')
 
+        ### Try to get static collision data from cache
+        self.map_hash = get_json_md5_hexdigest(str(self.map.map_file))
+        collision_cache_filepath = ''.join(get_path(str(self.map.map_file)).split('.')[0:-1]) + '.cc'
+        try:
+            with open(collision_cache_filepath, 'rb') as f:
+                map_cc = pickle.load(f)
+        except:
+            pass   
+        else:
+            if map_cc:
+                if map_cc[0] == self.map_hash:
+                    self.map_static_collision = map_cc[1]
+                    self.map_static_collision_cached = True
+        ### End of static collision cache process     
+        
+        print(self.map.map_file, collision_cache_filepath)
+        
         self.size = Vector(*self.map.map_size)
         self.tile_size = Vector(*self.map.tile_size)
         self.bg_color = self.map.background_color
@@ -212,10 +241,9 @@ class TiledMap:
             self.tile_layers[layer.name] = processed
             if processed.properties:
                 if processed.properties.get('world_static', True):
-                    self.default_space.add_static_collison(
-                        processed,
-                        elasticity = 1.0
-                    )
+                    if not self.map_static_collision_cached:
+                        self.map_static_collision.extend(get_merged_convexes(processed))
+                    
         elif isinstance(layer, pytiled_parser.ObjectLayer):
             processed = self._process_object_layer(layer, **options)
             if processed[0]:
@@ -233,6 +261,17 @@ class TiledMap:
         elif isinstance(layer, pytiled_parser.LayerGroup):
             for sub_layer in layer.layers:
                 self._process_layer(sub_layer, global_options, layer_options)
+        
+        if self.map_static_collision:
+            self.default_space.add_static_collison(
+                        shape_data = self.map_static_collision,
+                        collision_type= collision.wall
+                    )
+            if not self.map_static_collision_cached:
+                collision_cache_filepath = ''.join(get_path(str(self.map.map_file)).split('.')[0:-1]) + '.cc'
+                
+                with open(collision_cache_filepath, 'wb') as f:
+                    pickle.dump((self.map_hash, self.map_static_collision), f)
 
     def _get_tile_by_gid(self, tile_gid: int) -> Optional[pytiled_parser.Tile]:
         flipped_diagonally = False
@@ -529,7 +568,6 @@ class TiledMap:
             set_physics = layer.properties.get('physics', True)
         except:
             set_physics = True
-        # print(layer.name,'set_physics',set_physics)
         
         sprite_list: ObjectLayer = ObjectLayer(
             self.default_space if set_physics else None,
