@@ -17,8 +17,8 @@ class TitleScreen(View):
         self.shadertoy.render(time=self.time)
         arcade.draw_text(PROJECT_NAME, 
                          self.window.width // 2, self.window.height // 2, 
-                         arcade.color.CYAN, 
-                         font_size = 50, 
+                         arcade.color.SLATE_GRAY, 
+                         font_size = 100, 
                          anchor_x = 'center')
         arcade.draw_text('PRESS ANY KEY' ,
                          self.window.width // 2, self.window.height // 2 - 75, 

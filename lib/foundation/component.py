@@ -39,16 +39,31 @@ class Inventory(GameObject):
     '''
     def __init__(
         self,
-        _list: list[Item] = [],
+        items: list[Item] = [],
         slot_count:int = 0,
         **kwargs
     ) -> None:
-        
-        if not slot_count or len(_list) <= slot_count:
-            self._list = _list
+        super().__init__(**kwargs)
+        self.slot_count = slot_count
+        if not slot_count or len(items) <= slot_count:
+            self._members = items
         else:
             raise Exception('Item count exceeds slot_count')
-        super().__init__(**kwargs)
+    
+    @property
+    def is_full(self) -> bool:
+        return self.slot_count and len(self.get_members(Item)) >= self.slot_count
+    
+    def put(self, item: Union[Item, list[Item]]):
+        if not self.available: return None
+        if self.is_full: return None
+        
+        if isinstance(item, Item):
+            pass
+            
+        
+        
+        
 
 
 class Loadouts(GameObject):

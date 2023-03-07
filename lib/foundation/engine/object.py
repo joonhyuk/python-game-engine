@@ -47,6 +47,8 @@ class GameObject(object):
             get top owner, read only.
         `members : list[GameObject]`
             get child GameObjects, read only.
+        `available : bool`
+            for validity check, read only.
     
     '''
     
