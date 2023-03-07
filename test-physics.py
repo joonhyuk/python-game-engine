@@ -120,8 +120,17 @@ class PhysicsTestView(View):
         self.shader = load_shader(get_path('data/shader/rtshadow.glsl'), self.window, self.channels)
         
         self.space.damping = 0.01
+        # self.space.gravity = (0, -9)
         
+        test_vesselsprite = Sprite(get_path(IMG_PATH + 'submarine.png'))
+        test_vesselsprite.set_hit_box(((128,32),(128,-32),(-128,-32),(-128,32)))
+        test_vesselbody = DynamicBody(
+            test_vesselsprite, shape_type=physics_types.poly
+        )
+        print(test_vesselbody.sprite.get_adjusted_hit_box())
+        # self.player = EscapePlayer(hp = 100, body = test_vesselbody)
         self.player = EscapePlayer()
+        
         sp = Spawner(
             [self.player], 
             self.character_layer,
@@ -681,8 +690,8 @@ def main():
     CLOCK.use_engine_tick = True
     
     GAME.set_window(CONFIG.screen_size, CONFIG.screen_title + ' ' + Version().full)
-    GAME.set_scene(WorldTestView)
-    # GAME.set_scene(TestTitle)
+    # GAME.set_scene(WorldTestView)
+    GAME.set_scene(TestTitle)
     # GAME.set_scene(TestInstruction)
     GAME.run()
 
